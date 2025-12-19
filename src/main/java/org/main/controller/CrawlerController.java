@@ -14,9 +14,16 @@ public class CrawlerController {
         this.crawlerService = crawlerService;
     }
 
-    @PostMapping("/euw/summoner/{name}")
-    public CrawlResultDto crawlSummoner(@PathVariable("name") String name,
-                                        @RequestParam(value = "limit", required = false, defaultValue = "20") int limit) {
-        return crawlerService.crawlSummonerEUW(name, limit);
+    @PostMapping("/euw/puuid/{puuid}")
+    public CrawlResultDto crawlByPuuid(@PathVariable String puuid,
+                                       @RequestParam(value = "limit", defaultValue = "20") int limit) {
+        return crawlerService.crawlPuuidEUW(puuid, limit);
+    }
+
+    @PostMapping("/euw/riotid/{gameName}/{tagLine}")
+    public CrawlResultDto crawlByRiotId(@PathVariable String gameName,
+                                        @PathVariable String tagLine,
+                                        @RequestParam(value = "limit", defaultValue = "20") int limit) {
+        return crawlerService.crawlRiotIdEUW(gameName, tagLine, limit);
     }
 }

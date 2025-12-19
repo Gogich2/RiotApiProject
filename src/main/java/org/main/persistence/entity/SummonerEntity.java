@@ -2,6 +2,9 @@ package org.main.persistence.entity;
 
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 
 @Entity
 @Table(
@@ -20,9 +23,10 @@ public class SummonerEntity {
     @Column(name = "puuid", nullable = false)
     private String puuid;
 
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
-    @Column(name = "platform", nullable = false)
-    private PlatformShard platform; // EUW1, EUN1, RU, TR
+    @Column(name = "platform", nullable = false, columnDefinition = "platform_shard")
+    private PlatformShard platform;
 
     @Column(name = "name")
     private String name;

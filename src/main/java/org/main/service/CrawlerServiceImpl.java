@@ -4,11 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.main.client.RiotApiClient;
 import org.main.dto.CrawlResultDto;
 import org.main.persistence.entity.MatchEntity;
+import org.main.persistence.entity.PlatformShard;
 import org.main.persistence.repository.MatchRepository;
-import org.main.util.SummonerNameNormalizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.main.persistence.entity.PlatformShard;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -28,15 +27,13 @@ public class CrawlerServiceImpl implements CrawlerService {
 
     @Override
     @Transactional
-    public CrawlResultDto crawlSummonerEUW(String summonerNameRaw, int limitRaw) {
-        String summonerName = SummonerNameNormalizer.normalize(summonerNameRaw);
-        int limit = clampLimit(limitRaw);
-
-        JsonNode summonerJson = riotApiClient.getSummonerByNameEUW(summonerName);
-        if (summonerJson == null || summonerJson.get("puuid") == null) {
-            throw new IllegalStateException("Summoner not found or invalid response");
+    public CrawlResultDto crawlPuuidEUW(String puuidRaw, int limitRaw) {
+        String puuid = puuidRaw == null ? "" : puuidRaw.trim();
+        if (puuid.isEmpty()) {
+            throw new IllegalArgumentException("PUUID is required");
         }
-        String puuid = summonerJson.get("puuid").asText();
+
+        int limit = clampLimit(limitRaw);
 
         // pagination
         int start = 0;
@@ -60,13 +57,13 @@ public class CrawlerServiceImpl implements CrawlerService {
         // save only new (no duplicates)
         List<String> saved = new ArrayList<>();
         for (String matchId : fetched) {
-            boolean exists = matchRepository.existsById(matchId);
-            if (exists) continue;
+            if (matchRepository.existsById(matchId)) continue;
 
             JsonNode matchJson = riotApiClient.getMatchByIdEurope(matchId);
+
             MatchEntity entity = new MatchEntity();
             entity.setMatchId(matchId);
-            entity.setRegion("europe");
+            entity.setRegion(org.main.persistence.entity.RegionRoute.europe);
             entity.setPlatform(PlatformShard.EUW1);
             entity.setRawMatchJson(matchJson == null ? null : matchJson.toString());
             entity.setFetchedAt(OffsetDateTime.now());
@@ -75,7 +72,30 @@ public class CrawlerServiceImpl implements CrawlerService {
             saved.add(matchId);
         }
 
-        return new CrawlResultDto("EUW1", summonerName, puuid, limit, saved.size(), saved);
+        return new CrawlResultDto("EUW1", null, puuid, limit, saved.size(), saved);
+    }
+
+    @Override
+    @Transactional
+    public CrawlResultDto crawlRiotIdEUW(String gameNameRaw, String tagLineRaw, int limitRaw) {
+        String gameName = gameNameRaw == null ? "" : gameNameRaw.trim();
+        String tagLine = tagLineRaw == null ? "" : tagLineRaw.trim();
+
+        if (gameName.isEmpty() || tagLine.isEmpty()) {
+            throw new IllegalArgumentException("RiotID is required: gameName and tagLine");
+        }
+
+        JsonNode accountJson = riotApiClient.getAccountByRiotIdEurope(gameName, tagLine);
+        if (accountJson == null || accountJson.get("puuid") == null) {
+            throw new IllegalStateException("Account not found or invalid response");
+        }
+
+        String puuid = accountJson.get("puuid").asText();
+        CrawlResultDto result = crawlPuuidEUW(puuid, limitRaw);
+
+        // Заповнимо summonerName для DTO як RiotID
+        return new CrawlResultDto("EUW1", gameName + "#" + tagLine, puuid,
+                result.requestedLimit(), result.savedNewMatches(), result.savedMatchIds());
     }
 
     // нетривіальна логіка для тестів пізніше

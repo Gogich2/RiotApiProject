@@ -16,19 +16,18 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @Value("${riot.api.key}")
+    private String apiKey;
+
+    // EU-only hosts
+    private static final String EUW_PLATFORM_HOST = "https://euw1.api.riotgames.com";
+    private static final String EUROPE_REGIONAL_HOST = "https://europe.api.riotgames.com";
+
     @PostConstruct
     void check() {
         System.out.println("RIOT_API_KEY length = " + (apiKey == null ? "null" : apiKey.length()));
         System.out.println("RIOT_API_KEY startsWith RGAPI- = " + (apiKey != null && apiKey.startsWith("RGAPI-")));
     }
-
-
-    @Value("${riot.api.key}")
-    private String apiKey;
-
-    // EUW-only endpoints
-    private static final String EUW_PLATFORM_HOST = "https://euw1.api.riotgames.com";
-    private static final String EUROPE_REGIONAL_HOST = "https://europe.api.riotgames.com";
 
     @Override
     public JsonNode getAccountByRiotIdEurope(String gameName, String tagLine) {
@@ -36,9 +35,9 @@ public class RiotApiHttpClient implements RiotApiClient {
                 .path("/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}")
                 .buildAndExpand(gameName, tagLine)
                 .toUriString();
+
         return exchangeJson(url);
     }
-
 
     @Override
     public List<String> getMatchIdsByPuuidEurope(String puuid, int start, int count) {
@@ -74,7 +73,6 @@ public class RiotApiHttpClient implements RiotApiClient {
         headers.set("X-Riot-Token", apiKey);
 
         HttpEntity<Void> req = new HttpEntity<>(headers);
-
         return restTemplate.exchange(url, HttpMethod.GET, req, clazz);
     }
 }
