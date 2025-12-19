@@ -1,4 +1,4 @@
-package org.main.controller;
+package org.main;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
