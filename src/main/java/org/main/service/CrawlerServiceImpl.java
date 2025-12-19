@@ -8,6 +8,7 @@ import org.main.persistence.repository.MatchRepository;
 import org.main.util.SummonerNameNormalizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.main.persistence.entity.PlatformShard;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class CrawlerServiceImpl implements CrawlerService {
             MatchEntity entity = new MatchEntity();
             entity.setMatchId(matchId);
             entity.setRegion("europe");
-            entity.setPlatform("EUW1");
+            entity.setPlatform(PlatformShard.EUW1);
             entity.setRawMatchJson(matchJson == null ? null : matchJson.toString());
             entity.setFetchedAt(OffsetDateTime.now());
 

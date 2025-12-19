@@ -1,6 +1,7 @@
 package org.main.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,13 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @PostConstruct
+    void check() {
+        System.out.println("RIOT_API_KEY length = " + (apiKey == null ? "null" : apiKey.length()));
+        System.out.println("RIOT_API_KEY startsWith RGAPI- = " + (apiKey != null && apiKey.startsWith("RGAPI-")));
+    }
+
+
     @Value("${riot.api.key}")
     private String apiKey;
 
@@ -23,14 +31,14 @@ public class RiotApiHttpClient implements RiotApiClient {
     private static final String EUROPE_REGIONAL_HOST = "https://europe.api.riotgames.com";
 
     @Override
-    public JsonNode getSummonerByNameEUW(String summonerName) {
-        String url = UriComponentsBuilder.fromHttpUrl(EUW_PLATFORM_HOST)
-                .path("/lol/summoner/v4/summoners/by-name/{name}")
-                .buildAndExpand(summonerName)
+    public JsonNode getAccountByRiotIdEurope(String gameName, String tagLine) {
+        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST)
+                .path("/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}")
+                .buildAndExpand(gameName, tagLine)
                 .toUriString();
-
         return exchangeJson(url);
     }
+
 
     @Override
     public List<String> getMatchIdsByPuuidEurope(String puuid, int start, int count) {
