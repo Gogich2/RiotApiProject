@@ -1,6 +1,6 @@
-package org.example;
+package org.main;
 
-import org.example.controller.SummonerController;
+import org.main.controller.SummonerController;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
