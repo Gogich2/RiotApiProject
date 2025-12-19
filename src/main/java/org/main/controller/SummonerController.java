@@ -10,12 +10,14 @@ import org.springframework.web.client.RestTemplate;
 public class SummonerController {
     @Value("${riot.api.key}")
     private String riotApiKey;
+    public String gameName = "Acoomer";
+    public String tagline = "3595";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     @GetMapping("/{name}")
     public ResponseEntity<?> getSummoner(@PathVariable String name) {
-        String url = "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + name;
+        String url = "https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/"+ gameName + "/" + tagline ;
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Riot-Token", riotApiKey);
         HttpEntity<String> entity = new HttpEntity<>(headers);
