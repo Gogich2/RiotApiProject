@@ -14,4 +14,6 @@ public interface CrawlerService {
      * Recommended modern entrypoint.
      */
     CrawlResultDto crawlRiotIdEUW(String gameNameRaw, String tagLineRaw, int limitRaw);
+
+    void crawlSummonerEUW(String acoomer, int limit);
 }

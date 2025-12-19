@@ -98,6 +98,11 @@ public class CrawlerServiceImpl implements CrawlerService {
                 result.requestedLimit(), result.savedNewMatches(), result.savedMatchIds());
     }
 
+    @Override
+    public void crawlSummonerEUW(String acoomer, int limit) {
+
+    }
+
     // нетривіальна логіка для тестів пізніше
     static int clampLimit(int limit) {
         if (limit <= 0) return 20;
