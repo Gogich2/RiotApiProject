@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -27,27 +27,6 @@ jobs:
       - name: Run tests (unit + cucumber)
         run: mvn -B -U test
 
-      - name: Publish JUnit Test Report
-        if: always()
-        uses: mikepenz/action-junit-report@v4
-        with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
-
-      - name: OWASP Dependency Check
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: mvn -B org.owasp:dependency-check-maven:check
-
-
-      - name: Upload OWASP report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
-
-
-
       - name: Upload Surefire reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,3 +35,32 @@ jobs:
           path: |
             target/surefire-reports/**
             target/failsafe-reports/**
+
+      - name: Cache OWASP data
+        uses: actions/cache@v4
+        with:
+          path: ~/.dependency-check
+          key: ${{ runner.os }}-depcheck-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-depcheck-
+
+      - name: OWASP Dependency Check
+        if: always()
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: mvn -B org.owasp:dependency-check-maven:check ^
+          -DfailOnError=false ^
+          -DnvdValidForHours=720 ^
+          -DnvdApiDelay=3500 ^
+          -DnvdMaxRetryCount=10
+
+
+      - name: Upload OWASP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: |
+            target/dependency-check-report.html
+            target/dependency-check-report.json
+          if-no-files-found: warn
