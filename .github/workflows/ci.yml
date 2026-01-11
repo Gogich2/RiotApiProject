@@ -62,25 +62,30 @@ jobs:
             echo "NVD_API_KEY is EMPTY."
           fi
 
-      - name: OWASP Dependency Check (with fallback)
+      - name: OWASP Dependency Check (guaranteed report)
         if: always()
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          set -e
-          mkdir -p target
+          mkdir -p ~/.dependency-check
 
           echo "== Attempt 1: normal update =="
           mvn -B org.owasp:dependency-check-maven:check \
             -DnvdApiKey="${NVD_API_KEY}" \
             -DfailOnError=false \
             -DnvdValidForHours=720 \
-            -DnvdApiDelay=16000 \
-            -DnvdMaxRetryCount=20 \
-          || {
+            -DnvdApiDelay=20000 \
+            -DnvdMaxRetryCount=30 \
+            || true
+
+          # Якщо звіти НЕ згенерувались — робимо 2-гу спробу без оновлень
+          if [ ! -f target/dependency-check-report.html ] && [ ! -f target/dependency-check-report.json ]; then
             echo "== Attempt 2: fallback, no updates =="
             mvn -B org.owasp:dependency-check-maven:check \
               -DautoUpdate=false \
               -DfailOnError=false
-          }
+          fi
+      
 
       - name: Upload OWASP report
         if: always()

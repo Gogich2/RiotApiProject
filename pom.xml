@@ -104,7 +104,8 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>${dependency.check.version}</version>
+                <version>12.1.9</version>
+
 
                 <configuration>
                     <!-- гарантовано читає env, який ми даємо в GitHub Actions -->
