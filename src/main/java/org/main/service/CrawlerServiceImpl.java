@@ -37,7 +37,7 @@ public class CrawlerServiceImpl implements CrawlerService {
 
         // pagination
         int start = 0;
-        int pageSize = 20; // Riot allows up to 100, але 20 ок для MVP
+        int pageSize = 20;
         List<String> fetched = new ArrayList<>();
         HashSet<String> seen = new HashSet<>();
 
