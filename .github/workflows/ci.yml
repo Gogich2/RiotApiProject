@@ -53,20 +53,34 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-depcheck-
 
+      - name: Debug NVD key presence (safe)
+        if: always()
+        run: |
+          if [ -n "${NVD_API_KEY}" ]; then
+            echo "NVD_API_KEY is present (length=${#NVD_API_KEY})."
+          else
+            echo "NVD_API_KEY is EMPTY."
+          fi
+
       - name: OWASP Dependency Check (with fallback)
         if: always()
         run: |
-          # 1) Спроба з оновленням (якщо ключ є і мережа ок)
+          set -e
+          mkdir -p target
+
+          echo "== Attempt 1: normal update =="
           mvn -B org.owasp:dependency-check-maven:check \
+            -DnvdApiKey="${NVD_API_KEY}" \
             -DfailOnError=false \
             -DnvdValidForHours=720 \
             -DnvdApiDelay=16000 \
             -DnvdMaxRetryCount=20 \
-          || \
-          # 2) Фолбек без оновлення (щоб звіт все одно генерився)
-          mvn -B org.owasp:dependency-check-maven:check \
-            -DautoUpdate=false \
-            -DfailOnError=false
+          || {
+            echo "== Attempt 2: fallback, no updates =="
+            mvn -B org.owasp:dependency-check-maven:check \
+              -DautoUpdate=false \
+              -DfailOnError=false
+          }
 
       - name: Upload OWASP report
         if: always()
