@@ -49,9 +49,9 @@ jobs:
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn -B org.owasp:dependency-check-maven:check ^
-          -DfailOnError=false ^
-          -DnvdValidForHours=720 ^
-          -DnvdApiDelay=3500 ^
+          -DfailOnError=false 
+          -DnvdValidForHours=720 
+          -DnvdApiDelay=3500 
           -DnvdMaxRetryCount=10
 
 
