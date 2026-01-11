@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -12,6 +12,9 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
     steps:
       - name: Checkout
@@ -35,8 +38,14 @@ jobs:
           path: |
             target/surefire-reports/**
             target/failsafe-reports/**
+          if-no-files-found: warn
+
+      - name: Prepare OWASP cache dir
+        if: always()
+        run: mkdir -p ~/.dependency-check
 
       - name: Cache OWASP data
+        if: always()
         uses: actions/cache@v4
         with:
           path: ~/.dependency-check
@@ -44,23 +53,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-depcheck-
 
-      - name: OWASP Dependency Check
+      - name: OWASP Dependency Check (with fallback)
         if: always()
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: mvn -B org.owasp:dependency-check-maven:check
-          -DfailOnError=false 
-          -DnvdValidForHours=720 
-          -DnvdApiDelay=3500 
-          -DnvdMaxRetryCount=10
-
+        run: |
+          # 1) Спроба з оновленням (якщо ключ є і мережа ок)
+          mvn -B org.owasp:dependency-check-maven:check \
+            -DfailOnError=false \
+            -DnvdValidForHours=720 \
+            -DnvdApiDelay=16000 \
+            -DnvdMaxRetryCount=20 \
+          || \
+          # 2) Фолбек без оновлення (щоб звіт все одно генерився)
+          mvn -B org.owasp:dependency-check-maven:check \
+            -DautoUpdate=false \
+            -DfailOnError=false
 
       - name: Upload OWASP report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
+          name: dependency-check-reports
           path: |
-            target/dependency-check-report.html
-            target/dependency-check-report.json
+            target/dependency-check-report.*
+            target/dependency-check-report/**/*
           if-no-files-found: warn

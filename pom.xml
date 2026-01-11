@@ -9,7 +9,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.3.3</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
 
     <groupId>org.example</groupId>
@@ -20,6 +20,11 @@
 
     <properties>
         <java.version>23</java.version>
+
+        <!-- (Опційно) тримати версії cucumber в одному місці -->
+        <cucumber.version>7.15.0</cucumber.version>
+        <junit.platform.suite.version>1.10.3</junit.platform.suite.version>
+        <dependency.check.version>9.0.9</dependency.check.version>
     </properties>
 
     <dependencies>
@@ -28,38 +33,59 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-        <!-- Cucumber -->
+
+        <!-- Spring Data JPA -->
         <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-java</artifactId>
-            <version>7.15.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.3</version>
-            <scope>test</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+        <!-- PostgreSQL driver -->
         <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-spring</artifactId>
-            <version>7.15.0</version>
-            <scope>test</scope>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
+        <!-- Actuator (optional) -->
         <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit-platform-engine</artifactId>
-            <version>7.15.0</version>
-            <scope>test</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Cucumber -->
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-spring</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <version>${junit.platform.suite.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -70,48 +96,25 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
     </dependencies>
-
-
 
     <build>
         <plugins>
+            <!-- OWASP Dependency Check -->
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.9</version>
+                <version>${dependency.check.version}</version>
+
                 <configuration>
+                    <!-- гарантовано читає env, який ми даємо в GitHub Actions -->
                     <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
 
                     <nvdValidForHours>720</nvdValidForHours>
-                    <nvdApiDelay>3500</nvdApiDelay>
-                    <nvdMaxRetryCount>10</nvdMaxRetryCount>
+                    <nvdApiDelay>16000</nvdApiDelay>
+                    <nvdMaxRetryCount>20</nvdMaxRetryCount>
 
+                    <!-- щоб не було "Fatal exception" і звіт міг згенеритись -->
                     <failOnError>false</failOnError>
                     <failBuildOnCVSS>11</failBuildOnCVSS>
 
@@ -122,9 +125,8 @@
 
                     <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
-
-
             </plugin>
+
             <!-- Maven Spring Boot plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -132,4 +134,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>
