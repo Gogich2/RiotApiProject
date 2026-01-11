@@ -80,11 +80,15 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- Optional: Testing -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -95,9 +99,32 @@
 
 
 
-
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.9</version>
+                <configuration>
+                    <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+
+                    <nvdValidForHours>720</nvdValidForHours>
+                    <nvdApiDelay>3500</nvdApiDelay>
+                    <nvdMaxRetryCount>10</nvdMaxRetryCount>
+
+                    <failOnError>false</failOnError>
+                    <failBuildOnCVSS>11</failBuildOnCVSS>
+
+                    <formats>
+                        <format>HTML</format>
+                        <format>JSON</format>
+                    </formats>
+
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                </configuration>
+
+
+            </plugin>
             <!-- Maven Spring Boot plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
