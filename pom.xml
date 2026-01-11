@@ -95,9 +95,26 @@
 
 
 
-
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.9</version>
+                <configuration>
+                    <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                    <failOnError>false</failOnError>
+                    <failBuildOnCVSS>11</failBuildOnCVSS>
+
+                    <formats>
+                        <format>HTML</format>
+                        <format>JSON</format>
+                    </formats>
+
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                </configuration>
+
+            </plugin>
             <!-- Maven Spring Boot plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
