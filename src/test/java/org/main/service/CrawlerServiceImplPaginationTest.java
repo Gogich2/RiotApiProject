@@ -20,17 +20,14 @@ class CrawlerServiceImplPaginationTest {
 
         CrawlerServiceImpl service = new CrawlerServiceImpl(api, repo);
 
-        // 20 ids in first page
         List<String> page1 = java.util.stream.IntStream.range(0, 20)
                 .mapToObj(i -> "m" + i).toList();
-        // 5 ids in second page
         List<String> page2 = java.util.stream.IntStream.range(20, 25)
                 .mapToObj(i -> "m" + i).toList();
 
         when(api.getMatchIdsByPuuidEurope(eq("puuid"), eq(0), eq(20))).thenReturn(page1);
         when(api.getMatchIdsByPuuidEurope(eq("puuid"), eq(20), eq(5))).thenReturn(page2);
 
-        // щоб збереження пройшло
         when(repo.existsById(anyString())).thenReturn(false);
         when(api.getMatchByIdEurope(anyString())).thenReturn(mock(JsonNode.class));
 
@@ -43,7 +40,6 @@ class CrawlerServiceImplPaginationTest {
         verify(api).getMatchIdsByPuuidEurope("puuid", 0, 20);
         verify(api).getMatchIdsByPuuidEurope("puuid", 20, 5);
 
-        // перевірка що реально викликали save 25 разів
         verify(repo, times(25)).save(any());
     }
 }

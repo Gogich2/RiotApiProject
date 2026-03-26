@@ -30,7 +30,6 @@ public class MatchEntity {
     @Column(name = "fetched_at", nullable = false)
     private OffsetDateTime fetchedAt;
 
-    // ===== getters / setters =====
 
     public String getMatchId() {
         return matchId;

@@ -78,7 +78,6 @@ jobs:
             -DnvdMaxRetryCount=30 \
             || true
 
-          # Якщо звіти НЕ згенерувались — робимо 2-гу спробу без оновлень
           if [ ! -f target/dependency-check-report.html ] && [ ! -f target/dependency-check-report.json ]; then
             echo "== Attempt 2: fallback, no updates =="
             mvn -B org.owasp:dependency-check-maven:check \

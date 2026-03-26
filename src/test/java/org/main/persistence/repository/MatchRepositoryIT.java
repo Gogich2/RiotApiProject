@@ -22,7 +22,7 @@ class MatchRepositoryIT {
 
     @Test
     void save_then_existsById_then_findById_work_with_real_postgres() {
-        String matchId = "IT_" + UUID.randomUUID(); // щоб не конфліктувати з реальними даними
+        String matchId = "IT_" + UUID.randomUUID();
 
         MatchEntity e = new MatchEntity();
         e.setMatchId(matchId);

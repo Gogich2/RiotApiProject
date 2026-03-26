@@ -33,9 +33,7 @@ public class Testing {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    // -------------------------
-    // 1) clampLimit requirements
-    // -------------------------
+
     @Test
     void clampLimit_shouldClampCorrectly() {
         assertEquals(20, CrawlerServiceImpl.clampLimit(0));
@@ -45,18 +43,14 @@ public class Testing {
         assertEquals(100, CrawlerServiceImpl.clampLimit(999));
     }
 
-    // ------------------------------------------------
-    // 2) crawlPuuidEUW: save only new (skip duplicates)
-    // ------------------------------------------------
+
     @Test
     void crawlPuuidEUW_shouldSaveOnlyNewMatches() throws Exception {
         String puuid = "test-puuid";
 
-        // Match IDs returned by Riot (2 items)
         when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 2))
                 .thenReturn(List.of("EUW1_123", "EUW1_456"));
 
-        // One exists, one is new
         when(matchRepository.existsById("EUW1_123")).thenReturn(true);
         when(matchRepository.existsById("EUW1_456")).thenReturn(false);
 
@@ -65,18 +59,14 @@ public class Testing {
 
         CrawlResultDto result = crawlerService.crawlPuuidEUW(puuid, 2);
 
-        // Repository save should happen only once
         verify(matchRepository, times(1)).save(any(MatchEntity.class));
 
-        // Validate DTO result in a robust way
         assertEquals(1, extractSavedCount(result));
         assertEquals(1, extractSavedMatchIds(result).size());
         assertTrue(extractSavedMatchIds(result).contains("EUW1_456"));
     }
 
-    // --------------------------------------------------------
-    // 3) crawlPuuidEUW: pagination (multiple matchlist requests)
-    // --------------------------------------------------------
+
     @Test
     void crawlPuuidEUW_shouldPaginateUntilLimitReached() throws Exception {
         String puuid = "test-puuid";

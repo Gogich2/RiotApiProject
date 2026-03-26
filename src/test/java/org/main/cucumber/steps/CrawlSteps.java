@@ -39,7 +39,6 @@ public class CrawlSteps {
 
     @Given("EUW summoner {string} exists")
     public void summonerExists(String name) {
-        // нічого не робимо — existence симулюємо моками
     }
 
     // ---------- WHEN ----------

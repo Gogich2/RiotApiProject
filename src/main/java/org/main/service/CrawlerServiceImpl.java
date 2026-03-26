@@ -54,7 +54,6 @@ public class CrawlerServiceImpl implements CrawlerService {
             start += count;
         }
 
-        // save only new (no duplicates)
         List<String> saved = new ArrayList<>();
         for (String matchId : fetched) {
             if (matchRepository.existsById(matchId)) continue;
@@ -93,7 +92,6 @@ public class CrawlerServiceImpl implements CrawlerService {
         String puuid = accountJson.get("puuid").asText();
         CrawlResultDto result = crawlPuuidEUW(puuid, limitRaw);
 
-        // Заповнимо summonerName для DTO як RiotID
         return new CrawlResultDto("EUW1", gameName + "#" + tagLine, puuid,
                 result.requestedLimit(), result.savedNewMatches(), result.savedMatchIds());
     }
@@ -103,7 +101,6 @@ public class CrawlerServiceImpl implements CrawlerService {
 
     }
 
-    // нетривіальна логіка для тестів пізніше
     static int clampLimit(int limit) {
         if (limit <= 0) return 20;
         if (limit > 100) return 100;

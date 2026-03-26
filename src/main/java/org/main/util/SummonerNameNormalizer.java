@@ -16,7 +16,6 @@ public final class SummonerNameNormalizer {
         // collapse multiple spaces
         trimmed = trimmed.replaceAll("\\s+", " ");
 
-        // Basic bounds (можеш змінити під свої вимоги ЛР1)
         if (trimmed.length() < 3 || trimmed.length() > 16) {
             throw new IllegalArgumentException("summonerName length must be 3..16");
         }
