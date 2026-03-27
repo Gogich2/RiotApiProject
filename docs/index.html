@@ -6,8 +6,16 @@
     <meta name="description" content="Лендінг бакалаврської роботи про інформаційну систему для отримання, обробки та збереження даних з Riot API.">
     <meta name="keywords" content="Riot API, бакалаврська робота, інформаційна система, Spring Boot, PostgreSQL, вебзастосунок">
     <meta name="author" content="Твоє ім'я та прізвище">
+    <meta name="theme-color" content="#111827">
 
-    <title>Бакалаврська робота, Riot API</title>
+    <meta property="og:title" content="Бакалаврська робота | Riot API">
+    <meta property="og:description" content="Односторінковий сайт для представлення бакалаврської роботи про систему збору, обробки та збереження даних з Riot API.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://Gogich2.github.io/RiotApiProject/front/">
+    <meta property="og:image" content="https://Gogich2.github.io/RiotApiProject/front/images/OIP-3206083345.jpg">
+    <meta property="og:locale" content="uk_UA">
+
+    <title>Бакалаврська робота | Riot API</title>
 
     <link rel="icon" href="favicon/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
@@ -15,19 +23,36 @@
     <link rel="apple-touch-icon" href="favicon/apple-touch-icon.png">
 
     <link rel="stylesheet" href="css/style.css">
+
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "CreativeWork",
+            "name": "Інформаційна система для отримання, обробки та збереження даних з Riot API",
+            "alternateName": "Information System for Retrieving, Processing, and Storing Data from Riot API",
+            "description": "Бакалаврська робота, присвячена розробці інформаційної системи для автоматизованого отримання, обробки та збереження ігрових даних з Riot API.",
+            "inLanguage": "uk",
+            "author": {
+                "@type": "Person",
+                "name": "Співак Єгор"
+            }
+        }
+    </script>
 </head>
 <body>
-<header class="header">
+<a class="skip-link" href="#main-content">Перейти до основного вмісту</a>
+
+<header class="header" role="banner">
     <div class="container">
         <p class="header__label">Лендінг бакалаврської роботи</p>
     </div>
 </header>
 
-<main>
-    <section class="hero">
+<main id="main-content" role="main">
+    <section class="hero" aria-labelledby="hero-title">
         <div class="container hero__content">
             <div class="hero__text">
-                <h1 class="hero__title">
+                <h1 class="hero__title" id="hero-title">
                     Інформаційна система для отримання, обробки та збереження даних з Riot API
                 </h1>
                 <h2 class="hero__subtitle">
@@ -41,14 +66,23 @@
             <div class="hero__image-wrapper">
                 <img
                         class="hero__image"
-                        src="images/riot-preview.jpg"
-                        alt="Ілюстрація, що символізує аналіз ігрових даних Riot API">
+                        src="images/OIP-3206083345.jpg"
+                        alt="Графічне представлення аналізу ігрових даних та роботи з Riot API">
             </div>
+        </div>
+    </section>
+
+    <section class="overview" aria-labelledby="overview-title">
+        <div class="container">
+            <h2 id="overview-title">Коротка інформація</h2>
+            <p>
+                Бакалаврська робота присвячена розробці інформаційної системи, яка автоматизує процес отримання даних про матчі та гравців із Riot API, їх обробку та збереження для подальшого аналізу.
+            </p>
         </div>
     </section>
 </main>
 
-<footer class="footer">
+<footer class="footer" role="contentinfo">
     <div class="container">
         <p class="footer__text">© 2026 Бакалаврська робота</p>
     </div>

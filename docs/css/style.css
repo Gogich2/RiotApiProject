@@ -126,3 +126,35 @@ select {
         font-size: 26px;
     }
 }
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 16px;
+    padding: 8px 12px;
+    background-color: #111827;
+    color: #ffffff;
+    z-index: 1000;
+    border-radius: 8px;
+}
+
+.skip-link:focus {
+    top: 16px;
+}
+
+.overview {
+    padding: 48px 0 72px;
+}
+
+.overview h2 {
+    margin-bottom: 16px;
+    font-size: 28px;
+    line-height: 1.2;
+    color: #111827;
+}
+
+.overview p {
+    max-width: 800px;
+    font-size: 18px;
+    color: #4b5563;
+}
