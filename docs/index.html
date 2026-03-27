@@ -22,6 +22,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
     <link rel="apple-touch-icon" href="favicon/apple-touch-icon.png">
 
+    <link rel="stylesheet" href="css/normalize.css">
     <link rel="stylesheet" href="css/style.css">
 
     <script type="application/ld+json">
@@ -52,15 +53,28 @@
     <section class="hero" aria-labelledby="hero-title">
         <div class="container hero__content">
             <div class="hero__text">
+                <p class="hero__tag">Бакалаврська робота</p>
+
                 <h1 class="hero__title" id="hero-title">
                     Інформаційна система для отримання, обробки та збереження даних з Riot API
                 </h1>
+
                 <h2 class="hero__subtitle">
                     Information System for Retrieving, Processing, and Storing Data from Riot API
                 </h2>
+
                 <p class="hero__description">
-                    Односторінковий вебсайт для представлення бакалаврської роботи, присвяченої розробці системи збору, обробки та збереження ігрових даних з Riot API.
+                    Веборієнтована інформаційна система для автоматизованого отримання даних про гравців і матчі з Riot API, їх обробки, збереження в базі даних та подальшого використання для аналізу й візуалізації.
                 </p>
+
+                <ul class="hero__meta" aria-label="Основна інформація про роботу">
+                    <li><strong>Ключові слова:</strong> Riot API, інформаційна система, Spring Boot, PostgreSQL, аналіз матчів</li>
+                    <li><strong>Автор:</strong> Співак Єгор</li>
+                </ul>
+
+                <div class="hero__actions">
+                    <a class="button" href="https://github.com/Gogich2/RiotApiProject" target="_blank" rel="noopener noreferrer">Репозиторій GitHub</a>
+                </div>
             </div>
 
             <div class="hero__image-wrapper">
@@ -72,19 +86,97 @@
         </div>
     </section>
 
-    <section class="overview" aria-labelledby="overview-title">
+    <section class="section" aria-labelledby="relevance-title">
         <div class="container">
-            <h2 id="overview-title">Коротка інформація</h2>
-            <p>
-                Бакалаврська робота присвячена розробці інформаційної системи, яка автоматизує процес отримання даних про матчі та гравців із Riot API, їх обробку та збереження для подальшого аналізу.
+            <h2 class="section__title" id="relevance-title">Актуальність теми</h2>
+            <p class="section__text">
+                Сучасні онлайн-ігри генерують великі обсяги даних про матчі, гравців та їхню активність. Використання таких даних є важливим для аналітики, побудови статистичних моделей і створення допоміжних сервісів для користувачів. Тому розробка системи, яка автоматизує отримання, обробку та збереження даних з Riot API, є актуальною практичною задачею.
             </p>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="goal-title">
+        <div class="container">
+            <h2 class="section__title" id="goal-title">Мета дослідження</h2>
+            <p class="section__text">
+                Розробити інформаційну систему, яка забезпечує автоматизоване отримання, обробку та збереження даних про матчі й гравців із Riot API для подальшого аналізу та представлення через вебінтерфейс.
+            </p>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="tasks-title">
+        <div class="container">
+            <h2 class="section__title" id="tasks-title">Основні завдання</h2>
+            <ol class="section__list">
+                <li>Проаналізувати можливості Riot API та визначити потрібні дані для системи.</li>
+                <li>Реалізувати серверну частину для отримання та обробки інформації про матчі та гравців.</li>
+                <li>Організувати збереження отриманих даних у базі даних PostgreSQL.</li>
+                <li>Підготувати вебінтерфейс для представлення результатів роботи системи.</li>
+                <li>Забезпечити перевірку працездатності за допомогою тестів і засобів безперервної інтеграції.</li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="methodology-title">
+        <div class="container">
+            <h2 class="section__title" id="methodology-title">Методологія дослідження</h2>
+            <p class="section__text">
+                У роботі використано підхід, що поєднує аналіз API, проєктування інформаційної системи, реалізацію серверної логіки та організацію збереження даних у реляційній базі даних.
+            </p>
+            <ul class="section__list">
+                <li><strong>Riot API</strong> використовується як джерело ігрових даних.</li>
+                <li><strong>Spring Boot</strong> застосовується для реалізації backend-частини системи.</li>
+                <li><strong>PostgreSQL</strong> використовується для збереження структурованих даних.</li>
+                <li><strong>Maven</strong> застосовується для керування залежностями та збіркою проєкту.</li>
+                <li><strong>Git та GitHub</strong> використовуються для контролю версій і документування процесу розробки.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="results-title">
+        <div class="container">
+            <h2 class="section__title" id="results-title">Очікувані результати</h2>
+            <ul class="section__list">
+                <li>Створення працездатної інформаційної системи для роботи з даними Riot API.</li>
+                <li>Автоматизація отримання та збереження даних про матчі та гравців.</li>
+                <li>Підготовка бази для подальшої аналітики, візуалізації та розширення функціоналу системи.</li>
+                <li>Формування прикладу практичного застосування сучасних інструментів веброзробки та backend-розробки.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="materials-title">
+        <div class="container">
+            <h2 class="section__title" id="materials-title">Ілюстративні матеріали</h2>
+            <div class="materials">
+                <figure class="materials__item">
+                    <img src="images/СумДУ.png" alt="Логотип університету">
+                    <figcaption>Логотип університету</figcaption>
+                </figure>
+                <figure class="materials__item">
+                    <img src="images/OIP-3206083345.jpg" alt="Графічне представлення об'єкта дослідження">
+                    <figcaption>Графічне представлення об'єкта дослідження</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="contacts-title">
+        <div class="container">
+            <h2 class="section__title" id="contacts-title">Контактна інформація</h2>
+            <ul class="section__list">
+                <li><strong>Автор:</strong> Співак Єгор</li>
+                <li><strong>GitHub:</strong> <a href="https://github.com/Gogich2" target="_blank" rel="noopener noreferrer">github.com/Gogich2</a></li>
+                <li><strong>Репозиторій проєкту:</strong> <a href="https://github.com/Gogich2/RiotApiProject" target="_blank" rel="noopener noreferrer">RiotApiProject</a></li>
+                <li><strong>Повний текст роботи:</strong> буде додано окремо</li>
+            </ul>
         </div>
     </section>
 </main>
 
 <footer class="footer" role="contentinfo">
     <div class="container">
-        <p class="footer__text">© 2026 Бакалаврська робота</p>
+        <p class="footer__text">© 2026 Співак Єгор. Бакалаврська робота.</p>
     </div>
 </footer>
 </body>
