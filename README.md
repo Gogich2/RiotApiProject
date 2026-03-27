@@ -41,3 +41,129 @@ Frontend / вебінтерфейс планується додати на на�
 - `.github/workflows/` , конфігурації CI/CD;
 - `pom.xml` , конфігурація Maven та залежностей;
 - `.gitignore` , список файлів і папок, які не відстежуються Git.
+
+## Вимоги до середовища
+Для запуску та розробки проєкту необхідно встановити:
+- **Git**
+- **JDK 23**
+- **Apache Maven**
+- **PostgreSQL**
+- **IntelliJ IDEA** або інше Java IDE
+- **PowerShell** або **Command Prompt**
+
+## Клонування репозиторію
+```bash
+git clone https://github.com/Gogich2/RiotApiProject.git
+cd RiotApiProject
+```
+
+## Перевірка встановленого середовища
+Перед запуском варто перевірити, що Java та Maven встановлені коректно:
+
+```bash
+java -version
+mvn -version
+```
+
+Також потрібно переконатися, що PostgreSQL встановлений і запущений.
+
+## Налаштування бази даних
+
+### Створення бази даних
+Після встановлення PostgreSQL потрібно створити базу даних:
+
+```sql
+CREATE DATABASE riot_api_project;
+```
+
+### Створення користувача
+```sql
+CREATE USER riot_user WITH PASSWORD 'strong_password';
+GRANT ALL PRIVILEGES ON DATABASE riot_api_project TO riot_user;
+```
+
+## Налаштування конфігурації
+У файлі `src/main/resources/application.properties` потрібно вказати параметри підключення до бази даних.
+
+Приклад:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/riot_api_project
+spring.datasource.username=riot_user
+spring.datasource.password=strong_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+```
+
+## Встановлення залежностей
+Для завантаження залежностей і перевірки збірки проєкту потрібно виконати:
+
+```bash
+mvn clean install
+```
+
+## Запуск проєкту у режимі розробки
+Для запуску застосунку використовується команда:
+
+```bash
+mvn spring-boot:run
+```
+
+Після запуску застосунок буде доступний за адресою:
+
+```text
+http://localhost:8080
+```
+
+## Альтернативний запуск через jar
+Після збірки проєкту застосунок можна запустити напряму:
+
+```bash
+mvn clean package
+java -jar target\RiotApiPractice-1.0-SNAPSHOT.jar
+```
+
+## Базові команди
+
+### Запуск застосунку
+```bash
+mvn spring-boot:run
+```
+
+### Збірка проєкту
+```bash
+mvn clean package
+```
+
+### Запуск тестів
+```bash
+mvn test
+```
+
+### Повна перевірка та збірка
+```bash
+mvn clean install
+```
+
+## Перевірка працездатності
+Після запуску потрібно переконатися, що:
+- застосунок стартував без помилок;
+- є успішне підключення до PostgreSQL;
+- API відповідає на HTTP-запити;
+- тести проходять без помилок.
+
+Перевірити доступність можна так:
+
+```bash
+curl http://localhost:8080
+```
+
+## Документація
+У папці `docs` розміщено додаткову документацію проєкту:
+- `docs/architecture.md` , опис архітектури проєкту;
+- `docs/deployment.md` , інструкція з розгортання у production;
+- `docs/update.md` , інструкція з оновлення та rollback.
+
+## Додатково
+У папці `docs` також може бути розміщено лендінг бакалаврської роботи та інші супровідні матеріали проєкту.

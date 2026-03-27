@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gogich2.github.io/RiotApiProject/sitemap.xml
