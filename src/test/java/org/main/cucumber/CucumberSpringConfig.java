@@ -13,8 +13,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
         classes = RiotPractice.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
         properties = {
-                "spring.autoconfigure.exclude=" +
-                        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+                "spring.autoconfigure.exclude="
+                        +
+                        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
+                        +
                         "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
         }
 )

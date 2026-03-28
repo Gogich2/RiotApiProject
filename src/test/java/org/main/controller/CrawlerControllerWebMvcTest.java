@@ -9,7 +9,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,22 +26,22 @@ class CrawlerControllerWebMvcTest {
     CrawlerService crawlerService;
 
     @Test
-    void crawlByPuuid_usesDefaultLimit20() throws Exception {
+    void crawlByPuuidUsesDefaultLimit20() throws Exception {
         when(crawlerService.crawlPuuidEUW(eq("p"), eq(20))).thenReturn(mock(CrawlResultDto.class));
 
-        mockMvc.perform(post("/api/crawl/euw/puuid/{puuid}", "p"))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/crawl/euw/puuid/{puuid}", "p")).
+                andExpect(status().isOk());
 
         verify(crawlerService).crawlPuuidEUW("p", 20);
         verifyNoMoreInteractions(crawlerService);
     }
 
     @Test
-    void crawlByPuuid_passesProvidedLimit() throws Exception {
+    void crawlByPuuidPassesProvidedLimit() throws Exception {
         when(crawlerService.crawlPuuidEUW(eq("p"), eq(7))).thenReturn(mock(CrawlResultDto.class));
 
-        mockMvc.perform(post("/api/crawl/euw/puuid/{puuid}?limit=7", "p"))
-                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/crawl/euw/puuid/{puuid}?limit=7", "p")).
+                andExpect(status().isOk());
 
         verify(crawlerService).crawlPuuidEUW("p", 7);
         verifyNoMoreInteractions(crawlerService);

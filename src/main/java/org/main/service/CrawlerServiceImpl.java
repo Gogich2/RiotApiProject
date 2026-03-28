@@ -18,6 +18,7 @@ import java.util.List;
 public class CrawlerServiceImpl implements CrawlerService {
 
     private final RiotApiClient riotApiClient;
+
     private final MatchRepository matchRepository;
 
     public CrawlerServiceImpl(RiotApiClient riotApiClient, MatchRepository matchRepository) {
@@ -44,7 +45,9 @@ public class CrawlerServiceImpl implements CrawlerService {
         while (fetched.size() < limit) {
             int count = Math.min(pageSize, limit - fetched.size());
             List<String> page = riotApiClient.getMatchIdsByPuuidEurope(puuid, start, count);
-            if (page.isEmpty()) break;
+            if (page.isEmpty()) {
+                break;
+            }
 
             for (String id : page) {
                 if (seen.add(id)) {
@@ -56,7 +59,9 @@ public class CrawlerServiceImpl implements CrawlerService {
 
         List<String> saved = new ArrayList<>();
         for (String matchId : fetched) {
-            if (matchRepository.existsById(matchId)) continue;
+            if (matchRepository.existsById(matchId)) {
+                continue;
+            }
 
             JsonNode matchJson = riotApiClient.getMatchByIdEurope(matchId);
 
@@ -102,8 +107,12 @@ public class CrawlerServiceImpl implements CrawlerService {
     }
 
     static int clampLimit(int limit) {
-        if (limit <= 0) return 20;
-        if (limit > 100) return 100;
+        if (limit <= 0) {
+            return 20;
+        }
+        if (limit > 100) {
+            return 100;
+        }
         return limit;
     }
 }

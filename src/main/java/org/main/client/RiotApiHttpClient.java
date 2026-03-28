@@ -3,7 +3,10 @@ package org.main.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -21,6 +24,7 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     // EU-only hosts
     private static final String EUW_PLATFORM_HOST = "https://euw1.api.riotgames.com";
+
     private static final String EUROPE_REGIONAL_HOST = "https://europe.api.riotgames.com";
 
     @PostConstruct
@@ -31,22 +35,22 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     @Override
     public JsonNode getAccountByRiotIdEurope(String gameName, String tagLine) {
-        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST)
-                .path("/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}")
-                .buildAndExpand(gameName, tagLine)
-                .toUriString();
+        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST).
+                path("/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}").
+                buildAndExpand(gameName, tagLine).
+                toUriString();
 
         return exchangeJson(url);
     }
 
     @Override
     public List<String> getMatchIdsByPuuidEurope(String puuid, int start, int count) {
-        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST)
-                .path("/lol/match/v5/matches/by-puuid/{puuid}/ids")
-                .queryParam("start", start)
-                .queryParam("count", count)
-                .buildAndExpand(puuid)
-                .toUriString();
+        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST).
+                path("/lol/match/v5/matches/by-puuid/{puuid}/ids").
+                queryParam("start", start).
+                queryParam("count", count).
+                buildAndExpand(puuid).
+                toUriString();
 
         ResponseEntity<String[]> resp = exchange(url, String[].class);
         String[] body = resp.getBody();
@@ -55,10 +59,10 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     @Override
     public JsonNode getMatchByIdEurope(String matchId) {
-        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST)
-                .path("/lol/match/v5/matches/{matchId}")
-                .buildAndExpand(matchId)
-                .toUriString();
+        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST).
+                path("/lol/match/v5/matches/{matchId}").
+                buildAndExpand(matchId).
+                toUriString();
 
         return exchangeJson(url);
     }

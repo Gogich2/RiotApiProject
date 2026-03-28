@@ -16,8 +16,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class Testing {
@@ -35,7 +41,7 @@ public class Testing {
 
 
     @Test
-    void clampLimit_shouldClampCorrectly() {
+    void clampLimitShouldClampCorrectly() {
         assertEquals(20, CrawlerServiceImpl.clampLimit(0));
         assertEquals(20, CrawlerServiceImpl.clampLimit(-5));
         assertEquals(1,  CrawlerServiceImpl.clampLimit(1));
@@ -45,11 +51,11 @@ public class Testing {
 
 
     @Test
-    void crawlPuuidEUW_shouldSaveOnlyNewMatches() throws Exception {
+    void crawlPuuidEUWShouldSaveOnlyNewMatches() throws Exception {
         String puuid = "test-puuid";
 
-        when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 2))
-                .thenReturn(List.of("EUW1_123", "EUW1_456"));
+        when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 2)).
+                thenReturn(List.of("EUW1_123", "EUW1_456"));
 
         when(matchRepository.existsById("EUW1_123")).thenReturn(true);
         when(matchRepository.existsById("EUW1_456")).thenReturn(false);
@@ -68,16 +74,20 @@ public class Testing {
 
 
     @Test
-    void crawlPuuidEUW_shouldPaginateUntilLimitReached() throws Exception {
+    void crawlPuuidEUWShouldPaginateUntilLimitReached() throws Exception {
         String puuid = "test-puuid";
         int limit = 25;
 
         // First page returns 20 ids, second page returns 5 ids
         List<String> page1 = new ArrayList<>();
-        for (int i = 1; i <= 20; i++) page1.add("EUW1_" + i);
+        for (int i = 1; i <= 20; i++) {
+            page1.add("EUW1_" + i);
+        };
 
         List<String> page2 = new ArrayList<>();
-        for (int i = 21; i <= 25; i++) page2.add("EUW1_" + i);
+        for (int i = 21; i <= 25; i++) {
+            page2.add("EUW1_" + i);
+        };
 
         when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 20)).thenReturn(page1);
         when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 20, 5)).thenReturn(page2);
@@ -105,7 +115,7 @@ public class Testing {
     // 4) crawlRiotIdEUW: RiotID > puuid > crawl matches > save
     // ------------------------------------------------------------
     @Test
-    void crawlRiotIdEUW_shouldResolvePuuidAndSaveMatches() throws Exception {
+    void crawlRiotIdEUWShouldResolvePuuidAndSaveMatches() throws Exception {
         String gameName = "acoomer";
         String tagLine = "EUW";
         String puuid = "resolved-puuid";
@@ -115,8 +125,8 @@ public class Testing {
         when(riotApiClient.getAccountByRiotIdEurope(gameName, tagLine)).thenReturn(accountJson);
 
         // matchlist for puuid
-        when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 3))
-                .thenReturn(List.of("EUW1_1", "EUW1_2", "EUW1_3"));
+        when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 3)).
+                thenReturn(List.of("EUW1_1", "EUW1_2", "EUW1_3"));
 
         when(matchRepository.existsById(anyString())).thenReturn(false);
 
@@ -139,13 +149,13 @@ public class Testing {
     // 5) input validation requirements (errors)
     // ----------------------------------------
     @Test
-    void crawlPuuidEUW_shouldThrowWhenPuuidIsBlank() {
+    void crawlPuuidEUWShouldThrowWhenPuuidIsBlank() {
         assertThrows(IllegalArgumentException.class,
                 () -> crawlerService.crawlPuuidEUW("   ", 5));
     }
 
     @Test
-    void crawlRiotIdEUW_shouldThrowWhenRiotIdMissing() {
+    void crawlRiotIdEUWShouldThrowWhenRiotIdMissing() {
         assertThrows(IllegalArgumentException.class,
                 () -> crawlerService.crawlRiotIdEUW("acoomer", "", 5));
         assertThrows(IllegalArgumentException.class,
@@ -159,8 +169,12 @@ public class Testing {
                 "saved", "getSaved",
                 "savedMatches", "getSavedMatches"
         );
-        if (val instanceof Integer i) return i;
-        if (val instanceof Number n) return n.intValue();
+        if (val instanceof Integer i) {
+            return i;
+        }
+        if (val instanceof Number n) {
+            return n.intValue();
+        }
         // fallback: if we can't find count, derive from ids list
         return extractSavedMatchIds(dto).size();
     }
@@ -173,7 +187,9 @@ public class Testing {
                 "matchIds", "getMatchIds",
                 "savedIds", "getSavedIds"
         );
-        if (val == null) return List.of();
+        if (val == null) {
+            return List.of();
+        }
         if (val instanceof List<?> list) {
             return (List<String>) list;
         }

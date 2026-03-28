@@ -23,7 +23,7 @@ class MatchRepositoryIT {
     MatchRepository matchRepository;
 
     @Test
-    void save_then_existsById_then_findById_work_with_real_postgres() {
+    void saveThenExistsByIdThenFindByIdWorkWithRealPostgres() {
         String matchId = "IT_" + UUID.randomUUID();
 
         MatchEntity e = new MatchEntity();
