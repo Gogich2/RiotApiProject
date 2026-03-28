@@ -2,9 +2,10 @@ package org.main.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import org.main.dto.CrawlResultDto;
 import org.main.service.CrawlerService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,14 +14,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST-контролер для запуску процесу збору та збереження даних з Riot API.
- * <p>
- * Надає HTTP-ендпоінти для ініціації обробки матчів за PUUID.
  */
-
 @Tag(name = "Crawler API", description = "API для запуску збору та обробки даних з Riot API")
 @RestController
 @RequestMapping("/api/crawl")
 public class CrawlerController {
+
+    private static final Logger log = LoggerFactory.getLogger(CrawlerController.class);
 
     private final CrawlerService crawlerService;
 
@@ -30,18 +30,27 @@ public class CrawlerController {
 
     @Operation(
             summary = "Запуск обробки матчів за PUUID",
-            description = "Отримує матчі для вказаного PUUID у регіоні EUW, обробляє їх і зберігає "
+            description = "Отримує матчі для вказаного PUUID у регіоні EUW, обробляє їх і зберігає"
     )
     @PostMapping("/euw/puuid/{puuid}")
     public CrawlResultDto crawlByPuuid(@PathVariable String puuid,
                                        @RequestParam(value = "limit", defaultValue = "20") int limit) {
-        return crawlerService.crawlPuuidEUW(puuid, limit);
+        log.info("Received crawlByPuuid request: puuid='{}', limit={}", puuid, limit);
+        CrawlResultDto result = crawlerService.crawlPuuidEUW(puuid, limit);
+        log.info("crawlByPuuid completed: puuid='{}', requestedLimit={}, savedNewMatches={}",
+                result.puuid(), result.requestedLimit(), result.savedNewMatches());
+        return result;
     }
 
     @PostMapping("/euw/riotid/{gameName}/{tagLine}")
     public CrawlResultDto crawlByRiotId(@PathVariable String gameName,
                                         @PathVariable String tagLine,
                                         @RequestParam(value = "limit", defaultValue = "20") int limit) {
-        return crawlerService.crawlRiotIdEUW(gameName, tagLine, limit);
+        log.info("Received crawlByRiotId request: gameName='{}', tagLine='{}', limit={}",
+                gameName, tagLine, limit);
+        CrawlResultDto result = crawlerService.crawlRiotIdEUW(gameName, tagLine, limit);
+        log.info("crawlByRiotId completed: summoner='{}', puuid='{}', requestedLimit={}, savedNewMatches={}",
+                result.summonerName(), result.puuid(), result.requestedLimit(), result.savedNewMatches());
+        return result;
     }
 }
