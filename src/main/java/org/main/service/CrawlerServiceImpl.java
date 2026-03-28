@@ -5,6 +5,7 @@ import org.main.client.RiotApiClient;
 import org.main.dto.CrawlResultDto;
 import org.main.persistence.entity.MatchEntity;
 import org.main.persistence.entity.PlatformShard;
+import org.main.persistence.entity.RegionRoute;
 import org.main.persistence.repository.MatchRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,12 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+/**
+ * Реалізація сервісу {@link CrawlerService}, що відповідає за отримання матчів
+ * із Riot API, перевірку наявності записів у базі даних та збереження нових матчів.
+ * <p>
+ * Клас координує взаємодію між Riot API client та persistence layer.
+ */
 
 @Service
 public class CrawlerServiceImpl implements CrawlerService {
@@ -25,6 +32,14 @@ public class CrawlerServiceImpl implements CrawlerService {
         this.riotApiClient = riotApiClient;
         this.matchRepository = matchRepository;
     }
+    /**
+     * Отримує список ідентифікаторів матчів для заданого гравця, завантажує інформацію
+     * про кожен матч і зберігає лише ті матчі, яких ще немає в базі даних.
+     *
+     * @param limitRaw унікальний ідентифікатор гравця
+     * @param limitRaw кількість матчів, яку потрібно отримати
+     * @return DTO з підсумковою інформацією про результат обробки
+     */
 
     @Override
     @Transactional
@@ -67,7 +82,7 @@ public class CrawlerServiceImpl implements CrawlerService {
 
             MatchEntity entity = new MatchEntity();
             entity.setMatchId(matchId);
-            entity.setRegion(org.main.persistence.entity.RegionRoute.europe);
+            entity.setRegion(RegionRoute.europe);
             entity.setPlatform(PlatformShard.EUW1);
             entity.setRawMatchJson(matchJson == null ? null : matchJson.toString());
             entity.setFetchedAt(OffsetDateTime.now());
