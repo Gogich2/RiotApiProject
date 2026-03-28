@@ -9,4 +9,4 @@ public record CrawlResultDto(
         int requestedLimit,
         int savedNewMatches,
         List<String> savedMatchIds
-) {}
+) { }

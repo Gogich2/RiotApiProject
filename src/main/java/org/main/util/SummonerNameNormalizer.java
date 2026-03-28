@@ -2,7 +2,7 @@ package org.main.util;
 
 public final class SummonerNameNormalizer {
 
-    private SummonerNameNormalizer() {}
+    private SummonerNameNormalizer() { }
 
     public static String normalize(String raw) {
         if (raw == null) {

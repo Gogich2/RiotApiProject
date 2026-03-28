@@ -47,13 +47,13 @@ public class CrawlSteps {
     public void crawlMatches(int limit) {
         this.limit = limit;
 
-        List<String> ids = IntStream.range(0, limit)
-                .mapToObj(i -> "EUW1_" + i)
-                .toList();
+        List<String> ids = IntStream.range(0, limit).
+                mapToObj(i -> "EUW1_" + i).
+                toList();
 
-        when(riotApiClient.getMatchIdsByPuuidEurope(eq(PUUID), anyInt(), anyInt()))
-                .thenReturn(ids)
-                .thenReturn(List.of());
+        when(riotApiClient.getMatchIdsByPuuidEurope(eq(PUUID), anyInt(), anyInt())).
+                thenReturn(ids).
+                thenReturn(List.of());
 
         when(matchRepository.existsById(anyString())).thenReturn(false);
         when(riotApiClient.getMatchByIdEurope(anyString())).thenReturn(null);
@@ -65,8 +65,8 @@ public class CrawlSteps {
     public void crawlNoMatches(int limit) {
         this.limit = limit;
 
-        when(riotApiClient.getMatchIdsByPuuidEurope(eq(PUUID), anyInt(), anyInt()))
-                .thenReturn(List.of());
+        when(riotApiClient.getMatchIdsByPuuidEurope(eq(PUUID), anyInt(), anyInt())).
+                thenReturn(List.of());
 
         crawlerService.crawlPuuidEUW(PUUID, limit);
     }
@@ -75,13 +75,13 @@ public class CrawlSteps {
     public void crawlAllExisting(int limit) {
         this.limit = limit;
 
-        List<String> ids = IntStream.range(0, limit)
-                .mapToObj(i -> "EUW1_" + i)
-                .toList();
+        List<String> ids = IntStream.range(0, limit).
+                mapToObj(i -> "EUW1_" + i).
+                toList();
 
-        when(riotApiClient.getMatchIdsByPuuidEurope(eq(PUUID), anyInt(), anyInt()))
-                .thenReturn(ids)
-                .thenReturn(List.of());
+        when(riotApiClient.getMatchIdsByPuuidEurope(eq(PUUID), anyInt(), anyInt())).
+                thenReturn(ids).
+                thenReturn(List.of());
 
         when(matchRepository.existsById(anyString())).thenReturn(true);
 

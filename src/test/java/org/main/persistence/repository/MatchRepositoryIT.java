@@ -11,7 +11,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -21,7 +23,7 @@ class MatchRepositoryIT {
     MatchRepository matchRepository;
 
     @Test
-    void save_then_existsById_then_findById_work_with_real_postgres() {
+    void saveThenExistsByIdThenFindByIdWorkWithRealPostgres() {
         String matchId = "IT_" + UUID.randomUUID();
 
         MatchEntity e = new MatchEntity();
