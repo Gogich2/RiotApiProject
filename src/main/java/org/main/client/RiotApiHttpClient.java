@@ -23,8 +23,6 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     private static final Logger log = LoggerFactory.getLogger(RiotApiHttpClient.class);
 
-    private static final String EUW_PLATFORM_HOST = "https://euw1.api.riotgames.com";
-
     private static final String EUROPE_REGIONAL_HOST = "https://europe.api.riotgames.com";
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -56,7 +54,7 @@ public class RiotApiHttpClient implements RiotApiClient {
                 buildAndExpand(gameName, tagLine).
                 toUriString();
 
-        log.debug("Calling Riot account endpoint for Riot ID: gameName='{}', tagLine='{}'", gameName, tagLine);
+        log.debug("Calling Riot account endpoint: gameName='{}', tagLine='{}'", gameName, tagLine);
         return exchangeJson(url);
     }
 
@@ -69,13 +67,10 @@ public class RiotApiHttpClient implements RiotApiClient {
                 buildAndExpand(puuid).
                 toUriString();
 
-        log.debug("Calling Riot match id list endpoint: puuid='{}', start={}, count={}", puuid, start, count);
+        log.debug("Calling Riot match ids endpoint: puuid='{}', start={}, count={}", puuid, start, count);
 
         ResponseEntity<String[]> resp = exchange(url, String[].class);
         String[] body = resp.getBody();
-
-        log.debug("Riot match id list response received: status={}, returnedCount={}",
-                resp.getStatusCode(), body == null ? 0 : body.length);
 
         return body == null ? List.of() : Arrays.asList(body);
     }
@@ -88,6 +83,17 @@ public class RiotApiHttpClient implements RiotApiClient {
                 toUriString();
 
         log.debug("Calling Riot match details endpoint: matchId='{}'", matchId);
+        return exchangeJson(url);
+    }
+
+    @Override
+    public JsonNode getMatchTimelineByIdEurope(String matchId) {
+        String url = UriComponentsBuilder.fromHttpUrl(EUROPE_REGIONAL_HOST).
+                path("/lol/match/v5/matches/{matchId}/timeline").
+                buildAndExpand(matchId).
+                toUriString();
+
+        log.debug("Calling Riot match timeline endpoint: matchId='{}'", matchId);
         return exchangeJson(url);
     }
 

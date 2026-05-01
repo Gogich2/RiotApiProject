@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
-public class RequestContextFilter extends OncePerRequestFilter {
+public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private static final String REQUEST_ID = "requestId";
 

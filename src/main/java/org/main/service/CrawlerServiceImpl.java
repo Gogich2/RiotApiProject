@@ -11,17 +11,15 @@ import org.main.exception.ExternalServiceException;
 import org.main.exception.NotFoundException;
 import org.main.persistence.entity.MatchEntity;
 import org.main.persistence.entity.PlatformShard;
+import org.main.persistence.entity.PlayerEntity;
 import org.main.persistence.entity.RegionRoute;
 import org.main.persistence.repository.MatchRepository;
+import org.main.persistence.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Реалізація сервісу {@link CrawlerService}, що відповідає за отримання матчів
- * із Riot API, перевірку наявності записів у базі даних та збереження нових матчів.
- */
 @Service
 public class CrawlerServiceImpl implements CrawlerService {
 
@@ -31,78 +29,46 @@ public class CrawlerServiceImpl implements CrawlerService {
 
     private final MatchRepository matchRepository;
 
-    public CrawlerServiceImpl(RiotApiClient riotApiClient, MatchRepository matchRepository) {
+    private final PlayerRepository playerRepository;
+
+    private final TimelineIngestService timelineIngestService;
+
+    public CrawlerServiceImpl(RiotApiClient riotApiClient,
+                              MatchRepository matchRepository) {
         this.riotApiClient = riotApiClient;
         this.matchRepository = matchRepository;
+        this.playerRepository = playerRepository;
+        this.timelineIngestService = timelineIngestService;
     }
 
     @Override
     @Transactional
     public CrawlResultDto crawlPuuidEUW(String puuidRaw, int limitRaw) {
         String puuid = puuidRaw == null ? "" : puuidRaw.trim();
+
         if (puuid.isEmpty()) {
             throw new IllegalArgumentException("PUUID is required");
         }
 
         int limit = clampLimit(limitRaw);
+
         log.info("Starting crawlPuuidEUW: puuid='{}', requestedLimit={}, effectiveLimit={}",
                 puuid, limitRaw, limit);
 
-        int start = 0;
-        int pageSize = 20;
-        List<String> fetched = new ArrayList<>();
-        HashSet<String> seen = new HashSet<>();
-
-        while (fetched.size() < limit) {
-            int count = Math.min(pageSize, limit - fetched.size());
-            log.debug("Requesting match id page: puuid='{}', start={}, count={}", puuid, start, count);
-
-            List<String> page = riotApiClient.getMatchIdsByPuuidEurope(puuid, start, count);
-            if (page.isEmpty()) {
-                log.info("No more match ids returned from Riot API: puuid='{}', start={}", puuid, start);
-                break;
-            }
-
-            for (String id : page) {
-                if (seen.add(id)) {
-                    fetched.add(id);
-                }
-            }
-
-            log.debug("Fetched page processed: puuid='{}', pageSizeReturned={}, uniqueCollected={}",
-                    puuid, page.size(), fetched.size());
-            start += count;
-        }
-
-        List<String> saved = new ArrayList<>();
-        for (String matchId : fetched) {
-            if (matchRepository.existsById(matchId)) {
-                log.warn("Skipping already existing match: matchId='{}'", matchId);
-                continue;
-            }
-
-            JsonNode matchJson = riotApiClient.getMatchByIdEurope(matchId);
-            if (matchJson == null) {
-                throw new ExternalServiceException("Riot API returned empty match details for matchId=" + matchId);
-            }
-
-            MatchEntity entity = new MatchEntity();
-            entity.setMatchId(matchId);
-            entity.setRegion(RegionRoute.europe);
-            entity.setPlatform(PlatformShard.EUW1);
-            entity.setRawMatchJson(matchJson.toString());
-            entity.setFetchedAt(OffsetDateTime.now());
-
-            matchRepository.save(entity);
-            saved.add(matchId);
-
-            log.info("Saved new match: matchId='{}'", matchId);
-        }
+        List<String> fetchedMatchIds = fetchMatchIds(puuid, limit);
+        List<String> savedMatchIds = saveNewMatchesAndTimelines(fetchedMatchIds);
 
         log.info("crawlPuuidEUW finished: puuid='{}', requestedLimit={}, fetchedUnique={}, savedNewMatches={}",
-                puuid, limit, fetched.size(), saved.size());
+                puuid, limit, fetchedMatchIds.size(), savedMatchIds.size());
 
-        return new CrawlResultDto("EUW1", null, puuid, limit, saved.size(), saved);
+        return new CrawlResultDto(
+                "EUW1",
+                null,
+                puuid,
+                limit,
+                savedMatchIds.size(),
+                savedMatchIds
+        );
     }
 
     @Override
@@ -119,26 +85,29 @@ public class CrawlerServiceImpl implements CrawlerService {
                 gameName, tagLine, limitRaw);
 
         JsonNode accountJson = riotApiClient.getAccountByRiotIdEurope(gameName, tagLine);
+
         if (accountJson == null || accountJson.get("puuid") == null) {
             throw new NotFoundException("Account not found for Riot ID: " + gameName + "#" + tagLine);
         }
 
         String puuid = accountJson.get("puuid").asText();
-        log.debug("Resolved Riot ID to puuid: gameName='{}', tagLine='{}', puuid='{}'",
-                gameName, tagLine, puuid);
 
-        CrawlResultDto result = crawlPuuidEUW(puuid, limitRaw);
+        saveOrUpdatePlayer(puuid, gameName, tagLine);
+
+        int limit = clampLimit(limitRaw);
+        List<String> fetchedMatchIds = fetchMatchIds(puuid, limit);
+        List<String> savedMatchIds = saveNewMatchesAndTimelines(fetchedMatchIds);
 
         log.info("crawlRiotIdEUW finished: summoner='{}#{}', puuid='{}', savedNewMatches={}",
-                gameName, tagLine, puuid, result.savedNewMatches());
+                gameName, tagLine, puuid, savedMatchIds.size());
 
         return new CrawlResultDto(
                 "EUW1",
                 gameName + "#" + tagLine,
                 puuid,
-                result.requestedLimit(),
-                result.savedNewMatches(),
-                result.savedMatchIds()
+                limit,
+                savedMatchIds.size(),
+                savedMatchIds
         );
     }
 
@@ -148,13 +117,100 @@ public class CrawlerServiceImpl implements CrawlerService {
         throw new UnsupportedOperationException("crawlSummonerEUW is not implemented yet");
     }
 
+    private void saveOrUpdatePlayer(String puuid, String gameName, String tagLine) {
+        OffsetDateTime now = OffsetDateTime.now();
+
+        PlayerEntity player = playerRepository.findById(puuid).
+                orElseGet(PlayerEntity::new);
+
+        if (player.getPuuid() == null) {
+            player.setPuuid(puuid);
+            player.setCreatedAt(now);
+        }
+
+        player.setGameName(gameName);
+        player.setTagLine(tagLine);
+        player.setUpdatedAt(now);
+
+        playerRepository.save(player);
+
+        log.info("Player saved or updated: gameName='{}', tagLine='{}', puuid='{}'",
+                gameName, tagLine, puuid);
+    }
+
+    private List<String> fetchMatchIds(String puuid, int limit) {
+        int start = 0;
+        int pageSize = 20;
+
+        List<String> fetched = new ArrayList<>();
+        HashSet<String> seen = new HashSet<>();
+
+        while (fetched.size() < limit) {
+            int count = Math.min(pageSize, limit - fetched.size());
+
+            log.debug("Requesting match id page: puuid='{}', start={}, count={}",
+                    puuid, start, count);
+
+            List<String> page = riotApiClient.getMatchIdsByPuuidEurope(puuid, start, count);
+
+            if (page.isEmpty()) {
+                log.info("No more match ids returned from Riot API: puuid='{}', start={}", puuid, start);
+                break;
+            }
+
+            for (String matchId : page) {
+                if (seen.add(matchId)) {
+                    fetched.add(matchId);
+                }
+            }
+
+            start += count;
+        }
+
+        return fetched;
+    }
+
+    private List<String> saveNewMatchesAndTimelines(List<String> matchIds) {
+        List<String> saved = new ArrayList<>();
+
+        for (String matchId : matchIds) {
+            if (!matchRepository.existsById(matchId)) {
+                JsonNode matchJson = riotApiClient.getMatchByIdEurope(matchId);
+
+                if (matchJson == null) {
+                    throw new ExternalServiceException("Riot API returned empty match details for matchId=" + matchId);
+                }
+
+                MatchEntity entity = new MatchEntity();
+                entity.setMatchId(matchId);
+                entity.setRegion(RegionRoute.europe);
+                entity.setPlatform(PlatformShard.EUW1);
+                entity.setRawMatchJson(matchJson.toString());
+                entity.setFetchedAt(OffsetDateTime.now());
+
+                matchRepository.save(entity);
+                saved.add(matchId);
+
+                log.info("Saved new match: matchId='{}'", matchId);
+            } else {
+                log.info("Match already exists, checking timeline: matchId='{}'", matchId);
+            }
+
+            timelineIngestService.ingestTimelineIfMissing(matchId);
+        }
+
+        return saved;
+    }
+
     static int clampLimit(int limit) {
         if (limit <= 0) {
             return 20;
         }
+
         if (limit > 100) {
             return 100;
         }
+
         return limit;
     }
 }
