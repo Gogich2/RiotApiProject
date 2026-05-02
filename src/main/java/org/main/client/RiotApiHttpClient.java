@@ -27,11 +27,20 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    private final RiotRateLimiter riotRateLimiter;
+
     @Value("${riot.api.key}")
     private String apiKey;
 
     @Value("${app.logging.mask-riot-api-key:true}")
     private boolean maskApiKey;
+
+    @Value("${riot.rate-limit.max-retries:5}")
+    private int maxRetries;
+
+    public RiotApiHttpClient(RiotRateLimiter riotRateLimiter) {
+        this.riotRateLimiter = riotRateLimiter;
+    }
 
     @PostConstruct
     void check() {
@@ -103,25 +112,51 @@ public class RiotApiHttpClient implements RiotApiClient {
     }
 
     private <T> ResponseEntity<T> exchange(String url, Class<T> clazz) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-Riot-Token", apiKey);
+        int attempts = Math.max(maxRetries, 1);
 
-            HttpEntity<Void> req = new HttpEntity<>(headers);
-            ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, req, clazz);
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                riotRateLimiter.acquire();
 
-            log.debug("External HTTP call succeeded: url='{}', status={}", url, response.getStatusCode());
-            return response;
-        } catch (HttpStatusCodeException ex) {
-            log.error("External HTTP call failed: url='{}', status={}, responseBody='{}'",
-                    url, ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
-            throw new ExternalServiceException("Riot API returned HTTP error: " + ex.getStatusCode(), ex);
-        } catch (ResourceAccessException ex) {
-            log.error("External HTTP call failed due to connectivity issue: url='{}'", url, ex);
-            throw new ExternalServiceException("Unable to reach Riot API", ex);
-        } catch (Exception ex) {
-            log.error("Unexpected error during Riot API call: url='{}'", url, ex);
-            throw new ExternalServiceException("Unexpected error during Riot API call", ex);
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-Riot-Token", apiKey);
+
+                HttpEntity<Void> req = new HttpEntity<>(headers);
+                ResponseEntity<T> response = restTemplate.exchange(url, HttpMethod.GET, req, clazz);
+
+                log.debug("External HTTP call succeeded: url='{}', status={}", url, response.getStatusCode());
+                return response;
+            } catch (HttpStatusCodeException ex) {
+                int statusCode = ex.getStatusCode().value();
+
+                if (statusCode == 429) {
+                    String retryAfter = ex.getResponseHeaders() == null
+                            ? null
+                            : ex.getResponseHeaders().getFirst("Retry-After");
+
+                    log.warn("Riot API rate limit reached: attempt={}/{}, retryAfter='{}', url='{}'",
+                            attempt, attempts, retryAfter, url);
+
+                    riotRateLimiter.pauseAfterRetryAfterHeader(retryAfter);
+
+                    if (attempt < attempts) {
+                        continue;
+                    }
+                }
+
+                log.error("External HTTP call failed: url='{}', status={}, responseBody='{}'",
+                        url, ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
+
+                throw new ExternalServiceException("Riot API returned HTTP error: " + ex.getStatusCode(), ex);
+            } catch (ResourceAccessException ex) {
+                log.error("External HTTP call failed due to connectivity issue: url='{}'", url, ex);
+                throw new ExternalServiceException("Unable to reach Riot API", ex);
+            } catch (Exception ex) {
+                log.error("Unexpected error during Riot API call: url='{}'", url, ex);
+                throw new ExternalServiceException("Unexpected error during Riot API call", ex);
+            }
         }
+
+        throw new ExternalServiceException("Riot API request failed after retries");
     }
 }

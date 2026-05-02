@@ -39,8 +39,9 @@ public class MatchTimelineEventEntity {
     @Column(name = "victim_id")
     private Short victimId;
 
-    @Column(name = "assisting_participant_ids")
-    private Short[] assistingParticipantIds;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "assisting_participant_ids", columnDefinition = "jsonb")
+    private String assistingParticipantIds;
 
     @Column(name = "item_id")
     private Integer itemId;
@@ -135,11 +136,11 @@ public class MatchTimelineEventEntity {
         this.victimId = victimId;
     }
 
-    public Short[] getAssistingParticipantIds() {
+    public String getAssistingParticipantIds() {
         return assistingParticipantIds;
     }
 
-    public void setAssistingParticipantIds(Short[] assistingParticipantIds) {
+    public void setAssistingParticipantIds(String assistingParticipantIds) {
         this.assistingParticipantIds = assistingParticipantIds;
     }
 

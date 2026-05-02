@@ -33,44 +33,43 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
 
     private final ObjectMapper objectMapper;
 
+    private final IngestLogService ingestLogService;
+
     public TimelineIngestServiceImpl(RiotApiClient riotApiClient,
                                      MatchTimelineRawRepository timelineRawRepository,
                                      MatchTimelineFrameRepository timelineFrameRepository,
                                      MatchTimelineEventRepository timelineEventRepository,
-                                     ObjectMapper objectMapper) {
+                                     ObjectMapper objectMapper,
+                                     IngestLogService ingestLogService) {
         this.riotApiClient = riotApiClient;
         this.timelineRawRepository = timelineRawRepository;
         this.timelineFrameRepository = timelineFrameRepository;
         this.timelineEventRepository = timelineEventRepository;
         this.objectMapper = objectMapper;
+        this.ingestLogService = ingestLogService;
     }
 
     @Override
     @Transactional
     public void ingestTimelineIfMissing(String matchId) {
         if (timelineRawRepository.existsById(matchId)) {
-            boolean hasFrames = timelineFrameRepository.countByMatchId(matchId) > 0;
-            boolean hasEvents = timelineEventRepository.countByMatchId(matchId) > 0;
-
-            if (hasFrames && hasEvents) {
-                log.info("Timeline already complete, skipping Riot API call: matchId='{}'", matchId);
-                return;
-            }
-
-            log.warn("Timeline raw exists, but parsed data is incomplete. Repairing from raw JSON: matchId='{}'",
-                    matchId);
-
-            repairTimelineFromRaw(matchId);
+            repairOrSkipExistingTimeline(matchId);
             return;
         }
 
-        JsonNode timelineJson = riotApiClient.getMatchTimelineByIdEurope(matchId);
+        try {
+            JsonNode timelineJson = riotApiClient.getMatchTimelineByIdEurope(matchId);
 
-        if (timelineJson == null) {
-            throw new ExternalServiceException("Riot API returned empty timeline for matchId=" + matchId);
+            if (timelineJson == null) {
+                ingestLogService.failed("TIMELINE", matchId, "Riot API returned empty timeline");
+                throw new ExternalServiceException("Riot API returned empty timeline for matchId=" + matchId);
+            }
+
+            ingestTimeline(matchId, timelineJson);
+        } catch (Exception ex) {
+            ingestLogService.failed("TIMELINE", matchId, ex.getMessage());
+            throw ex;
         }
-
-        ingestTimeline(matchId, timelineJson);
     }
 
     @Override
@@ -87,6 +86,7 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
         saveRawTimeline(matchId, timelineJson);
         saveFramesAndEvents(matchId, timelineJson);
 
+        ingestLogService.success("TIMELINE", matchId, "Timeline raw, frames and events ingested");
         log.info("Timeline ingested: matchId='{}'", matchId);
     }
 
@@ -100,10 +100,32 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
             JsonNode timelineJson = objectMapper.readTree(rawEntity.getRawTimelineJson());
             saveFramesAndEvents(matchId, timelineJson);
 
+            ingestLogService.success("TIMELINE_REPAIR", matchId, "Timeline repaired from raw JSON");
             log.info("Timeline repaired from raw JSON: matchId='{}'", matchId);
         } catch (Exception ex) {
+            ingestLogService.failed("TIMELINE_REPAIR", matchId, ex.getMessage());
             throw new IllegalStateException("Cannot repair timeline from raw JSON for matchId=" + matchId, ex);
         }
+    }
+
+    private void repairOrSkipExistingTimeline(String matchId) {
+        boolean hasFrames = timelineFrameRepository.countByMatchId(matchId) > 0;
+        boolean hasEvents = timelineEventRepository.countByMatchId(matchId) > 0;
+
+        if (hasFrames && hasEvents) {
+            ingestLogService.skipped("TIMELINE", matchId, "Timeline already complete");
+            log.info("Timeline already complete, skipping Riot API call: matchId='{}'", matchId);
+            return;
+        }
+
+        ingestLogService.skipped("TIMELINE_RAW", matchId, "Timeline raw exists, parsed data incomplete");
+
+        log.warn(
+                "Timeline raw exists, but parsed data is incomplete. Repairing from raw JSON: matchId='{}'",
+                matchId
+        );
+
+        repairTimelineFromRaw(matchId);
     }
 
     private void saveRawTimeline(String matchId, JsonNode timelineJson) {
@@ -128,7 +150,10 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
         }
 
         timelineEventRepository.deleteByMatchId(matchId);
+        timelineEventRepository.flush();
+
         timelineFrameRepository.deleteByMatchId(matchId);
+        timelineFrameRepository.flush();
 
         int frameNo = 0;
 
@@ -161,34 +186,39 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
         List<MatchTimelineEventEntity> entities = new ArrayList<>();
 
         for (JsonNode event : events) {
-            MatchTimelineEventEntity entity = new MatchTimelineEventEntity();
-
-            entity.setMatchId(matchId);
-            entity.setFrameNo(frameNo);
-            entity.setTsMs(nullableLong(event, "timestamp"));
-            entity.setType(nullableText(event, "type"));
-
-            entity.setParticipantId(nullableShort(event, "participantId"));
-            entity.setKillerId(nullableShort(event, "killerId"));
-            entity.setVictimId(nullableShort(event, "victimId"));
-
-            entity.setAssistingParticipantIds(jsonOrNull(event.get("assistingParticipantIds")));
-
-            entity.setItemId(nullableInteger(event, "itemId"));
-            entity.setSkillSlot(nullableShort(event, "skillSlot"));
-            entity.setLevelUpType(nullableText(event, "levelUpType"));
-            entity.setWardType(nullableText(event, "wardType"));
-            entity.setBuildingType(nullableText(event, "buildingType"));
-            entity.setLaneType(nullableText(event, "laneType"));
-            entity.setBounty(nullableInteger(event, "bounty"));
-
-            entity.setPosition(jsonOrNull(event.get("position")));
-            entity.setOtherJson(event.toString());
-
+            MatchTimelineEventEntity entity = buildEventEntity(matchId, frameNo, event);
             entities.add(entity);
         }
 
         timelineEventRepository.saveAll(entities);
+    }
+
+    private MatchTimelineEventEntity buildEventEntity(String matchId, int frameNo, JsonNode event) {
+        MatchTimelineEventEntity entity = new MatchTimelineEventEntity();
+
+        entity.setMatchId(matchId);
+        entity.setFrameNo(frameNo);
+        entity.setTsMs(nullableLong(event, "timestamp"));
+        entity.setType(nullableText(event, "type"));
+
+        entity.setParticipantId(nullableShort(event, "participantId"));
+        entity.setKillerId(nullableShort(event, "killerId"));
+        entity.setVictimId(nullableShort(event, "victimId"));
+
+        entity.setAssistingParticipantIds(jsonOrNull(event.get("assistingParticipantIds")));
+
+        entity.setItemId(nullableInteger(event, "itemId"));
+        entity.setSkillSlot(nullableShort(event, "skillSlot"));
+        entity.setLevelUpType(nullableText(event, "levelUpType"));
+        entity.setWardType(nullableText(event, "wardType"));
+        entity.setBuildingType(nullableText(event, "buildingType"));
+        entity.setLaneType(nullableText(event, "laneType"));
+        entity.setBounty(nullableInteger(event, "bounty"));
+
+        entity.setPosition(jsonOrNull(event.get("position")));
+        entity.setOtherJson(event.toString());
+
+        return entity;
     }
 
     private String jsonOrNull(JsonNode node) {

@@ -388,7 +388,7 @@ public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawler
             return 20;
         }
 
-        return Math.min(targetPerBucket, 500);
+        return Math.min(targetPerBucket, 10000);
     }
 
     private int normalizeMatchesPerPlayer(int matchesPerPlayer) {
@@ -404,6 +404,6 @@ public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawler
             return 50;
         }
 
-        return Math.min(maxPlayersToVisit, 500);
+        return Math.min(maxPlayersToVisit, 5000);
     }
 }
