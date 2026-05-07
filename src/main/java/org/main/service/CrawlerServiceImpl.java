@@ -18,10 +18,14 @@ import org.main.persistence.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+
+
 
 @Service
 public class CrawlerServiceImpl implements CrawlerService {
+
+    private final TransactionTemplate transactionTemplate;
 
     private static final Logger log = LoggerFactory.getLogger(CrawlerServiceImpl.class);
 
@@ -39,16 +43,17 @@ public class CrawlerServiceImpl implements CrawlerService {
                               MatchRepository matchRepository,
                               PlayerRepository playerRepository,
                               TimelineIngestService timelineIngestService,
-                              IngestLogService ingestLogService) {
+                              IngestLogService ingestLogService,
+                              TransactionTemplate transactionTemplate) {
         this.riotApiClient = riotApiClient;
         this.matchRepository = matchRepository;
         this.playerRepository = playerRepository;
         this.timelineIngestService = timelineIngestService;
         this.ingestLogService = ingestLogService;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
-    @Transactional
     public CrawlResultDto crawlPuuidEUW(String puuidRaw, int limitRaw) {
         String puuid = puuidRaw == null ? "" : puuidRaw.trim();
 
@@ -87,7 +92,6 @@ public class CrawlerServiceImpl implements CrawlerService {
     }
 
     @Override
-    @Transactional
     public CrawlResultDto crawlRiotIdEUW(String gameNameRaw, String tagLineRaw, int limitRaw) {
         String gameName = gameNameRaw == null ? "" : gameNameRaw.trim();
         String tagLine = tagLineRaw == null ? "" : tagLineRaw.trim();
@@ -208,11 +212,14 @@ public class CrawlerServiceImpl implements CrawlerService {
 
         for (String matchId : matchIds) {
             try {
-                saveMatchIfMissing(matchId, saved);
+                transactionTemplate.executeWithoutResult(status -> {
+                    saveMatchIfMissing(matchId, saved);
+                });
+
                 timelineIngestService.ingestTimelineIfMissing(matchId);
             } catch (Exception ex) {
                 ingestLogService.failed("MATCH_PROCESSING", matchId, ex.getMessage());
-                throw ex;
+                log.error("Failed to process match: matchId='{}'", matchId, ex);
             }
         }
 
@@ -245,6 +252,33 @@ public class CrawlerServiceImpl implements CrawlerService {
 
         ingestLogService.success("MATCH_DETAILS", matchId, "Match details saved");
         log.info("Saved new match: matchId='{}'", matchId);
+    }
+
+    @Override
+    public CrawlResultDto crawlLatestPlayerEUW(int limitRaw) {
+        int limit = clampLimit(limitRaw);
+
+        PlayerEntity latestPlayer = playerRepository.findTopByOrderByUpdatedAtDesc().
+                orElseThrow(() -> new NotFoundException("No players found in raw.players"));
+
+        String puuid = latestPlayer.getPuuid();
+
+        if (puuid == null || puuid.isBlank()) {
+            throw new IllegalStateException("Latest player has empty PUUID");
+        }
+
+        log.info(
+                "Starting crawlLatestPlayerEUW: puuid='{}', gameName='{}',"
+                        +
+                        " tagLine='{}', requestedLimit={}, effectiveLimit={}",
+                puuid,
+                latestPlayer.getGameName(),
+                latestPlayer.getTagLine(),
+                limitRaw,
+                limit
+        );
+
+        return crawlPuuidEUW(puuid, limit);
     }
 
     static int clampLimit(int limit) {

@@ -12,4 +12,6 @@ public interface PlayerRepository extends JpaRepository<PlayerEntity, String> {
     List<PlayerEntity> findByGameNameContainingIgnoreCase(String gameName);
 
     Optional<PlayerEntity> findByGameNameIgnoreCaseAndTagLineIgnoreCase(String gameName, String tagLine);
+
+    Optional<PlayerEntity> findTopByOrderByUpdatedAtDesc();
 }

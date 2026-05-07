@@ -53,4 +53,20 @@ public class CrawlerController {
                 result.summonerName(), result.puuid(), result.requestedLimit(), result.savedNewMatches());
         return result;
     }
+
+    @PostMapping("/euw/latest-player")
+    public CrawlResultDto crawlLatestPlayer(@RequestParam(value = "limit", defaultValue = "100") int limit) {
+        log.info("Received crawlLatestPlayer request: limit={}", limit);
+
+        CrawlResultDto result = crawlerService.crawlLatestPlayerEUW(limit);
+
+        log.info(
+                "crawlLatestPlayer completed: puuid='{}', requestedLimit={}, savedNewMatches={}",
+                result.puuid(),
+                result.requestedLimit(),
+                result.savedNewMatches()
+        );
+
+        return result;
+    }
 }

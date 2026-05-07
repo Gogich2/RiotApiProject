@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.main.client.RiotApiClient;
 import org.main.persistence.repository.MatchRepository;
 import org.main.persistence.repository.PlayerRepository;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,13 +26,15 @@ class CrawlerServiceImplPaginationTest {
         PlayerRepository playerRepository = mock(PlayerRepository.class);
         TimelineIngestService timelineIngestService = mock(TimelineIngestService.class);
         IngestLogService ingestLogService = mock(IngestLogService.class);
+        TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
 
         CrawlerServiceImpl service = new CrawlerServiceImpl(
                 api,
                 matchRepository,
                 playerRepository,
                 timelineIngestService,
-                ingestLogService
+                ingestLogService,
+                transactionTemplate
         );
 
         List<String> page1 = java.util.stream.IntStream.range(0, 20).
