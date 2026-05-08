@@ -11,7 +11,7 @@ def load_data() -> pd.DataFrame:
             champion_name,
             win,
             vision_score
-        from analyzed.player_match_stats
+        from analyzed.v_player_match_stats
         where puuid is not null
           and vision_score is not null
     """
