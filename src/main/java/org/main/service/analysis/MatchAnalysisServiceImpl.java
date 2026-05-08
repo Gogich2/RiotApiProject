@@ -124,11 +124,11 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             ParticipantContext context = buildParticipantContext(source, participant);
             participantContextById.put(context.participantId(), context);
 
+            savePlayerMatchStats(context, participant);
             saveFinalItems(context, participant);
             saveLoadout(context, participant);
             saveRuneSelections(context, participant);
         }
-
         saveItemEvents(source, participantContextById);
         saveSkillOrder(source, participantContextById);
 
@@ -350,37 +350,40 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             for (JsonNode selection : selections) {
                 Integer runeId = nullableInteger(selection, "perk");
 
-                if (runeId == null) {
+                if (runeId == null || runeId == 0) {
+                    order++;
                     continue;
                 }
 
                 boolean isKeystone = "PRIMARY".equals(styleType) && order == 0;
 
                 jdbcTemplate.update("""
-                        INSERT INTO analyzed.participant_rune_selections
-                        (
-                            match_id,
-                            participant_id,
-                            puuid,
-                            champion_id,
-                            team_id,
-                            win,
-                            style_id,
-                            style_type,
-                            rune_id,
-                            rune_slot,
-                            selection_order,
-                            is_keystone,
-                            var1,
-                            var2,
-                            var3,
-                            game_version,
-                            queue_id,
-                            game_duration_ms,
-                            created_at
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
+            INSERT INTO analyzed.participant_rune_selections
+            (
+                match_id,
+                participant_id,
+                puuid,
+                champion_id,
+                team_id,
+                win,
+                style_id,
+                style_type,
+                rune_id,
+                rune_slot,
+                selection_order,
+                is_keystone,
+                var1,
+                var2,
+                var3,
+                game_version,
+                queue_id,
+                game_duration_ms,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (match_id, participant_id, rune_id)
+            DO NOTHING
+            """,
                         context.matchId(),
                         context.participantId(),
                         context.puuid(),
@@ -403,8 +406,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 );
 
                 order++;
-            }
-        }
+            }        }
     }
 
     private void saveItemEvents(MatchSource source, Map<Short, ParticipantContext> participantContextById) {
@@ -619,7 +621,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         jdbcTemplate.update("DELETE FROM analyzed.participant_rune_selections WHERE match_id = ?", matchId);
         jdbcTemplate.update("DELETE FROM analyzed.participant_loadouts WHERE match_id = ?", matchId);
         jdbcTemplate.update("DELETE FROM analyzed.participant_final_items WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.participant_skill_order WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.player_match_stats WHERE match_id = ?", matchId);
     }
 
     private boolean hasTimelineEvents(String matchId) {
@@ -630,6 +632,114 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 """, Integer.class, matchId);
 
         return count != null && count > 0;
+    }
+
+    private void savePlayerMatchStats(ParticipantContext context, JsonNode participant) {
+        jdbcTemplate.update("""
+            INSERT INTO analyzed.player_match_stats
+            (
+                match_id,
+                participant_id,
+                puuid,
+                riot_game_name,
+                riot_tagline,
+                summoner_name,
+                champion_id,
+                champion_name,
+                team_id,
+                win,
+                kills,
+                deaths,
+                assists,
+                champ_level,
+                gold_earned,
+                gold_spent,
+                total_damage_dealt_to_champions,
+                total_damage_taken,
+                vision_score,
+                wards_placed,
+                wards_killed,
+                total_minions_killed,
+                neutral_minions_killed,
+                summoner1_id,
+                summoner2_id,
+                game_version,
+                queue_id,
+                game_duration_ms,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (match_id, participant_id)
+            DO UPDATE SET
+                puuid = EXCLUDED.puuid,
+                riot_game_name = EXCLUDED.riot_game_name,
+                riot_tagline = EXCLUDED.riot_tagline,
+                summoner_name = EXCLUDED.summoner_name,
+                champion_id = EXCLUDED.champion_id,
+                champion_name = EXCLUDED.champion_name,
+                team_id = EXCLUDED.team_id,
+                win = EXCLUDED.win,
+                kills = EXCLUDED.kills,
+                deaths = EXCLUDED.deaths,
+                assists = EXCLUDED.assists,
+                champ_level = EXCLUDED.champ_level,
+                gold_earned = EXCLUDED.gold_earned,
+                gold_spent = EXCLUDED.gold_spent,
+                total_damage_dealt_to_champions = EXCLUDED.total_damage_dealt_to_champions,
+                total_damage_taken = EXCLUDED.total_damage_taken,
+                vision_score = EXCLUDED.vision_score,
+                wards_placed = EXCLUDED.wards_placed,
+                wards_killed = EXCLUDED.wards_killed,
+                total_minions_killed = EXCLUDED.total_minions_killed,
+                neutral_minions_killed = EXCLUDED.neutral_minions_killed,
+                summoner1_id = EXCLUDED.summoner1_id,
+                summoner2_id = EXCLUDED.summoner2_id,
+                game_version = EXCLUDED.game_version,
+                queue_id = EXCLUDED.queue_id,
+                game_duration_ms = EXCLUDED.game_duration_ms
+            """,
+                context.matchId(),
+                context.participantId(),
+                context.puuid(),
+
+                nullableText(participant, "riotIdGameName"),
+                nullableText(participant, "riotIdTagline"),
+                nullableText(participant, "summonerName"),
+
+                context.championId(),
+                nullableText(participant, "championName"),
+
+                context.teamId(),
+                context.win(),
+
+                nullableInteger(participant, "kills"),
+                nullableInteger(participant, "deaths"),
+                nullableInteger(participant, "assists"),
+
+                nullableInteger(participant, "champLevel"),
+
+                nullableInteger(participant, "goldEarned"),
+                nullableInteger(participant, "goldSpent"),
+
+                nullableInteger(participant, "totalDamageDealtToChampions"),
+                nullableInteger(participant, "totalDamageTaken"),
+
+                nullableInteger(participant, "visionScore"),
+                nullableInteger(participant, "wardsPlaced"),
+                nullableInteger(participant, "wardsKilled"),
+
+                nullableInteger(participant, "totalMinionsKilled"),
+                nullableInteger(participant, "neutralMinionsKilled"),
+
+                nullableInteger(participant, "summoner1Id"),
+                nullableInteger(participant, "summoner2Id"),
+
+                context.gameVersion(),
+                context.queueId(),
+                context.gameDurationMs(),
+
+                OffsetDateTime.now()
+        );
     }
 
     private void markProcessing(String matchId) {
