@@ -456,7 +456,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         RuneLoadout loadout = parseRuneLoadout(perks);
 
         jdbcTemplate.update("""
-                INSERT INTO analyzed.v_participant_loadouts
+                INSERT INTO analyzed.participant_loadouts
                 (
                     match_id,
                     participant_id,
@@ -804,7 +804,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             );
 
             jdbcTemplate.update("""
-                    INSERT INTO analyzed.v_participant_skill_order
+                    INSERT INTO analyzed.participant_skill_order
                     (
                         match_id,
                         participant_id,
@@ -917,12 +917,12 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         jdbcTemplate.update("DELETE FROM core.participant_skill_order WHERE match_id = ?", matchId);
         jdbcTemplate.update("DELETE FROM core.participants WHERE match_id = ?", matchId);
 
-        jdbcTemplate.update("DELETE FROM analyzed.v_participant_item_events WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.v_participant_rune_selections WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.v_participant_loadouts WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.v_participant_final_items WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.v_participant_skill_order WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.v_player_match_stats WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.participant_item_events WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.participant_rune_selections WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.participant_loadouts WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.participant_final_items WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.participant_skill_order WHERE match_id = ?", matchId);
+        jdbcTemplate.update("DELETE FROM analyzed.player_match_stats WHERE match_id = ?", matchId);
     }
 
     private boolean hasTimelineEvents(String matchId) {
