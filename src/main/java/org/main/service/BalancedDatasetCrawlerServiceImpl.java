@@ -22,7 +22,6 @@ import org.main.persistence.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawlerService {
@@ -64,7 +63,6 @@ public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawler
     }
 
     @Override
-    @Transactional
     public BalancedDatasetResultDto collectBalancedDatasetEUW(List<String> seedPuuids,
                                                               int targetPerBucket,
                                                               int matchesPerPlayer,
@@ -112,11 +110,22 @@ public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawler
             log.info("Visiting player for dataset crawl: puuid='{}', visited={}/{}",
                     currentPuuid, visitedPlayers.size(), effectiveMaxPlayers);
 
-            List<String> matchIds = riotApiClient.getMatchIdsByPuuidEurope(
-                    currentPuuid,
-                    0,
-                    effectiveMatchesPerPlayer
-            );
+            List<String> matchIds;
+
+            try {
+                matchIds = riotApiClient.getMatchIdsByPuuidEurope(
+                        currentPuuid,
+                        0,
+                        effectiveMatchesPerPlayer
+                );
+            } catch (Exception ex) {
+                log.warn(
+                        "Skipping player because match ids could not be loaded: puuid='{}', reason='{}'",
+                        currentPuuid,
+                        ex.getMessage()
+                );
+                continue;
+            }
 
             for (String matchId : matchIds) {
                 if (isBalanced(bucketCounts, effectiveTarget)) {
@@ -129,7 +138,19 @@ public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawler
 
                 scannedMatches++;
 
-                JsonNode matchJson = loadMatchJson(matchId);
+                JsonNode matchJson;
+
+                try {
+                    matchJson = loadMatchJson(matchId);
+                } catch (Exception ex) {
+                    skippedMatches++;
+                    log.warn(
+                            "Skipping match because match details could not be loaded: matchId='{}', reason='{}'",
+                            matchId,
+                            ex.getMessage()
+                    );
+                    continue;
+                }
 
                 if (!isUsefulMatch(matchJson)) {
                     skippedMatches++;
@@ -145,15 +166,23 @@ public class BalancedDatasetCrawlerServiceImpl implements BalancedDatasetCrawler
                     savedNewMatches++;
                 }
 
-                timelineIngestService.ingestTimelineIfMissing(matchId);
+                try {
+                    timelineIngestService.ingestTimelineIfMissing(matchId);
+                } catch (Exception ex) {
+                    skippedMatches++;
+                    log.warn(
+                            "Skipping timeline because it could not be ingested: matchId='{}', reason='{}'",
+                            matchId,
+                            ex.getMessage()
+                    );
+                }
             }
         }
 
         boolean balanced = isBalanced(bucketCounts, effectiveTarget);
 
-        log.info("Balanced dataset crawl finished: balanced={},"
-                        +
-                        " visitedPlayers={}, scannedMatches={}, savedNewMatches={}, skippedMatches={}",
+        log.info("Balanced dataset crawl finished: balanced={}, "
+                        + "visitedPlayers={}, scannedMatches={}, savedNewMatches={}, skippedMatches={}",
                 balanced, visitedPlayers.size(), scannedMatches, savedNewMatches, skippedMatches);
 
         return new BalancedDatasetResultDto(
