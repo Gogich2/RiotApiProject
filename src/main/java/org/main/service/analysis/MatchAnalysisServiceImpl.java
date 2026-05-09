@@ -19,15 +19,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
 
     private static final Logger log = LoggerFactory.getLogger(MatchAnalysisServiceImpl.class);
 
-    private record TimelineSkillEvent(
-            String matchId,
-            short participantId,
-            short skillSlot,
-            String levelUpType,
-            Long timestampMs
-    ) {
-    }
-
     private static final List<String> ITEM_EVENT_TYPES = List.of(
             "ITEM_PURCHASED",
             "ITEM_SOLD",
@@ -82,16 +73,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         transactionTemplate.executeWithoutResult(status -> processMatchInsideTransaction(matchId));
     }
 
-    private TimelineSkillEvent mapTimelineSkillEvent(ResultSet rs, int rowNum) throws SQLException {
-        return new TimelineSkillEvent(
-                rs.getString("match_id"),
-                rs.getShort("participant_id"),
-                rs.getShort("skill_slot"),
-                rs.getString("level_up_type"),
-                getLong(rs, "ts_ms")
-        );
-    }
-
     private void processMatchInsideTransaction(String matchId) {
         if (matchId == null || matchId.isBlank()) {
             throw new IllegalArgumentException("matchId is required");
@@ -126,10 +107,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             participantContextById.put(context.participantId(), context);
 
             saveCoreParticipant(context, participant);
-
-            savePlayerMatchStats(context, participant);
             saveFinalItems(context, participant);
-            saveLoadout(context, participant);
             saveRuneSelections(context, participant);
         }
 
@@ -392,8 +370,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 continue;
             }
 
-            OffsetDateTime now = OffsetDateTime.now();
-
             jdbcTemplate.update("""
                     INSERT INTO core.participant_final_items
                     (
@@ -413,101 +389,9 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     context.participantId(),
                     slot,
                     itemId,
-                    now
-            );
-
-            jdbcTemplate.update("""
-                    INSERT INTO analyzed.participant_final_items
-                    (
-                        match_id,
-                        participant_id,
-                        puuid,
-                        champion_id,
-                        team_id,
-                        win,
-                        item_id,
-                        item_slot,
-                        game_version,
-                        queue_id,
-                        game_duration_ms,
-                        created_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    context.matchId(),
-                    context.participantId(),
-                    context.puuid(),
-                    context.championId(),
-                    context.teamId(),
-                    context.win(),
-                    itemId,
-                    slot,
-                    context.gameVersion(),
-                    context.queueId(),
-                    context.gameDurationMs(),
-                    now
+                    OffsetDateTime.now()
             );
         }
-    }
-
-    private void saveLoadout(ParticipantContext context, JsonNode participant) {
-        JsonNode perks = participant.path("perks");
-
-        RuneLoadout loadout = parseRuneLoadout(perks);
-
-        jdbcTemplate.update("""
-                INSERT INTO analyzed.participant_loadouts
-                (
-                    match_id,
-                    participant_id,
-                    puuid,
-                    champion_id,
-                    team_id,
-                    win,
-                    primary_style_id,
-                    secondary_style_id,
-                    keystone_id,
-                    primary_rune_1_id,
-                    primary_rune_2_id,
-                    primary_rune_3_id,
-                    secondary_rune_1_id,
-                    secondary_rune_2_id,
-                    stat_offense_id,
-                    stat_flex_id,
-                    stat_defense_id,
-                    summoner1_id,
-                    summoner2_id,
-                    game_version,
-                    queue_id,
-                    game_duration_ms,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                context.matchId(),
-                context.participantId(),
-                context.puuid(),
-                context.championId(),
-                context.teamId(),
-                context.win(),
-                loadout.primaryStyleId(),
-                loadout.secondaryStyleId(),
-                loadout.keystoneId(),
-                loadout.primaryRune1Id(),
-                loadout.primaryRune2Id(),
-                loadout.primaryRune3Id(),
-                loadout.secondaryRune1Id(),
-                loadout.secondaryRune2Id(),
-                loadout.statOffenseId(),
-                loadout.statFlexId(),
-                loadout.statDefenseId(),
-                nullableInteger(participant, "summoner1Id"),
-                nullableInteger(participant, "summoner2Id"),
-                context.gameVersion(),
-                context.queueId(),
-                context.gameDurationMs(),
-                OffsetDateTime.now()
-        );
     }
 
     private void saveRuneSelections(ParticipantContext context, JsonNode participant) {
@@ -545,7 +429,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 }
 
                 boolean isKeystone = "PRIMARY".equals(styleType) && order == 0;
-                OffsetDateTime now = OffsetDateTime.now();
 
                 jdbcTemplate.update("""
                         INSERT INTO core.participant_rune_selections
@@ -587,55 +470,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                         nullableInteger(selection, "var1"),
                         nullableInteger(selection, "var2"),
                         nullableInteger(selection, "var3"),
-                        now
-                );
-
-                jdbcTemplate.update("""
-                        INSERT INTO analyzed.participant_rune_selections
-                        (
-                            match_id,
-                            participant_id,
-                            puuid,
-                            champion_id,
-                            team_id,
-                            win,
-                            style_id,
-                            style_type,
-                            rune_id,
-                            rune_slot,
-                            selection_order,
-                            is_keystone,
-                            var1,
-                            var2,
-                            var3,
-                            game_version,
-                            queue_id,
-                            game_duration_ms,
-                            created_at
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT (match_id, participant_id, rune_id)
-                        DO NOTHING
-                        """,
-                        context.matchId(),
-                        context.participantId(),
-                        context.puuid(),
-                        context.championId(),
-                        context.teamId(),
-                        context.win(),
-                        styleId,
-                        styleType,
-                        runeId,
-                        order,
-                        order,
-                        isKeystone,
-                        nullableInteger(selection, "var1"),
-                        nullableInteger(selection, "var2"),
-                        nullableInteger(selection, "var3"),
-                        context.gameVersion(),
-                        context.queueId(),
-                        context.gameDurationMs(),
-                        now
+                        OffsetDateTime.now()
                 );
 
                 order++;
@@ -670,7 +505,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             }
 
             Integer minute = event.timestampMs() == null ? null : (int) (event.timestampMs() / 60000);
-            OffsetDateTime now = OffsetDateTime.now();
 
             jdbcTemplate.update("""
                     INSERT INTO core.participant_item_events
@@ -693,43 +527,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     event.eventType(),
                     event.timestampMs(),
                     minute,
-                    now
-            );
-
-            jdbcTemplate.update("""
-                    INSERT INTO analyzed.participant_item_events
-                    (
-                        match_id,
-                        participant_id,
-                        puuid,
-                        champion_id,
-                        team_id,
-                        win,
-                        item_id,
-                        event_type,
-                        timestamp_ms,
-                        minute,
-                        game_version,
-                        queue_id,
-                        created_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (match_id, participant_id, event_type, item_id, timestamp_ms)
-                    DO NOTHING
-                    """,
-                    context.matchId(),
-                    context.participantId(),
-                    context.puuid(),
-                    context.championId(),
-                    context.teamId(),
-                    context.win(),
-                    event.itemId(),
-                    event.eventType(),
-                    event.timestampMs(),
-                    minute,
-                    context.gameVersion(),
-                    context.queueId(),
-                    now
+                    OffsetDateTime.now()
             );
         }
     }
@@ -770,7 +568,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
 
             int skillOrder = orderByParticipant.merge(event.participantId(), 1, Integer::sum);
             Integer minute = event.timestampMs() == null ? null : (int) (event.timestampMs() / 60000);
-            OffsetDateTime now = OffsetDateTime.now();
 
             jdbcTemplate.update("""
                     INSERT INTO core.participant_skill_order
@@ -800,114 +597,19 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     event.levelUpType(),
                     event.timestampMs(),
                     minute,
-                    now
-            );
-
-            jdbcTemplate.update("""
-                    INSERT INTO analyzed.participant_skill_order
-                    (
-                        match_id,
-                        participant_id,
-                        puuid,
-                        champion_id,
-                        team_id,
-                        win,
-                        skill_slot,
-                        level_up_type,
-                        timestamp_ms,
-                        minute,
-                        skill_order,
-                        game_version,
-                        queue_id,
-                        game_duration_ms,
-                        created_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (match_id, participant_id, skill_order)
-                    DO NOTHING
-                    """,
-                    context.matchId(),
-                    context.participantId(),
-                    context.puuid(),
-                    context.championId(),
-                    context.teamId(),
-                    context.win(),
-                    event.skillSlot(),
-                    event.levelUpType(),
-                    event.timestampMs(),
-                    minute,
-                    skillOrder,
-                    context.gameVersion(),
-                    context.queueId(),
-                    context.gameDurationMs(),
-                    now
+                    OffsetDateTime.now()
             );
         }
     }
 
-    private RuneLoadout parseRuneLoadout(JsonNode perks) {
-        JsonNode styles = perks.path("styles");
-        JsonNode statPerks = perks.path("statPerks");
-
-        Integer primaryStyleId = null;
-        Integer secondaryStyleId = null;
-
-        Integer keystoneId = null;
-        Integer primaryRune1Id = null;
-        Integer primaryRune2Id = null;
-        Integer primaryRune3Id = null;
-
-        Integer secondaryRune1Id = null;
-        Integer secondaryRune2Id = null;
-
-        if (styles.isArray()) {
-            for (JsonNode style : styles) {
-                Integer styleId = nullableInteger(style, "style");
-                String description = nullableText(style, "description");
-                JsonNode selections = style.path("selections");
-
-                boolean primary = "primaryStyle".equalsIgnoreCase(description);
-                boolean secondary = "subStyle".equalsIgnoreCase(description);
-
-                if (primary) {
-                    primaryStyleId = styleId;
-
-                    keystoneId = runeAt(selections, 0);
-                    primaryRune1Id = runeAt(selections, 1);
-                    primaryRune2Id = runeAt(selections, 2);
-                    primaryRune3Id = runeAt(selections, 3);
-                }
-
-                if (secondary) {
-                    secondaryStyleId = styleId;
-
-                    secondaryRune1Id = runeAt(selections, 0);
-                    secondaryRune2Id = runeAt(selections, 1);
-                }
-            }
-        }
-
-        return new RuneLoadout(
-                primaryStyleId,
-                secondaryStyleId,
-                keystoneId,
-                primaryRune1Id,
-                primaryRune2Id,
-                primaryRune3Id,
-                secondaryRune1Id,
-                secondaryRune2Id,
-                nullableInteger(statPerks, "offense"),
-                nullableInteger(statPerks, "flex"),
-                nullableInteger(statPerks, "defense")
+    private TimelineSkillEvent mapTimelineSkillEvent(ResultSet rs, int rowNum) throws SQLException {
+        return new TimelineSkillEvent(
+                rs.getString("match_id"),
+                rs.getShort("participant_id"),
+                rs.getShort("skill_slot"),
+                rs.getString("level_up_type"),
+                getLong(rs, "ts_ms")
         );
-    }
-
-    private Integer runeAt(JsonNode selections, int index) {
-        if (!selections.isArray() || selections.size() <= index) {
-            return null;
-        }
-
-        return nullableInteger(selections.get(index), "perk");
     }
 
     private void deletePreviousAnalysis(String matchId) {
@@ -916,13 +618,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         jdbcTemplate.update("DELETE FROM core.participant_final_items WHERE match_id = ?", matchId);
         jdbcTemplate.update("DELETE FROM core.participant_skill_order WHERE match_id = ?", matchId);
         jdbcTemplate.update("DELETE FROM core.participants WHERE match_id = ?", matchId);
-
-        jdbcTemplate.update("DELETE FROM analyzed.participant_item_events WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.participant_rune_selections WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.participant_loadouts WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.participant_final_items WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.participant_skill_order WHERE match_id = ?", matchId);
-        jdbcTemplate.update("DELETE FROM analyzed.player_match_stats WHERE match_id = ?", matchId);
     }
 
     private boolean hasTimelineEvents(String matchId) {
@@ -933,114 +628,6 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 """, Integer.class, matchId);
 
         return count != null && count > 0;
-    }
-
-    private void savePlayerMatchStats(ParticipantContext context, JsonNode participant) {
-        jdbcTemplate.update("""
-                INSERT INTO analyzed.player_match_stats
-                (
-                    match_id,
-                    participant_id,
-                    puuid,
-                    riot_game_name,
-                    riot_tagline,
-                    summoner_name,
-                    champion_id,
-                    champion_name,
-                    team_id,
-                    win,
-                    kills,
-                    deaths,
-                    assists,
-                    champ_level,
-                    gold_earned,
-                    gold_spent,
-                    total_damage_dealt_to_champions,
-                    total_damage_taken,
-                    vision_score,
-                    wards_placed,
-                    wards_killed,
-                    total_minions_killed,
-                    neutral_minions_killed,
-                    summoner1_id,
-                    summoner2_id,
-                    game_version,
-                    queue_id,
-                    game_duration_ms,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (match_id, participant_id)
-                DO UPDATE SET
-                    puuid = EXCLUDED.puuid,
-                    riot_game_name = EXCLUDED.riot_game_name,
-                    riot_tagline = EXCLUDED.riot_tagline,
-                    summoner_name = EXCLUDED.summoner_name,
-                    champion_id = EXCLUDED.champion_id,
-                    champion_name = EXCLUDED.champion_name,
-                    team_id = EXCLUDED.team_id,
-                    win = EXCLUDED.win,
-                    kills = EXCLUDED.kills,
-                    deaths = EXCLUDED.deaths,
-                    assists = EXCLUDED.assists,
-                    champ_level = EXCLUDED.champ_level,
-                    gold_earned = EXCLUDED.gold_earned,
-                    gold_spent = EXCLUDED.gold_spent,
-                    total_damage_dealt_to_champions = EXCLUDED.total_damage_dealt_to_champions,
-                    total_damage_taken = EXCLUDED.total_damage_taken,
-                    vision_score = EXCLUDED.vision_score,
-                    wards_placed = EXCLUDED.wards_placed,
-                    wards_killed = EXCLUDED.wards_killed,
-                    total_minions_killed = EXCLUDED.total_minions_killed,
-                    neutral_minions_killed = EXCLUDED.neutral_minions_killed,
-                    summoner1_id = EXCLUDED.summoner1_id,
-                    summoner2_id = EXCLUDED.summoner2_id,
-                    game_version = EXCLUDED.game_version,
-                    queue_id = EXCLUDED.queue_id,
-                    game_duration_ms = EXCLUDED.game_duration_ms
-                """,
-                context.matchId(),
-                context.participantId(),
-                context.puuid(),
-
-                nullableText(participant, "riotIdGameName"),
-                nullableText(participant, "riotIdTagline"),
-                nullableText(participant, "summonerName"),
-
-                context.championId(),
-                nullableText(participant, "championName"),
-
-                context.teamId(),
-                context.win(),
-
-                nullableInteger(participant, "kills"),
-                nullableInteger(participant, "deaths"),
-                nullableInteger(participant, "assists"),
-
-                nullableInteger(participant, "champLevel"),
-
-                nullableInteger(participant, "goldEarned"),
-                nullableInteger(participant, "goldSpent"),
-
-                nullableInteger(participant, "totalDamageDealtToChampions"),
-                nullableInteger(participant, "totalDamageTaken"),
-
-                nullableInteger(participant, "visionScore"),
-                nullableInteger(participant, "wardsPlaced"),
-                nullableInteger(participant, "wardsKilled"),
-
-                nullableInteger(participant, "totalMinionsKilled"),
-                nullableInteger(participant, "neutralMinionsKilled"),
-
-                nullableInteger(participant, "summoner1Id"),
-                nullableInteger(participant, "summoner2Id"),
-
-                context.gameVersion(),
-                context.queueId(),
-                context.gameDurationMs(),
-
-                OffsetDateTime.now()
-        );
     }
 
     private void markProcessing(String matchId) {
@@ -1186,18 +773,12 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
     ) {
     }
 
-    private record RuneLoadout(
-            Integer primaryStyleId,
-            Integer secondaryStyleId,
-            Integer keystoneId,
-            Integer primaryRune1Id,
-            Integer primaryRune2Id,
-            Integer primaryRune3Id,
-            Integer secondaryRune1Id,
-            Integer secondaryRune2Id,
-            Integer statOffenseId,
-            Integer statFlexId,
-            Integer statDefenseId
+    private record TimelineSkillEvent(
+            String matchId,
+            short participantId,
+            short skillSlot,
+            String levelUpType,
+            Long timestampMs
     ) {
     }
 }
