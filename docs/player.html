@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Player</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<header class="site-header">
+    <a class="site-header__logo" href="index.html">Riot Stats</a>
+
+    <div class="search">
+        <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
+        <div class="search__results" id="globalSearchResults"></div>
+    </div>
+</header>
+
+<main class="page">
+    <section class="hero" id="playerHero"></section>
+
+    <section class="stats-grid" id="playerStats"></section>
+
+    <section class="section">
+        <h2 class="section__title">Insights and recommendations</h2>
+        <div class="insights" id="playerInsights"></div>
+    </section>
+
+    <section class="section">
+        <h2 class="section__title">Recent matches</h2>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Champion</th>
+                    <th>Result</th>
+                    <th>KDA</th>
+                    <th>Queue</th>
+                    <th>Version</th>
+                    <th>Duration</th>
+                </tr>
+                </thead>
+                <tbody id="playerMatchesBody"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/search.js"></script>
+<script src="js/player.js"></script>
+</body>
+</html>
