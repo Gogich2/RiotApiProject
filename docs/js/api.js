@@ -31,7 +31,13 @@ const api = {
 };
 
 async function fetchJson(url) {
-    const response = await fetch(`${API_BASE_URL}${url}`);
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+        method: 'GET',
+        headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'Accept': 'application/json'
+        }
+    });
 
     if (!response.ok) {
         throw new Error(`Request failed: ${response.status}`);
