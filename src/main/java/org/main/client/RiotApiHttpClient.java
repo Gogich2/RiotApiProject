@@ -25,6 +25,8 @@ public class RiotApiHttpClient implements RiotApiClient {
 
     private static final String EUROPE_REGIONAL_HOST = "https://europe.api.riotgames.com";
 
+    private static final String EUW_PLATFORM_HOST = "https://euw1.api.riotgames.com";
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     private final RiotRateLimiter riotRateLimiter;
@@ -64,7 +66,7 @@ public class RiotApiHttpClient implements RiotApiClient {
                 toUriString();
 
         log.debug("Calling Riot account endpoint: gameName='{}', tagLine='{}'", gameName, tagLine);
-        return exchangeJson(url);
+      return exchangeJson(url);
     }
 
     @Override
@@ -103,6 +105,28 @@ public class RiotApiHttpClient implements RiotApiClient {
                 toUriString();
 
         log.debug("Calling Riot match timeline endpoint: matchId='{}'", matchId);
+        return exchangeJson(url);
+    }
+
+    @Override
+    public JsonNode getSummonerByPuuidEuw(String puuid) {
+        String url = UriComponentsBuilder.fromHttpUrl(EUW_PLATFORM_HOST).
+                path("/lol/summoner/v4/summoners/by-puuid/{puuid}").
+                buildAndExpand(puuid).
+                toUriString();
+
+        log.debug("Calling Riot summoner endpoint: puuid='{}'", puuid);
+        return exchangeJson(url);
+    }
+
+    @Override
+    public JsonNode getLeagueEntriesBySummonerIdEuw(String summonerId) {
+        String url = UriComponentsBuilder.fromHttpUrl(EUW_PLATFORM_HOST).
+                path("/lol/league/v4/entries/by-summoner/{summonerId}").
+                buildAndExpand(summonerId).
+                toUriString();
+
+        log.debug("Calling Riot league entries endpoint: summonerId='{}'", summonerId);
         return exchangeJson(url);
     }
 

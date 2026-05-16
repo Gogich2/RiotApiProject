@@ -12,4 +12,8 @@ public interface RiotApiClient {
     JsonNode getMatchByIdEurope(String matchId);
 
     JsonNode getMatchTimelineByIdEurope(String matchId);
+
+    JsonNode getSummonerByPuuidEuw(String puuid);
+
+    JsonNode getLeagueEntriesBySummonerIdEuw(String summonerId);
 }

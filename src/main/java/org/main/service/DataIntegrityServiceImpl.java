@@ -2,10 +2,13 @@ package org.main.service;
 
 import java.util.List;
 import org.main.dto.DataIntegrityReportDto;
+import org.main.dto.RankRepairResultDto;
+import org.main.persistence.entity.PlayerEntity;
 import org.main.persistence.repository.MatchRepository;
 import org.main.persistence.repository.MatchTimelineEventRepository;
 import org.main.persistence.repository.MatchTimelineFrameRepository;
 import org.main.persistence.repository.MatchTimelineRawRepository;
+import org.main.persistence.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,16 +28,24 @@ public class DataIntegrityServiceImpl implements DataIntegrityService {
 
     private final TimelineIngestService timelineIngestService;
 
+    private final PlayerRepository playerRepository;
+
+    private final RankEnrichmentService rankEnrichmentService;
+
     public DataIntegrityServiceImpl(MatchRepository matchRepository,
                                     MatchTimelineRawRepository timelineRawRepository,
                                     MatchTimelineFrameRepository timelineFrameRepository,
                                     MatchTimelineEventRepository timelineEventRepository,
-                                    TimelineIngestService timelineIngestService) {
+                                    TimelineIngestService timelineIngestService,
+                                    PlayerRepository playerRepository,
+                                    RankEnrichmentService rankEnrichmentService) {
         this.matchRepository = matchRepository;
         this.timelineRawRepository = timelineRawRepository;
         this.timelineFrameRepository = timelineFrameRepository;
         this.timelineEventRepository = timelineEventRepository;
         this.timelineIngestService = timelineIngestService;
+        this.playerRepository = playerRepository;
+        this.rankEnrichmentService = rankEnrichmentService;
     }
 
     @Override
@@ -99,6 +110,32 @@ public class DataIntegrityServiceImpl implements DataIntegrityService {
         }
 
         return check();
+    }
+
+    @Override
+    public RankRepairResultDto repairMissingRanks(int limitRaw) {
+        int limit = normalizeLimit(limitRaw);
+
+        List<PlayerEntity> players = playerRepository.findAll().
+                stream().
+                filter(player -> player.getPuuid() != null && !player.getPuuid().isBlank()).
+                filter(player -> !rankEnrichmentService.hasRankData(player.getPuuid())).
+                limit(limit).
+                toList();
+
+        int enriched = 0;
+
+        for (PlayerEntity player : players) {
+            try {
+                if (!rankEnrichmentService.enrichRanksForPuuidEuw(player.getPuuid()).isEmpty()) {
+                    enriched++;
+                }
+            } catch (Exception ex) {
+                log.warn("Could not enrich rank: puuid='{}'", player.getPuuid(), ex);
+            }
+        }
+
+        return new RankRepairResultDto(players.size(), enriched);
     }
 
     private int normalizeLimit(int limit) {
