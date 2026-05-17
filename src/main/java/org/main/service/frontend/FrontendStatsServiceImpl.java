@@ -391,6 +391,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
         return summaries.get(0);
     }
 
+
     @Override
     public List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit) {
         int safeLimit = limit <= 0 ? 20 : Math.min(limit, 50);
@@ -424,7 +425,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         m.game_creation_ms,
                         m.game_duration_ms
                     FROM core.participants p
-                    JOIN core.matches m
+                    JOIN core.match_details_view m
                         ON m.match_id = p.match_id
                     LEFT JOIN latest_champions lc
                         ON lc.champion_id = p.champion_id

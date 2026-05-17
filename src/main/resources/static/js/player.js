@@ -74,6 +74,7 @@ function renderPlayerHero(player) {
     const playerName = player.gameName || 'Unknown';
     const tagLine = player.tagLine ? `#${player.tagLine}` : '';
     const iconUrl = getProfileIconUrl(player.profileIconId);
+
     const iconMarkup = iconUrl
         ? `
             <img
@@ -103,13 +104,6 @@ function renderPlayerHero(player) {
     `;
 }
 
-function getPlayerInitials(playerName) {
-    if (!playerName) {
-        return '?';
-    }
-
-    return String(playerName).trim().charAt(0).toUpperCase() || '?';
-}
 function renderPlayerStats(player) {
     const container = document.getElementById('playerStats');
 
@@ -153,12 +147,16 @@ function renderPlayerChampions(champions) {
 
     container.innerHTML = champions.map(champion => `
         <a class="player-champion-card" href="/champion.html?id=${encodeURIComponent(champion.championId)}">
-            <img
-                class="player-champion-card__image"
-                src="${escapeHtml(champion.imageUrl || '')}"
-                alt="${escapeHtml(champion.championName || 'Champion')}"
-                onerror="this.style.display='none'"
-            >
+            ${
+        champion.imageUrl
+            ? `<img
+                        class="player-champion-card__image"
+                        src="${escapeHtml(champion.imageUrl)}"
+                        alt="${escapeHtml(champion.championName || 'Champion')}"
+                        onerror="this.onerror=null; this.remove();"
+                    >`
+            : ''
+    }
 
             <div class="player-champion-card__main">
                 <strong class="player-champion-card__name">${escapeHtml(champion.championName || 'Unknown')}</strong>
@@ -168,7 +166,8 @@ function renderPlayerChampions(champions) {
             </div>
 
             <div class="player-champion-card__kda">
-                Avg KDA: ${formatDecimal(champion.averageKills)}/${formatDecimal(champion.averageDeaths)}/${formatDecimal(champion.averageAssists)}
+                Avg KDA:
+                ${formatDecimal(champion.averageKills)}/${formatDecimal(champion.averageDeaths)}/${formatDecimal(champion.averageAssists)}
             </div>
         </a>
     `).join('');
@@ -194,8 +193,6 @@ function renderRankCard(title, rank) {
     if (!rank) {
         return `
             <article class="rank-card rank-card--unranked">
-                <img class="rank-card__image" src="/img/ranks/unranked.png" alt="Unranked rank" onerror="this.style.display='none'">
-
                 <div class="rank-card__content">
                     <div class="rank-card__header">
                         <span class="rank-card__queue">${escapeHtml(title)}</span>
@@ -212,15 +209,20 @@ function renderRankCard(title, rank) {
     const games = (rank.wins || 0) + (rank.losses || 0);
     const winrate = games > 0 ? (rank.wins * 100 / games) : 0;
     const tier = rank.tier || 'unknown';
+    const rankImageUrl = getRankImageUrl(tier);
 
     return `
         <article class="rank-card rank-card--${escapeHtml(tier.toLowerCase())}">
-            <img
-                class="rank-card__image"
-                src="${escapeHtml(getRankImageUrl(tier))}"
-                alt="${escapeHtml(tier)} rank"
-                onerror="this.style.display='none'"
-            >
+            ${
+        rankImageUrl
+            ? `<img
+                        class="rank-card__image"
+                        src="${escapeHtml(rankImageUrl)}"
+                        alt="${escapeHtml(tier)} rank"
+                        onerror="this.onerror=null; this.remove();"
+                    >`
+            : ''
+    }
 
             <div class="rank-card__content">
                 <div class="rank-card__header">
@@ -509,35 +511,62 @@ function renderPlayerMatches(matches) {
         return;
     }
 
-    body.innerHTML = matches.map(match => `
-        <tr>
-            <td>
-                <a class="match-champion-link" href="/champion.html?id=${encodeURIComponent(match.championId)}">
-                    ${
-        match.championImageUrl
-            ? `<img
-                                class="match-champion-link__image"
-                                src="${escapeHtml(match.championImageUrl)}"
-                                alt="${escapeHtml(match.championName || 'Champion')}"
-                                onerror="this.onerror=null; this.remove();"
-                            >`
-            : ''
-    }
-                    <span>${escapeHtml(match.championName || 'Unknown')}</span>
-                </a>
-            </td>
-            <td>
-                <span class="${match.win ? 'result result--win' : 'result result--loss'}">
-                    ${match.win ? 'Win' : 'Loss'}
-                </span>
-            </td>
-            <td>${formatKda(match.kills, match.deaths, match.assists)}</td>
-            <td>${match.queueId || '-'}</td>
-            <td>${escapeHtml(match.gameVersion || '-')}</td>
-            <td>${formatDuration(match.gameDurationMs)}</td>
-        </tr>
-    `).join('');
+    body.innerHTML = matches.map(match => {
+        const championId = getValue(match, 'championId', 'champion_id');
+        const championName = getValue(match, 'championName', 'champion_name') || 'Unknown';
+        const championImageUrl = getValue(match, 'championImageUrl', 'champion_image_url');
+        const queueId = getValue(match, 'queueId', 'queue_id');
+        const gameVersion = getValue(match, 'gameVersion', 'game_version');
+        const gameDurationMs = getValue(match, 'gameDurationMs', 'game_duration_ms');
+        const gameDurationSeconds = getValue(match, 'gameDurationSeconds', 'game_duration_seconds');
+
+        return `
+            <tr>
+                <td>
+                    <a class="match-champion-link" href="/champion.html?id=${encodeURIComponent(championId)}">
+                        ${
+            championImageUrl
+                ? `<img
+                                    class="match-champion-link__image"
+                                    src="${escapeHtml(championImageUrl)}"
+                                    alt="${escapeHtml(championName)}"
+                                    onerror="this.onerror=null; this.remove();"
+                                >`
+                : ''
+        }
+                        <span>${escapeHtml(championName)}</span>
+                    </a>
+                </td>
+                <td>
+                    <span class="${match.win ? 'result result--win' : 'result result--loss'}">
+                        ${match.win ? 'Win' : 'Loss'}
+                    </span>
+                </td>
+                <td>${formatKda(match.kills, match.deaths, match.assists)}</td>
+                <td>${escapeHtml(formatQueue(queueId))}</td>
+                <td>${escapeHtml(formatPatchVersion(gameVersion))}</td>
+                <td>${formatMatchDuration(gameDurationMs, gameDurationSeconds)}</td>
+            </tr>
+        `;
+    }).join('');
 }
+
+function getValue(object, camelCaseKey, snakeCaseKey) {
+    if (!object) {
+        return null;
+    }
+
+    if (object[camelCaseKey] !== undefined && object[camelCaseKey] !== null) {
+        return object[camelCaseKey];
+    }
+
+    if (object[snakeCaseKey] !== undefined && object[snakeCaseKey] !== null) {
+        return object[snakeCaseKey];
+    }
+
+    return null;
+}
+
 function findRank(ranks, queueType) {
     return ranks.find(rank => rank.queueType === queueType);
 }
@@ -567,6 +596,55 @@ function formatQueueName(queueType) {
     return queueType || 'Unknown queue';
 }
 
+function formatQueue(queueId) {
+    const queues = {
+        400: 'Normal Draft',
+        420: 'Ranked Solo/Duo',
+        430: 'Normal Blind',
+        440: 'Ranked Flex',
+        450: 'ARAM',
+        700: 'Clash',
+        720: 'ARAM Clash',
+        830: 'Co-op Intro',
+        840: 'Co-op Beginner',
+        850: 'Co-op Intermediate',
+        900: 'URF',
+        1020: 'One for All',
+        1300: 'Nexus Blitz',
+        1400: 'Ultimate Spellbook',
+        1700: 'Arena',
+        1710: 'Arena'
+    };
+
+    const normalized = Number(queueId);
+
+    if (!Number.isFinite(normalized)) {
+        return '-';
+    }
+
+    return queues[normalized] || `Queue ${normalized}`;
+}
+
+function formatPatchVersion(gameVersion) {
+    if (!gameVersion) {
+        return '-';
+    }
+
+    return String(gameVersion).split('.').slice(0, 2).join('.');
+}
+
+function formatMatchDuration(gameDurationMs, gameDurationSeconds) {
+    if (gameDurationMs) {
+        return formatDuration(gameDurationMs);
+    }
+
+    if (gameDurationSeconds) {
+        return formatDuration(Number(gameDurationSeconds) * 1000);
+    }
+
+    return '-';
+}
+
 function formatRank(rank) {
     if (!rank || !rank.tier) {
         return 'Unranked';
@@ -584,11 +662,26 @@ function formatRankTier(rank) {
 }
 
 function getRankImageUrl(tier) {
-    if (!tier) {
-        return '/img/ranks/unranked.png';
+    const allowed = [
+        'iron',
+        'bronze',
+        'silver',
+        'gold',
+        'platinum',
+        'emerald',
+        'diamond',
+        'master',
+        'grandmaster',
+        'challenger'
+    ];
+
+    const normalized = String(tier || '').toLowerCase();
+
+    if (!allowed.includes(normalized)) {
+        return null;
     }
 
-    return `/img/ranks/${tier.toLowerCase()}.png`;
+    return `/img/ranks/${normalized}.png`;
 }
 
 function getRankScore(entry) {
@@ -618,6 +711,22 @@ function getRankScore(entry) {
     return (tierScore[tier] ?? 0)
         + (divisionScore[rankValue] ?? 0)
         + Number(entry.leaguePoints ?? 0);
+}
+
+function getProfileIconUrl(profileIconId) {
+    if (!profileIconId) {
+        return null;
+    }
+
+    return `https://ddragon.leagueoflegends.com/cdn/15.10.1/img/profileicon/${profileIconId}.png`;
+}
+
+function getPlayerInitials(playerName) {
+    if (!playerName) {
+        return '?';
+    }
+
+    return String(playerName).trim().charAt(0).toUpperCase() || '?';
 }
 
 function calculateLpChange(current, previous) {
@@ -736,12 +845,4 @@ function escapeHtml(value) {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
-}
-
-function getProfileIconUrl(profileIconId) {
-    if (!profileIconId) {
-        return null;
-    }
-
-    return `https://ddragon.leagueoflegends.com/cdn/15.10.1/img/profileicon/${profileIconId}.png`;
 }
