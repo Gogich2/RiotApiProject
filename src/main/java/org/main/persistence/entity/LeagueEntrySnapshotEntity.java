@@ -8,30 +8,23 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(
-        name = "league_entries",
-        schema = "raw",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"platform", "summoner_id", "queue_type"})
-        }
-)
-public class LeagueEntryEntity {
+@Table(name = "league_entry_snapshots", schema = "raw")
+public class LeagueEntrySnapshotEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "puuid", nullable = false)
+    private String puuid;
+
     @Column(name = "summoner_id")
     private String summonerId;
-
-    @Column(name = "puuid")
-    private String puuid;
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
@@ -68,19 +61,11 @@ public class LeagueEntryEntity {
     @Column(name = "inactive")
     private Boolean inactive;
 
-    @Column(name = "last_synced_at", nullable = false)
-    private OffsetDateTime lastSyncedAt;
+    @Column(name = "synced_at", nullable = false)
+    private OffsetDateTime syncedAt;
 
     public Long getId() {
         return id;
-    }
-
-    public String getSummonerId() {
-        return summonerId;
-    }
-
-    public void setSummonerId(String summonerId) {
-        this.summonerId = summonerId;
     }
 
     public String getPuuid() {
@@ -89,6 +74,14 @@ public class LeagueEntryEntity {
 
     public void setPuuid(String puuid) {
         this.puuid = puuid;
+    }
+
+    public String getSummonerId() {
+        return summonerId;
+    }
+
+    public void setSummonerId(String summonerId) {
+        this.summonerId = summonerId;
     }
 
     public PlatformShard getPlatform() {
@@ -179,11 +172,11 @@ public class LeagueEntryEntity {
         this.inactive = inactive;
     }
 
-    public OffsetDateTime getLastSyncedAt() {
-        return lastSyncedAt;
+    public OffsetDateTime getSyncedAt() {
+        return syncedAt;
     }
 
-    public void setLastSyncedAt(OffsetDateTime lastSyncedAt) {
-        this.lastSyncedAt = lastSyncedAt;
+    public void setSyncedAt(OffsetDateTime syncedAt) {
+        this.syncedAt = syncedAt;
     }
 }

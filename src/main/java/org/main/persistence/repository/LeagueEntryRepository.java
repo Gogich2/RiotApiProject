@@ -12,6 +12,12 @@ public interface LeagueEntryRepository extends JpaRepository<LeagueEntryEntity, 
 
     List<LeagueEntryEntity> findByPuuidOrderByQueueTypeAsc(String puuid);
 
+    Optional<LeagueEntryEntity> findByPlatformAndPuuidAndQueueType(
+            PlatformShard platform,
+            String puuid,
+            String queueType
+    );
+
     Optional<LeagueEntryEntity> findByPlatformAndSummonerIdAndQueueType(
             PlatformShard platform,
             String summonerId,

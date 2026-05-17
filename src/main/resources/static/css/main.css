@@ -326,6 +326,9 @@ a:hover {
 }
 
 .insight-card__type {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: #8ab4ff;
     font-size: 13px;
     font-weight: 700;
@@ -345,4 +348,367 @@ a:hover {
     margin: 0;
     color: #cbd5e1;
     line-height: 1.5;
+}
+
+.rank-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.rank-card {
+    position: relative;
+    overflow: hidden;
+    padding: 22px;
+    border-radius: 20px;
+    background:
+            radial-gradient(circle at top right, rgba(138, 180, 255, 0.18), transparent 34%),
+            #171b25;
+    border: 1px solid #252936;
+}
+
+.rank-card--unranked {
+    background: #171b25;
+}
+
+.rank-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.rank-card__queue {
+    color: #9ca3af;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.rank-card__badge {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(138, 180, 255, 0.14);
+    color: #cfe0ff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rank-card__rank {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 34px;
+    line-height: 1;
+}
+
+.rank-card__lp {
+    margin-bottom: 18px;
+    color: #cbd5e1;
+    font-size: 18px;
+}
+
+.rank-card__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.rank-card__stats span {
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: #202636;
+    color: #e5e7eb;
+    font-size: 14px;
+}
+
+.rank-card__meta {
+    margin: 0;
+    color: #9ca3af;
+}
+
+.rank-card__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.rank-flag {
+    padding: 5px 8px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.rank-flag--muted {
+    background: rgba(156, 163, 175, 0.12);
+    color: #d1d5db;
+}
+
+.rank-history {
+    display: grid;
+    gap: 16px;
+}
+
+.rank-history-card {
+    padding: 18px;
+    border-radius: 18px;
+    background: #171b25;
+    border: 1px solid #252936;
+}
+
+.rank-history-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.rank-history-card__title {
+    margin: 0;
+    font-size: 18px;
+}
+
+.rank-history-card__count {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.rank-history-list {
+    display: grid;
+    gap: 10px;
+}
+
+.rank-history-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px;
+    border-radius: 14px;
+    background: #111827;
+    border: 1px solid #252936;
+}
+
+.rank-history-item__rank {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.rank-history-item__date {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.rank-history-item__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    color: #cbd5e1;
+    font-size: 13px;
+}
+
+.rank-history-item__meta span {
+    padding: 6px 8px;
+    border-radius: 999px;
+    background: #202636;
+}
+
+.rank-delta--up {
+    color: #86efac;
+}
+
+.rank-delta--down {
+    color: #fca5a5;
+}
+
+.result {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.result--win {
+    background: rgba(34, 197, 94, 0.14);
+    color: #86efac;
+}
+
+.result--loss {
+    background: rgba(239, 68, 68, 0.14);
+    color: #fca5a5;
+}
+
+@media (max-width: 860px) {
+    .rank-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rank-history-item {
+        flex-direction: column;
+    }
+
+    .rank-history-item__meta {
+        justify-content: flex-start;
+    }
+}
+
+.rank-card {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    align-items: center;
+    min-height: 210px;
+}
+
+.rank-card__image {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.45));
+}
+
+.rank-card__content {
+    min-width: 0;
+}
+
+.player-champions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.player-champion-card {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 18px;
+    background: #171b25;
+    border: 1px solid #252936;
+    color: #f3f4f6;
+}
+
+.player-champion-card:hover {
+    background: #202636;
+    text-decoration: none;
+}
+
+.player-champion-card__image {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    object-fit: cover;
+    background: #111827;
+}
+
+.player-champion-card__main {
+    min-width: 0;
+}
+
+.player-champion-card__name {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-champion-card__meta {
+    display: block;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+.player-champion-card__kda {
+    grid-column: 1 / -1;
+    padding-top: 10px;
+    border-top: 1px solid #252936;
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+@media (max-width: 1000px) {
+    .player-champions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .rank-card {
+        grid-template-columns: 1fr;
+    }
+
+    .rank-card__image {
+        width: 92px;
+        height: 92px;
+        margin-bottom: 12px;
+    }
+
+    .player-champions {
+        grid-template-columns: 1fr;
+    }
+}
+
+.player-hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.player-hero__icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 24px;
+    background: #111827;
+    border: 1px solid #30384a;
+    object-fit: cover;
+}
+
+.player-hero__content {
+    min-width: 0;
+}
+
+@media (max-width: 620px) {
+    .player-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.player-hero__icon--placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    font-weight: 800;
+    color: #8ab4ff;
+}
+
+.match-champion-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #f3f4f6;
+    font-weight: 700;
+}
+
+.match-champion-link:hover {
+    color: #8ab4ff;
+    text-decoration: none;
+}
+
+.match-champion-link__image {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #111827;
+    border: 1px solid #30384a;
+    object-fit: cover;
 }

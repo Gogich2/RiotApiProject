@@ -23,8 +23,20 @@ const api = {
         return fetchJson(`/api/players/${encodeURIComponent(puuid)}/matches?limit=${limit}`);
     },
 
+    async getPlayerChampions(puuid) {
+        return fetchJson(`/api/players/${encodeURIComponent(puuid)}/champions`);
+    },
+
     async getPlayerInsights(puuid) {
         return fetchJson(`/api/players/${encodeURIComponent(puuid)}/insights`);
+    },
+
+    async getPlayerRanks(puuid) {
+        return fetchJson(`/api/players/${encodeURIComponent(puuid)}/ranks`);
+    },
+
+    async getPlayerRankHistory(puuid) {
+        return fetchJson(`/api/players/${encodeURIComponent(puuid)}/rank-history`);
     }
 };
 

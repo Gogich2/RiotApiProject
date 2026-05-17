@@ -11,7 +11,6 @@ import java.time.OffsetDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-
 @Entity
 @Table(
         name = "summoners",
@@ -31,7 +30,7 @@ public class SummonerEntity {
 
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Enumerated(EnumType.STRING)
-    @Column(name = "platform", nullable = false, columnDefinition = "platform_shard")
+    @Column(name = "platform", nullable = false, columnDefinition = "public.platform_shard")
     private PlatformShard platform;
 
     @Column(name = "name")
@@ -48,8 +47,6 @@ public class SummonerEntity {
 
     @Column(name = "last_synced_at")
     private OffsetDateTime lastSyncedAt;
-
-    // ===== getters / setters =====
 
     public String getSummonerId() {
         return summonerId;

@@ -4,6 +4,7 @@ public record PlayerRecentMatchDto(
         String matchId,
         Integer championId,
         String championName,
+        String championImageUrl,
         Boolean win,
         Integer kills,
         Integer deaths,

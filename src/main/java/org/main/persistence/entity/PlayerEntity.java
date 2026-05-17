@@ -20,6 +20,15 @@ public class PlayerEntity {
     @Column(name = "tag_line")
     private String tagLine;
 
+    @Column(name = "profile_icon_id")
+    private Integer profileIconId;
+
+    @Column(name = "summoner_level")
+    private Integer summonerLevel;
+
+    @Column(name = "profile_synced_at")
+    private OffsetDateTime profileSyncedAt;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -50,6 +59,30 @@ public class PlayerEntity {
         this.tagLine = tagLine;
     }
 
+    public Integer getProfileIconId() {
+        return profileIconId;
+    }
+
+    public void setProfileIconId(Integer profileIconId) {
+        this.profileIconId = profileIconId;
+    }
+
+    public Integer getSummonerLevel() {
+        return summonerLevel;
+    }
+
+    public void setSummonerLevel(Integer summonerLevel) {
+        this.summonerLevel = summonerLevel;
+    }
+
+    public OffsetDateTime getProfileSyncedAt() {
+        return profileSyncedAt;
+    }
+
+    public void setProfileSyncedAt(OffsetDateTime profileSyncedAt) {
+        this.profileSyncedAt = profileSyncedAt;
+    }
+
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
@@ -66,3 +99,4 @@ public class PlayerEntity {
         this.updatedAt = updatedAt;
     }
 }
+

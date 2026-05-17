@@ -8,6 +8,7 @@ import org.main.dto.frontend.PlayerRecentMatchDto;
 import org.main.dto.frontend.PlayerSummaryDto;
 import org.main.dto.frontend.SearchResultDto;
 import org.main.dto.frontend.PlayerInsightDto;
+import org.main.dto.frontend.PlayerChampionStatsDto;
 
 import java.util.List;
 
@@ -28,5 +29,7 @@ public interface FrontendStatsService {
     List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit);
 
     List<PlayerInsightDto> getPlayerInsights(String puuid);
+
+    List<PlayerChampionStatsDto> getPlayerChampions(String puuid);
 
 }

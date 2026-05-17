@@ -120,13 +120,13 @@ public class RiotApiHttpClient implements RiotApiClient {
     }
 
     @Override
-    public JsonNode getLeagueEntriesBySummonerIdEuw(String summonerId) {
+    public JsonNode getLeagueEntriesByPuuidEuw(String puuid) {
         String url = UriComponentsBuilder.fromHttpUrl(EUW_PLATFORM_HOST).
-                path("/lol/league/v4/entries/by-summoner/{summonerId}").
-                buildAndExpand(summonerId).
+                path("/lol/league/v4/entries/by-puuid/{puuid}").
+                buildAndExpand(puuid).
                 toUriString();
 
-        log.debug("Calling Riot league entries endpoint: summonerId='{}'", summonerId);
+        log.debug("Calling Riot league entries endpoint: puuid='{}'", puuid);
         return exchangeJson(url);
     }
 

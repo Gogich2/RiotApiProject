@@ -7,6 +7,7 @@ import org.main.persistence.entity.PlayerEntity;
 import org.main.persistence.repository.LeagueEntryRepository;
 import org.main.persistence.repository.MatchRepository;
 import org.main.persistence.repository.PlayerRepository;
+import org.main.service.RankEnrichmentResult;
 import org.main.service.RankEnrichmentService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -71,7 +72,12 @@ public class SearchController {
 
     @GetMapping("/players/{puuid}/ranks")
     public List<LeagueEntryEntity> findPlayerRanks(@PathVariable String puuid) {
-        rankEnrichmentService.enrichRanksForPuuidEuw(puuid);
+        RankEnrichmentResult result = rankEnrichmentService.enrichRanksForPuuidEuw(puuid);
+
+        if (result.hasEntries()) {
+            return result.entries();
+        }
+
         return leagueEntryRepository.findByPuuidOrderByQueueTypeAsc(puuid);
     }
 

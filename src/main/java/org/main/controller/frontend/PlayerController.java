@@ -4,7 +4,14 @@ import java.util.List;
 import org.main.dto.frontend.PlayerInsightDto;
 import org.main.dto.frontend.PlayerRecentMatchDto;
 import org.main.dto.frontend.PlayerSummaryDto;
+import org.main.persistence.entity.LeagueEntryEntity;
+import org.main.persistence.entity.LeagueEntrySnapshotEntity;
+import org.main.persistence.repository.LeagueEntryRepository;
+import org.main.persistence.repository.LeagueEntrySnapshotRepository;
+import org.main.service.RankEnrichmentResult;
+import org.main.service.RankEnrichmentService;
 import org.main.service.frontend.FrontendStatsService;
+import org.main.dto.frontend.PlayerChampionStatsDto;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,13 +24,30 @@ public class PlayerController {
 
     private final FrontendStatsService frontendStatsService;
 
-    public PlayerController(FrontendStatsService frontendStatsService) {
+    private final RankEnrichmentService rankEnrichmentService;
+
+    private final LeagueEntryRepository leagueEntryRepository;
+
+    private final LeagueEntrySnapshotRepository leagueEntrySnapshotRepository;
+
+    public PlayerController(FrontendStatsService frontendStatsService,
+                            RankEnrichmentService rankEnrichmentService,
+                            LeagueEntryRepository leagueEntryRepository,
+                            LeagueEntrySnapshotRepository leagueEntrySnapshotRepository) {
         this.frontendStatsService = frontendStatsService;
+        this.rankEnrichmentService = rankEnrichmentService;
+        this.leagueEntryRepository = leagueEntryRepository;
+        this.leagueEntrySnapshotRepository = leagueEntrySnapshotRepository;
     }
 
     @GetMapping("/{puuid}/summary")
     public PlayerSummaryDto summary(@PathVariable String puuid) {
         return frontendStatsService.getPlayerSummary(puuid);
+    }
+
+    @GetMapping("/{puuid}/champions")
+    public List<PlayerChampionStatsDto> champions(@PathVariable String puuid) {
+        return frontendStatsService.getPlayerChampions(puuid);
     }
 
     @GetMapping("/{puuid}/matches")
@@ -35,5 +59,21 @@ public class PlayerController {
     @GetMapping("/{puuid}/insights")
     public List<PlayerInsightDto> insights(@PathVariable String puuid) {
         return frontendStatsService.getPlayerInsights(puuid);
+    }
+
+    @GetMapping("/{puuid}/ranks")
+    public List<LeagueEntryEntity> ranks(@PathVariable String puuid) {
+        RankEnrichmentResult result = rankEnrichmentService.enrichRanksForPuuidEuw(puuid);
+
+        if (result.hasEntries()) {
+            return result.entries();
+        }
+
+        return leagueEntryRepository.findByPuuidOrderByQueueTypeAsc(puuid);
+    }
+
+    @GetMapping("/{puuid}/rank-history")
+    public List<LeagueEntrySnapshotEntity> rankHistory(@PathVariable String puuid) {
+        return leagueEntrySnapshotRepository.findByPuuidOrderBySyncedAtDesc(puuid);
     }
 }

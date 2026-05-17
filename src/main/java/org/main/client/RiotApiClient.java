@@ -15,5 +15,5 @@ public interface RiotApiClient {
 
     JsonNode getSummonerByPuuidEuw(String puuid);
 
-    JsonNode getLeagueEntriesBySummonerIdEuw(String summonerId);
+    JsonNode getLeagueEntriesByPuuidEuw(String puuid);
 }

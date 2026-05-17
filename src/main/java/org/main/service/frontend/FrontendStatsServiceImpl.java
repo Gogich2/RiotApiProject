@@ -15,6 +15,7 @@ import org.main.dto.frontend.SearchResultDto;
 import org.main.exception.NotFoundException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.main.dto.frontend.PlayerInsightDto;
+import org.main.dto.frontend.PlayerChampionStatsDto;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,7 +40,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         insight_type,
                         title,
                         description,
-                        score,
+                        metric_value AS score,
                         created_at
                     FROM analyzed.player_insights
                     WHERE puuid = ?
@@ -344,30 +345,32 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
     @Override
     public PlayerSummaryDto getPlayerSummary(String puuid) {
         List<PlayerSummaryDto> summaries = jdbcTemplate.query("""
-                        SELECT
-                            p.puuid,
-                            COALESCE(MAX(pl.game_name), 'Unknown') AS game_name,
-                            COALESCE(MAX(pl.tag_line), '') AS tag_line,
-                            COUNT(*) AS matches,
-                            SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
-                            ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0 
-                                       / COUNT(*))::numeric, 2)::double precision AS winrate,
-                            ROUND(AVG(p.kills)::numeric, 2)::double precision AS avg_kills,
-                            ROUND(AVG(p.deaths)::numeric, 2)::double precision AS avg_deaths,
-                            ROUND(AVG(p.assists)::numeric, 2)::double precision AS avg_assists,
-                            ROUND(AVG(p.gold_earned)::numeric, 2)::double precision AS avg_gold,
-                            ROUND(AVG(p.total_damage_to_champions)::numeric, 2)::double precision AS avg_damage,
-                            ROUND(AVG(p.vision_score)::numeric, 2)::double precision AS avg_vision
-                        FROM core.participants p
-                        LEFT JOIN raw.players pl
-                            ON pl.puuid = p.puuid
-                        WHERE p.puuid = ?
-                        GROUP BY p.puuid
-                        """,
+                    SELECT
+                        p.puuid,
+                        COALESCE(MAX(pl.game_name), 'Unknown') AS game_name,
+                        COALESCE(MAX(pl.tag_line), '') AS tag_line,
+                        MAX(pl.profile_icon_id) AS profile_icon_id,
+                        COUNT(*) AS matches,
+                        SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
+                        ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0
+                                   / COUNT(*))::numeric, 2)::double precision AS winrate,
+                        ROUND(AVG(p.kills)::numeric, 2)::double precision AS avg_kills,
+                        ROUND(AVG(p.deaths)::numeric, 2)::double precision AS avg_deaths,
+                        ROUND(AVG(p.assists)::numeric, 2)::double precision AS avg_assists,
+                        ROUND(AVG(p.gold_earned)::numeric, 2)::double precision AS avg_gold,
+                        ROUND(AVG(p.total_damage_to_champions)::numeric, 2)::double precision AS avg_damage,
+                        ROUND(AVG(p.vision_score)::numeric, 2)::double precision AS avg_vision
+                    FROM core.participants p
+                    LEFT JOIN raw.players pl
+                        ON pl.puuid = p.puuid
+                    WHERE p.puuid = ?
+                    GROUP BY p.puuid
+                    """,
                 (rs, rowNum) -> new PlayerSummaryDto(
                         rs.getString("puuid"),
                         rs.getString("game_name"),
                         rs.getString("tag_line"),
+                        getInteger(rs, "profile_icon_id"),
                         getLong(rs, "matches"),
                         getLong(rs, "wins"),
                         getDouble(rs, "winrate"),
@@ -393,29 +396,48 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
         int safeLimit = limit <= 0 ? 20 : Math.min(limit, 50);
 
         return jdbcTemplate.query("""
+                    WITH latest_champions AS (
                         SELECT
-                            p.match_id,
-                            p.champion_id,
-                            COALESCE(p.champion_name, 'Unknown') AS champion_name,
-                            p.win,
-                            p.kills,
-                            p.deaths,
-                            p.assists,
-                            m.queue_id,
-                            m.game_version,
-                            m.game_creation_ms,
-                            m.game_duration_ms
-                        FROM core.participants p
-                        JOIN core.matches m
-                            ON m.match_id = p.match_id
-                        WHERE p.puuid = ?
-                        ORDER BY m.game_creation_ms DESC NULLS LAST
-                        LIMIT ?
-                        """,
+                            champion_id,
+                            version,
+                            image_full,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY champion_id
+                                ORDER BY version DESC
+                            ) AS rn
+                        FROM static.champions
+                    )
+                    SELECT
+                        p.match_id,
+                        p.champion_id,
+                        COALESCE(p.champion_name, 'Unknown') AS champion_name,
+                        CASE
+                            WHEN lc.image_full IS NULL THEN NULL
+                            ELSE CONCAT(?, '/', lc.version, '/img/champion/', lc.image_full)
+                        END AS champion_image_url,
+                        p.win,
+                        p.kills,
+                        p.deaths,
+                        p.assists,
+                        m.queue_id,
+                        m.game_version,
+                        m.game_creation_ms,
+                        m.game_duration_ms
+                    FROM core.participants p
+                    JOIN core.matches m
+                        ON m.match_id = p.match_id
+                    LEFT JOIN latest_champions lc
+                        ON lc.champion_id = p.champion_id
+                       AND lc.rn = 1
+                    WHERE p.puuid = ?
+                    ORDER BY m.game_creation_ms DESC NULLS LAST
+                    LIMIT ?
+                    """,
                 (rs, rowNum) -> new PlayerRecentMatchDto(
                         rs.getString("match_id"),
                         getInteger(rs, "champion_id"),
                         rs.getString("champion_name"),
+                        rs.getString("champion_image_url"),
                         getBoolean(rs, "win"),
                         getInteger(rs, "kills"),
                         getInteger(rs, "deaths"),
@@ -425,6 +447,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         getLong(rs, "game_creation_ms"),
                         getLong(rs, "game_duration_ms")
                 ),
+                DATA_DRAGON_BASE_URL,
                 puuid,
                 safeLimit
         );
@@ -459,6 +482,48 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
         );
     }
 
+    @Override
+    public List<PlayerChampionStatsDto> getPlayerChampions(String puuid) {
+        return jdbcTemplate.query("""
+                    SELECT
+                        p.champion_id,
+                        COALESCE(MAX(p.champion_name), MAX(c.name), 'Unknown') AS champion_name,
+                        CASE
+                            WHEN MAX(c.image_full) IS NULL THEN NULL
+                            ELSE CONCAT(?, '/', MAX(c.version), '/img/champion/', MAX(c.image_full))
+                        END AS image_url,
+                        COUNT(*) AS games,
+                        SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
+                        ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0 / 
+                               COUNT(*))::numeric, 2)::double precision AS winrate,
+                        ROUND(AVG(p.kills)::numeric, 2)::double precision AS avg_kills,
+                        ROUND(AVG(p.deaths)::numeric, 2)::double precision AS avg_deaths,
+                        ROUND(AVG(p.assists)::numeric, 2)::double precision AS avg_assists
+                    FROM core.participants p
+                    LEFT JOIN static.champions c
+                        ON c.champion_id = p.champion_id
+                    WHERE p.puuid = ?
+                      AND p.champion_id IS NOT NULL
+                    GROUP BY p.champion_id
+                    ORDER BY games DESC, winrate DESC, avg_kills DESC
+                    LIMIT 8
+                    """,
+                (rs, rowNum) -> new PlayerChampionStatsDto(
+                        getInteger(rs, "champion_id"),
+                        rs.getString("champion_name"),
+                        rs.getString("image_url"),
+                        getLong(rs, "games"),
+                        getLong(rs, "wins"),
+                        getDouble(rs, "winrate"),
+                        getDouble(rs, "avg_kills"),
+                        getDouble(rs, "avg_deaths"),
+                        getDouble(rs, "avg_assists")
+                ),
+                DATA_DRAGON_BASE_URL,
+                puuid
+        );
+    }
+
     private Long nullToZero(Long value) {
         return value == null ? 0L : value;
     }
@@ -482,4 +547,5 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
         boolean value = rs.getBoolean(columnName);
         return rs.wasNull() ? null : value;
     }
+
 }
