@@ -926,6 +926,7 @@ body:has(#playerHero) .section__title {
     background: #141927;
     border: 1px solid #252936;
     transition: border-color 160ms ease, background 160ms ease;
+    cursor: pointer;
 }
 
 .player-match-card:hover {
@@ -957,6 +958,7 @@ body:has(#playerHero) .section__title {
 
 .player-match-card__button {
     flex: 0 0 auto;
+    cursor: pointer;
 }
 
 .player-match-card__meta {
@@ -1032,6 +1034,7 @@ body:has(#playerHero) .section__title {
     gap: 10px;
     color: #f3f4f6;
     font-weight: 800;
+    cursor: pointer;
 }
 
 .match-champion-link:hover {
@@ -1069,9 +1072,10 @@ body:has(#playerHero) .section__title {
 /* MATCH DETAILS */
 
 .match-details-inline {
-    margin-top: 12px;
+    margin-top: 10px;
     padding-top: 12px;
     border-top: 1px solid #252936;
+    cursor: default;
 }
 
 .match-details-inline[hidden] {
@@ -1085,12 +1089,14 @@ body:has(#playerHero) .section__title {
 
 .match-details-view {
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .player-match-card--expanded {
-    border-color: #3b82f6;
-    background: #151d2f;
+    border-color: #36558f;
+    background:
+            linear-gradient(180deg, rgba(17, 24, 39, 0.82), rgba(17, 24, 39, 0.96)),
+            #151d2f;
 }
 
 .match-details-view--standalone {
@@ -1100,15 +1106,17 @@ body:has(#playerHero) .section__title {
 .match-summary,
 .match-panel,
 .match-team-table,
-.match-build__section,
-.match-timeline-event {
+.match-build__section {
     border-radius: 12px;
-    background: #111827;
-    border: 1px solid #252936;
+    background: #101624;
+    border: 1px solid #232d42;
 }
 
 .match-summary {
     padding: 12px;
+    background:
+            linear-gradient(180deg, rgba(36, 58, 99, 0.2), rgba(16, 22, 36, 0)),
+            #101624;
 }
 
 .match-summary__top {
@@ -1159,8 +1167,8 @@ body:has(#playerHero) .section__title {
     min-width: 0;
     padding: 10px;
     border-radius: 10px;
-    background: #141d30;
-    border: 1px solid #33415f;
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid #30415f;
 }
 
 .match-selected__identity {
@@ -1222,8 +1230,8 @@ body:has(#playerHero) .section__title {
 .match-team-strip {
     padding: 9px 10px;
     border-radius: 10px;
-    background: #141927;
-    border: 1px solid #252936;
+    background: rgba(20, 25, 39, 0.7);
+    border: 1px solid #252f46;
 }
 
 .match-team-strip__header {
@@ -1265,29 +1273,35 @@ body:has(#playerHero) .section__title {
 .match-details-tabs {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
     padding: 4px;
     border-radius: 12px;
-    background: #121826;
-    border: 1px solid #252936;
+    background: #0f1521;
+    border: 1px solid #232d42;
 }
 
 .match-details-tabs .player-tabs__button {
+    flex: 1 1 0;
+    min-width: 92px;
     padding: 8px 10px;
     font-size: 12px;
+    text-align: center;
+    border: 1px solid transparent;
 }
 
 .match-panel {
     padding: 10px;
+    overflow: hidden;
 }
 
 .match-postgame {
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .match-team-table {
     padding: 10px;
+    background: #0f1523;
 }
 
 .match-team-table__header {
@@ -1315,8 +1329,8 @@ body:has(#playerHero) .section__title {
     align-items: center;
     padding: 8px 10px;
     border-radius: 10px;
-    background: #0f1523;
-    border: 1px solid #252936;
+    background: rgba(17, 24, 39, 0.85);
+    border: 1px solid #232d42;
 }
 
 .match-participant-row__identity {
@@ -1364,11 +1378,13 @@ body:has(#playerHero) .section__title {
 
 .match-build {
     display: grid;
-    gap: 8px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 10px;
 }
 
 .match-build__section {
     padding: 10px;
+    background: #0f1523;
 }
 
 .match-build__header {
@@ -1389,28 +1405,47 @@ body:has(#playerHero) .section__title {
     font-size: 14px;
 }
 
+.match-build__section--items {
+    grid-column: 1 / -1;
+}
+
 .match-runes {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
 }
 
-.match-rune-group {
+.match-rune-tree {
     padding: 8px;
     border-radius: 10px;
-    background: #0f1523;
-    border: 1px solid #252936;
+    background: rgba(20, 25, 39, 0.82);
+    border: 1px solid #242f46;
 }
 
-.match-rune-group__header {
+.match-rune-tree__header {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     margin-bottom: 8px;
     font-size: 12px;
 }
 
-.match-rune-group__items {
+.match-rune-tree__copy {
+    display: grid;
+    gap: 2px;
+}
+
+.match-rune-tree__copy span {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.match-rune-tree__body {
+    display: grid;
+    gap: 6px;
+}
+
+.match-rune-slot {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -1418,23 +1453,27 @@ body:has(#playerHero) .section__title {
 
 .match-rune-item {
     display: inline-flex;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    background: #0f172a;
-    border: 1px solid #30384a;
+    border-radius: 999px;
+    background: #0d1320;
+    border: 1px solid #314055;
+    box-shadow: inset 0 0 0 1px rgba(8, 12, 20, 0.6);
 }
 
 .match-rune-item--style {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
 }
 
 .match-rune-item--keystone {
+    width: 36px;
+    height: 36px;
     border-color: #8ab4ff;
-    background: #16213c;
+    background: #18233b;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
 }
 
 .match-rune-item--empty::after {
@@ -1453,13 +1492,15 @@ body:has(#playerHero) .section__title {
 
 .match-skill-grid {
     overflow-x: auto;
+    padding-bottom: 2px;
 }
 
 .match-skill-grid__row {
     display: grid;
-    grid-template-columns: 28px repeat(18, minmax(22px, 1fr));
-    gap: 4px;
-    margin-bottom: 4px;
+    grid-template-columns: 28px repeat(18, minmax(24px, 1fr));
+    gap: 3px;
+    margin-bottom: 3px;
+    min-width: 500px;
 }
 
 .match-skill-grid__label,
@@ -1469,57 +1510,68 @@ body:has(#playerHero) .section__title {
     justify-content: center;
     min-height: 24px;
     border-radius: 6px;
-    background: #0f1523;
-    border: 1px solid #252936;
+    background: #0d1320;
+    border: 1px solid #232d42;
     color: #cbd5e1;
     font-size: 11px;
     font-weight: 700;
 }
 
+.match-skill-grid__row--header .match-skill-grid__cell {
+    color: #8fa4ca;
+    background: transparent;
+}
+
 .match-skill-grid__cell--active {
-    background: #23407a;
-    border-color: #3b82f6;
+    background: linear-gradient(180deg, #2851a3, #1a3774);
+    border-color: #4f8cff;
     color: #ffffff;
 }
 
-.match-build-items {
+.match-item-timeline {
     display: grid;
-    gap: 6px;
-}
-
-.match-build-item {
-    display: flex;
-    align-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 8px;
-    padding: 7px 8px;
-    border-radius: 10px;
-    background: #0f1523;
-    border: 1px solid #252936;
 }
 
-.match-build-item__minute {
-    min-width: 38px;
-    color: #8ab4ff;
-    font-weight: 800;
-    font-size: 11px;
-}
-
-.match-build-item__copy {
+.match-item-minute-group {
     display: grid;
-    gap: 2px;
+    gap: 8px;
+    padding: 9px;
+    border-radius: 10px;
+    background: rgba(20, 25, 39, 0.82);
+    border: 1px solid #242f46;
 }
 
-.match-build-item__copy strong {
+.match-item-minute-group__time {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.match-item-minute-group__time strong {
+    color: #8ab4ff;
     font-size: 12px;
 }
 
-.match-build-item__copy span {
-    color: #9ca3af;
+.match-item-minute-group__time span {
+    color: #94a3b8;
     font-size: 11px;
 }
 
+.match-item-minute-group__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.match-item-purchase {
+    display: inline-flex;
+}
+
 .match-timeline-toolbar {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .match-filters {
@@ -1529,20 +1581,22 @@ body:has(#playerHero) .section__title {
 }
 
 .match-filter-button {
-    padding: 6px 10px;
+    padding: 6px 11px;
     border-radius: 999px;
     font-size: 11px;
+    background: #121b2b;
+    border-color: #293552;
 }
 
 .match-filter-button--active {
     border-color: #3b82f6;
-    background: #1f335d;
+    background: #1e3768;
     color: #ffffff;
 }
 
 .match-timeline-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 180px;
+    grid-template-columns: minmax(0, 1fr) 160px;
     gap: 10px;
 }
 
@@ -1569,21 +1623,78 @@ body:has(#playerHero) .section__title {
 
 .match-timeline-event {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 8px;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
     padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(15, 21, 35, 0.9);
+    border: 1px solid #232d42;
 }
 
 .match-timeline-event__time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #111b2d;
+    border: 1px solid #2c3b5b;
     color: #8ab4ff;
     font-weight: 800;
     font-size: 11px;
 }
 
-.match-timeline-event__content strong {
-    display: block;
+.match-timeline-event__body {
+    min-width: 0;
+}
+
+.match-timeline-event__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.match-timeline-event__header strong {
+    min-width: 0;
     font-size: 12px;
     line-height: 1.35;
+}
+
+.match-timeline-event__type {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 66px;
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: #192334;
+    color: #dbe5f6;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.match-timeline-event__type--kill {
+    background: rgba(239, 68, 68, 0.14);
+    color: #fca5a5;
+}
+
+.match-timeline-event__type--objective {
+    background: rgba(168, 85, 247, 0.15);
+    color: #d8b4fe;
+}
+
+.match-timeline-event__type--item {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+}
+
+.match-timeline-event__type--vision {
+    background: rgba(34, 197, 94, 0.14);
+    color: #86efac;
 }
 
 .match-timeline-event__meta {
@@ -1591,8 +1702,18 @@ body:has(#playerHero) .section__title {
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 4px;
-    color: #9ca3af;
-    font-size: 11px;
+}
+
+.match-timeline-event__chip {
+    padding: 4px 7px;
+    border-radius: 999px;
+    background: #192334;
+    color: #9fb0cc;
+    font-size: 10px;
+}
+
+.match-timeline-event__accent {
+    display: inline-flex;
 }
 
 .match-compact-empty {
@@ -1606,8 +1727,198 @@ body:has(#playerHero) .section__title {
 
 .match-performance-table .table th,
 .match-performance-table .table td {
-    padding: 9px 10px;
+    padding: 8px 10px;
     font-size: 12px;
+}
+
+.match-performance-table {
+    border-radius: 12px;
+    border-color: #232d42;
+    background: #0f1523;
+}
+
+.match-performance-table .table {
+    min-width: 720px;
+}
+
+.match-performance-table .table th {
+    background: #121b2b;
+    color: #8ea4cb;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.match-performance-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.match-performance-row {
+    background: rgba(15, 21, 35, 0.92);
+}
+
+.match-performance-row--blue {
+    box-shadow: inset 3px 0 0 rgba(59, 130, 246, 0.32);
+}
+
+.match-performance-row--red {
+    box-shadow: inset 3px 0 0 rgba(239, 68, 68, 0.28);
+}
+
+.match-performance-row--selected {
+    background: rgba(25, 40, 68, 0.98);
+}
+
+.match-performance-table__player-cell {
+    min-width: 220px;
+}
+
+.match-performance-player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.match-performance-player__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    border: 1px solid #324156;
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+
+.match-performance-player__copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.match-performance-player__heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.match-performance-player__heading strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.match-performance-player__team,
+.match-performance-player__champion {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.match-performance-player__team {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #1a2435;
+    flex: 0 0 auto;
+}
+
+.match-performance-kda {
+    display: grid;
+    gap: 2px;
+}
+
+.match-performance-kda strong {
+    color: #f3f4f6;
+}
+
+.match-performance-kda span {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.match-performance-value-chip,
+.match-performance-metric {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 9px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #121b2b;
+    border: 1px solid #26334c;
+}
+
+.match-performance-value-chip::before,
+.match-performance-metric::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: var(--value-fill, var(--metric-fill, 0%));
+    background: rgba(96, 165, 250, 0.16);
+}
+
+.match-performance-value-chip {
+    min-width: 54px;
+    justify-content: center;
+}
+
+.match-performance-value-chip,
+.match-performance-metric strong {
+    position: relative;
+    z-index: 1;
+}
+
+.match-performance-metric {
+    width: 100%;
+}
+
+.match-performance-metric--damage::before {
+    background: rgba(96, 165, 250, 0.18);
+}
+
+.match-performance-metric--gold::before {
+    background: rgba(250, 204, 21, 0.16);
+}
+
+.match-performance-metric--cs::before {
+    background: rgba(52, 211, 153, 0.16);
+}
+
+.match-performance-table__column--accent {
+    color: #93c5fd;
+}
+
+.match-performance-table__column--gold {
+    color: #fcd34d;
+}
+
+.match-metrics {
+    display: grid;
+    gap: 8px;
+}
+
+.match-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.match-metric-card {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 10px;
+    background: #0f1523;
+    border: 1px solid #232d42;
+}
+
+.match-metric-card span {
+    color: #94a3b8;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.match-metric-card strong {
+    font-size: 16px;
 }
 
 .player-match-items--compact {
@@ -1985,8 +2296,16 @@ body:has(#playerHero) .section__title {
         justify-content: flex-start;
     }
 
+    .match-build {
+        grid-template-columns: 1fr;
+    }
+
     .match-timeline-layout {
         grid-template-columns: 1fr;
+    }
+
+    .match-metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -2024,6 +2343,10 @@ body:has(#playerHero) .section__title {
 
     .match-runes {
         grid-template-columns: 1fr;
+    }
+
+    .match-item-timeline {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .site-nav {
@@ -2084,6 +2407,18 @@ body:has(#playerHero) .section__title {
         flex-wrap: wrap;
     }
 
+    .match-details-tabs .player-tabs__button {
+        flex: 1 1 calc(50% - 4px);
+    }
+
+    .match-timeline-event {
+        grid-template-columns: 48px minmax(0, 1fr);
+    }
+
+    .match-timeline-event__accent {
+        display: none;
+    }
+
     .match-skill-grid__row {
         grid-template-columns: 28px repeat(18, minmax(22px, 1fr));
     }
@@ -2093,6 +2428,11 @@ body:has(#playerHero) .section__title {
     }
 
     .player-match-card__meta {
+        grid-template-columns: 1fr;
+    }
+
+    .match-item-timeline,
+    .match-metrics-grid {
         grid-template-columns: 1fr;
     }
 

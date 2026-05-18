@@ -135,16 +135,23 @@ function setupMatchDetailsInline(puuid) {
     }
 
     matchesContainer.addEventListener('click', event => {
-        const championLink = event.target.closest('.match-champion-link');
+        const targetCard = event.target.closest('[data-match-details-card]');
 
-        if (championLink) {
+        if (!targetCard) {
+            return;
+        }
+
+        if (event.target.closest('[data-match-details-panel]')) {
+            return;
+        }
+
+        if (event.target.closest('a')) {
             return;
         }
 
         const targetButton = event.target.closest('[data-match-details-button]');
-        const targetCard = event.target.closest('[data-match-details-card]');
 
-        if (!targetButton || !targetCard) {
+        if (!targetButton && event.target.closest('button')) {
             return;
         }
 
