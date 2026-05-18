@@ -1,5 +1,6 @@
 let activePlayerTab = 'overview';
 let cachedPlayerInsights = [];
+let expandedMatchId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     const puuid = getQueryParam('puuid');
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     setupPlayerTabs();
+    setupMatchDetailsInline(puuid);
 
     renderPlayerRanks([]);
     renderPlayerRankChart([]);
@@ -123,6 +125,93 @@ function updatePlayerTabs() {
         const tabs = String(panel.dataset.playerTabPanel || '').split(' ');
         panel.hidden = !tabs.includes(activePlayerTab);
     });
+}
+
+function setupMatchDetailsInline(puuid) {
+    const matchesContainer = document.getElementById('playerMatchesBody');
+
+    if (!matchesContainer) {
+        return;
+    }
+
+    matchesContainer.addEventListener('click', event => {
+        const championLink = event.target.closest('.match-champion-link');
+
+        if (championLink) {
+            return;
+        }
+
+        const targetButton = event.target.closest('[data-match-details-button]');
+        const targetCard = event.target.closest('[data-match-details-card]');
+
+        if (!targetButton || !targetCard) {
+            return;
+        }
+
+        const matchId = targetCard.dataset.matchId;
+        const panel = targetCard.querySelector('[data-match-details-panel]');
+
+        if (!matchId || !panel || !window.MatchDetailsView) {
+            return;
+        }
+
+        event.preventDefault();
+        toggleMatchDetails(targetCard, panel, matchId, puuid);
+    });
+}
+
+async function toggleMatchDetails(card, panel, matchId, puuid) {
+    const isAlreadyExpanded = expandedMatchId === matchId && card.classList.contains('player-match-card--expanded');
+
+    if (isAlreadyExpanded) {
+        collapseMatchCard(card);
+        expandedMatchId = null;
+        return;
+    }
+
+    collapseExpandedMatchCard(card.closest('#playerMatchesBody'));
+    expandedMatchId = matchId;
+    card.classList.add('player-match-card--expanded');
+    panel.hidden = false;
+    window.MatchDetailsView.renderLoadingState(panel, 'Loading match details...');
+
+    try {
+        const details = await window.MatchDetailsView.loadDetails(matchId, puuid);
+
+        if (expandedMatchId !== matchId) {
+            return;
+        }
+
+        window.MatchDetailsView.renderInto(panel, details);
+    } catch (error) {
+        console.error('Could not load match details:', error);
+
+        if (expandedMatchId !== matchId) {
+            return;
+        }
+
+        window.MatchDetailsView.renderErrorState(panel, 'Could not load match details.');
+    }
+}
+
+function collapseExpandedMatchCard(container) {
+    if (!container) {
+        return;
+    }
+
+    container.querySelectorAll('.player-match-card--expanded').forEach(card => {
+        collapseMatchCard(card);
+    });
+}
+
+function collapseMatchCard(card) {
+    card.classList.remove('player-match-card--expanded');
+    const panel = card.querySelector('[data-match-details-panel]');
+
+    if (panel) {
+        panel.hidden = true;
+        panel.innerHTML = '';
+    }
 }
 
 function renderInsightsForActiveTab() {
@@ -656,9 +745,10 @@ function renderPlayerMatches(matches) {
         const matchId = getValue(match, 'matchId', 'match_id');
         const finalItems = getValue(match, 'finalItems', 'final_items') || [];
         const matchResultClass = match.win ? 'player-match-card--win' : 'player-match-card--loss';
-
         return `
-            <article class="player-match-card ${matchResultClass}">
+            <article class="player-match-card ${matchResultClass}"
+                     data-match-details-card
+                     data-match-id="${escapeHtml(matchId)}">
                 <div class="player-match-card__top">
                     <div class="player-match-card__identity">
                         <span class="${match.win ? 'result result--win' : 'result result--loss'}">
@@ -678,10 +768,10 @@ function renderPlayerMatches(matches) {
                             <span>${escapeHtml(championName)}</span>
                         </a>
                     </div>
-                    <a class="button button--secondary player-match-card__button"
-                       href="match.html?id=${encodeURIComponent(matchId)}">
-                        View match details
-                    </a>
+                    <button class="button button--secondary player-match-card__button"
+                            data-match-details-button type="button">
+                        View details
+                    </button>
                 </div>
 
                 <div class="player-match-card__meta">
@@ -713,6 +803,8 @@ function renderPlayerMatches(matches) {
         }
                     </div>
                 </div>
+
+                <div class="match-details-inline" data-match-details-panel hidden></div>
             </article>
         `;
     }).join('');

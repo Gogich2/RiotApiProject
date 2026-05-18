@@ -54,6 +54,10 @@ const api = {
 
     async getPlayerRankHistory(puuid) {
         return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/rank-history`));
+    },
+
+    async getMatchDetails(matchId, puuid) {
+        return fetchJson(buildApiUrl(`/matches/${encodeURIComponent(matchId)}/details`, { puuid }));
     }
 };
 
