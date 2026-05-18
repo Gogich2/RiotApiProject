@@ -1,7 +1,5 @@
 package org.main.service.frontend;
 
-import jakarta.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.List;
 import org.main.dto.frontend.ChampionAbilityDto;
 import org.main.dto.frontend.ChampionDetailsDto;
@@ -22,7 +20,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.main.dto.frontend.PlayerInsightDto;
 import org.main.dto.frontend.PlayerChampionStatsDto;
 import org.springframework.stereotype.Service;
-import org.springframework.scheduling.annotation.Scheduled;
 
 @Service
 public class FrontendStatsServiceImpl implements FrontendStatsService {
@@ -31,30 +28,10 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     private static final String DATA_DRAGON_BASE_URL = "https://ddragon.leagueoflegends.com/cdn";
 
-    private static final long PLAYER_LEADERBOARD_CACHE_TTL_MS = 60_000L;
-
     private final JdbcTemplate jdbcTemplate;
-
-    private volatile PlayerLeaderboardResponseDto cachedPlayerLeaderboards;
-
-    private volatile long playerLeaderboardsCachedAtMs;
 
     public FrontendStatsServiceImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-    }
-
-    @PostConstruct
-    public void initializePlayerLeaderboardSnapshot() {
-        ensurePlayerLeaderboardSupportObjects();
-        refreshPlayerLeaderboardSnapshot();
-    }
-
-    @Scheduled(
-            fixedDelayString = "${app.frontend.player-leaderboard.refresh-ms:300000}",
-            initialDelayString = "${app.frontend.player-leaderboard.initial-delay-ms:60000}"
-    )
-    public void refreshPlayerLeaderboardSnapshotScheduled() {
-        refreshPlayerLeaderboardSnapshot();
     }
 
     @Override
@@ -820,13 +797,43 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     @Override
     public PlayerLeaderboardResponseDto getPlayerLeaderboards() {
-        PlayerLeaderboardResponseDto cached = cachedPlayerLeaderboards;
+        String query = """
+                SELECT
+                    puuid,
+                    game_name,
+                    tag_line,
+                    profile_icon_id,
+                    profile_icon_url,
+                    matches,
+                    wins,
+                    winrate,
+                    average_kills,
+                    average_deaths,
+                    average_assists
+                FROM analyzed.player_leaderboard_stats
+                %s
+                ORDER BY %s
+                LIMIT 20
+                """;
+        try {
+            List<PlayerLeaderboardDto> bestPlayers = jdbcTemplate.query(
+                    query.formatted("WHERE matches >= 10", "winrate DESC, matches DESC, game_name ASC"),
+                    (rs, rowNum) -> mapPlayerLeaderboardRow(rs)
+            );
 
-        if (cached != null && isPlayerLeaderboardCacheFresh()) {
-            return cached;
+            List<PlayerLeaderboardDto> mostActivePlayers = jdbcTemplate.query(
+                    query.formatted("", "matches DESC, winrate DESC, game_name ASC"),
+                    (rs, rowNum) -> mapPlayerLeaderboardRow(rs)
+            );
+
+            return new PlayerLeaderboardResponseDto(bestPlayers, mostActivePlayers);
+        } catch (DataAccessException ex) {
+            throw new IllegalStateException(
+                    "Leaderboard view analyzed.player_leaderboard_stats is unavailable. "
+                            + "Refresh or create the materialized view before calling /api/players/leaderboard.",
+                    ex
+            );
         }
-
-        return loadPlayerLeaderboardsFromSnapshot();
     }
 
     private PlayerLeaderboardDto mapPlayerLeaderboardRow(java.sql.ResultSet rs)
@@ -848,144 +855,6 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     private Long nullToZero(Long value) {
         return value == null ? 0L : value;
-    }
-
-    private boolean isPlayerLeaderboardCacheFresh() {
-        return System.currentTimeMillis() - playerLeaderboardsCachedAtMs < PLAYER_LEADERBOARD_CACHE_TTL_MS;
-    }
-
-    private void ensurePlayerLeaderboardSupportObjects() {
-        jdbcTemplate.execute("""
-                CREATE INDEX IF NOT EXISTS idx_core_participants_puuid_not_bot
-                ON core.participants (puuid)
-                WHERE puuid IS NOT NULL
-                  AND puuid <> ''
-                  AND puuid <> 'BOT'
-                """);
-
-        jdbcTemplate.execute("""
-                CREATE INDEX IF NOT EXISTS idx_raw_players_puuid
-                ON raw.players (puuid)
-                """);
-
-        String createMaterializedViewSql = """
-                CREATE MATERIALIZED VIEW IF NOT EXISTS analyzed.player_leaderboard_stats AS
-                WITH latest_version AS (
-                    SELECT MAX(version) AS version
-                    FROM static.champions
-                ),
-                participant_stats AS (
-                    SELECT
-                        p.puuid,
-                        COUNT(*) AS matches,
-                        COALESCE(SUM(CASE WHEN p.win THEN 1 ELSE 0 END), 0) AS wins,
-                        COALESCE(
-                            ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0
-                                       / NULLIF(COUNT(*), 0))::numeric, 2)::double precision,
-                            0
-                        ) AS winrate,
-                        COALESCE(ROUND(AVG(p.kills)::numeric, 2)::double precision, 0) AS average_kills,
-                        COALESCE(ROUND(AVG(p.deaths)::numeric, 2)::double precision, 0) AS average_deaths,
-                        COALESCE(ROUND(AVG(p.assists)::numeric, 2)::double precision, 0) AS average_assists
-                    FROM core.participants p
-                    WHERE p.puuid IS NOT NULL
-                      AND p.puuid <> ''
-                      AND p.puuid <> 'BOT'
-                    GROUP BY p.puuid
-                )
-                SELECT
-                    ps.puuid,
-                    COALESCE(pl.game_name, 'Unknown') AS game_name,
-                    COALESCE(pl.tag_line, '') AS tag_line,
-                    pl.profile_icon_id,
-                    CASE
-                        WHEN pl.profile_icon_id IS NULL OR lv.version IS NULL THEN NULL
-                        ELSE CONCAT('%s', '/', lv.version, '/img/profileicon/', pl.profile_icon_id, '.png')
-                    END AS profile_icon_url,
-                    ps.matches,
-                    ps.wins,
-                    ps.winrate,
-                    ps.average_kills,
-                    ps.average_deaths,
-                    ps.average_assists
-                FROM participant_stats ps
-                JOIN raw.players pl
-                    ON pl.puuid = ps.puuid
-                CROSS JOIN latest_version lv
-                WITH NO DATA
-                """.formatted(DATA_DRAGON_BASE_URL);
-
-        jdbcTemplate.execute(createMaterializedViewSql);
-
-        jdbcTemplate.execute("""
-                CREATE UNIQUE INDEX IF NOT EXISTS idx_player_leaderboard_stats_puuid
-                ON analyzed.player_leaderboard_stats (puuid)
-                """);
-
-        jdbcTemplate.execute("""
-                CREATE INDEX IF NOT EXISTS idx_player_leaderboard_stats_best
-                ON analyzed.player_leaderboard_stats (winrate DESC, matches DESC, game_name ASC)
-                """);
-
-        jdbcTemplate.execute("""
-                CREATE INDEX IF NOT EXISTS idx_player_leaderboard_stats_active
-                ON analyzed.player_leaderboard_stats (matches DESC, winrate DESC, game_name ASC)
-                """);
-    }
-
-    private void refreshPlayerLeaderboardSnapshot() {
-        jdbcTemplate.execute("REFRESH MATERIALIZED VIEW analyzed.player_leaderboard_stats");
-        cachedPlayerLeaderboards = queryPlayerLeaderboardsFromSnapshot();
-        playerLeaderboardsCachedAtMs = System.currentTimeMillis();
-    }
-
-    private PlayerLeaderboardResponseDto loadPlayerLeaderboardsFromSnapshot() {
-        PlayerLeaderboardResponseDto response = queryPlayerLeaderboardsFromSnapshot();
-        cachedPlayerLeaderboards = response;
-        playerLeaderboardsCachedAtMs = System.currentTimeMillis();
-        return response;
-    }
-
-    private PlayerLeaderboardResponseDto queryPlayerLeaderboardsFromSnapshot() {
-        String query = """
-                WITH best_players AS (
-                    SELECT
-                        'BEST' AS leaderboard_type,
-                        s.*
-                    FROM analyzed.player_leaderboard_stats s
-                    WHERE s.matches >= 10
-                    ORDER BY s.winrate DESC, s.matches DESC, s.game_name ASC
-                    LIMIT 20
-                ),
-                most_active_players AS (
-                    SELECT
-                        'ACTIVE' AS leaderboard_type,
-                        s.*
-                    FROM analyzed.player_leaderboard_stats s
-                    ORDER BY s.matches DESC, s.winrate DESC, s.game_name ASC
-                    LIMIT 20
-                )
-                SELECT *
-                FROM best_players
-                UNION ALL
-                SELECT *
-                FROM most_active_players
-                """;
-
-        List<PlayerLeaderboardDto> bestPlayers = new ArrayList<>();
-        List<PlayerLeaderboardDto> mostActivePlayers = new ArrayList<>();
-
-        jdbcTemplate.query(query, rs -> {
-            PlayerLeaderboardDto player = mapPlayerLeaderboardRow(rs);
-
-            if ("BEST".equals(rs.getString("leaderboard_type"))) {
-                bestPlayers.add(player);
-            } else {
-                mostActivePlayers.add(player);
-            }
-        });
-
-        return new PlayerLeaderboardResponseDto(bestPlayers, mostActivePlayers);
     }
 
     private Integer getInteger(java.sql.ResultSet rs, String columnName) throws java.sql.SQLException {

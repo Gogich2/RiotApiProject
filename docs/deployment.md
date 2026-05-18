@@ -90,6 +90,26 @@ Suggested manual checks:
 2. Open a player page and verify summary, matches, champions, ranks, rank history, and insights.
 3. Open a champion page and verify hero, abilities, and item statistics.
 
+## Leaderboard refresh
+
+Player leaderboard data is backed by the existing materialized view:
+
+```text
+analyzed.player_leaderboard_stats
+```
+
+Refresh it manually when needed:
+
+```sql
+REFRESH MATERIALIZED VIEW analyzed.player_leaderboard_stats;
+```
+
+If concurrent refresh is needed and the unique index exists:
+
+```sql
+REFRESH MATERIALIZED VIEW CONCURRENTLY analyzed.player_leaderboard_stats;
+```
+
 ## CORS notes
 
 The backend CORS allowlist is configurable through:
