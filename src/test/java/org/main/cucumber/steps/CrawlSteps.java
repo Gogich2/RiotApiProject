@@ -7,6 +7,7 @@ import org.main.client.RiotApiClient;
 import org.main.persistence.repository.MatchRepository;
 import org.main.service.CrawlerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -15,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,10 +37,17 @@ public class CrawlSteps {
     @Autowired
     private MatchRepository matchRepository;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
     // ---------- GIVEN ----------
 
     @Given("EUW summoner {string} exists")
     public void summonerExists(String name) {
+        doAnswer(invocation -> {
+            invocation.getArgument(0, java.util.function.Consumer.class).accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
     }
 
     // ---------- WHEN ----------

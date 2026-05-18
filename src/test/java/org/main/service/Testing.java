@@ -8,9 +8,10 @@ import org.main.client.RiotApiClient;
 import org.main.dto.CrawlResultDto;
 import org.main.persistence.entity.MatchEntity;
 import org.main.persistence.repository.MatchRepository;
-import org.mockito.InjectMocks;
+import org.main.persistence.repository.PlayerRepository;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,10 +36,33 @@ public class Testing {
     @Mock
     MatchRepository matchRepository;
 
-    @InjectMocks
+    @Mock
+    PlayerRepository playerRepository;
+
+    @Mock
+    TimelineIngestService timelineIngestService;
+
+    @Mock
+    IngestLogService ingestLogService;
+
+    @Mock
+    TransactionTemplate transactionTemplate;
+
     CrawlerServiceImpl crawlerService;
 
     private final ObjectMapper mapper = new ObjectMapper();
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        crawlerService = new CrawlerServiceImpl(
+                riotApiClient,
+                matchRepository,
+                playerRepository,
+                timelineIngestService,
+                ingestLogService,
+                transactionTemplate
+        );
+    }
 
 
     @Test
@@ -53,6 +78,7 @@ public class Testing {
     @Test
     void crawlPuuidEUWShouldSaveOnlyNewMatches() throws Exception {
         String puuid = "test-puuid";
+        stubTransactionExecution();
 
         when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 2)).
                 thenReturn(List.of("EUW1_123", "EUW1_456"));
@@ -77,6 +103,7 @@ public class Testing {
     void crawlPuuidEUWShouldPaginateUntilLimitReached() throws Exception {
         String puuid = "test-puuid";
         int limit = 25;
+        stubTransactionExecution();
 
         // First page returns 20 ids, second page returns 5 ids
         List<String> page1 = new ArrayList<>();
@@ -119,10 +146,12 @@ public class Testing {
         String gameName = "acoomer";
         String tagLine = "EUW";
         String puuid = "resolved-puuid";
+        stubTransactionExecution();
 
         // RiotID > account JSON > puuid
         JsonNode accountJson = mapper.readTree("{\"puuid\":\"" + puuid + "\"}");
         when(riotApiClient.getAccountByRiotIdEurope(gameName, tagLine)).thenReturn(accountJson);
+        when(playerRepository.findById(puuid)).thenReturn(java.util.Optional.empty());
 
         // matchlist for puuid
         when(riotApiClient.getMatchIdsByPuuidEurope(puuid, 0, 3)).
@@ -160,6 +189,13 @@ public class Testing {
                 () -> crawlerService.crawlRiotIdEUW("acoomer", "", 5));
         assertThrows(IllegalArgumentException.class,
                 () -> crawlerService.crawlRiotIdEUW("", "EUW", 5));
+    }
+
+    private void stubTransactionExecution() {
+        doAnswer(invocation -> {
+            invocation.getArgument(0, java.util.function.Consumer.class).accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
     }
 
     private static int extractSavedCount(CrawlResultDto dto) {

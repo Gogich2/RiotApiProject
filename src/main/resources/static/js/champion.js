@@ -75,7 +75,8 @@ function renderChampionAbilities(abilities) {
 
     container.innerHTML = abilities.map(ability => `
         <article class="ability-card">
-            ${ability.imageUrl ? `<img class="ability-card__icon" src="${ability.imageUrl}" alt="${ability.abilityName}">` : ''}
+            ${ability.imageUrl ? `<img class="ability-card__icon" src="${ability.imageUrl}" alt="${ability.abilityName}"
+                onerror="this.onerror=null; this.remove();">` : ''}
             <div>
                 <span class="ability-card__key">${ability.abilityKey}</span>
                 <h3 class="ability-card__title">${ability.abilityName}</h3>

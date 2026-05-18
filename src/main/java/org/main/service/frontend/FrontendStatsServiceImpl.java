@@ -552,23 +552,125 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
     }
 
     private List<ChampionAbilityDto> getChampionAbilities(Integer championId) {
+        List<ChampionAbilityDto> abilities = getChampionAbilitiesFromStaticTable(championId);
+
+        if (!abilities.isEmpty()) {
+            return abilities;
+        }
+
+        return getChampionAbilitiesFromRawJson(championId);
+    }
+
+    private List<ChampionAbilityDto> getChampionAbilitiesFromStaticTable(Integer championId) {
+        try {
+            return jdbcTemplate.query("""
+                            SELECT
+                                ability_key,
+                                ability_name,
+                                ability_description,
+                                image_url
+                            FROM static.champion_abilities
+                            WHERE champion_id = ?
+                            ORDER BY
+                                CASE ability_key
+                                    WHEN 'PASSIVE' THEN 0
+                                    WHEN 'Q' THEN 1
+                                    WHEN 'W' THEN 2
+                                    WHEN 'E' THEN 3
+                                    WHEN 'R' THEN 4
+                                    ELSE 5
+                                END
+                            """,
+                    (rs, rowNum) -> new ChampionAbilityDto(
+                            rs.getString("ability_key"),
+                            rs.getString("ability_name"),
+                            rs.getString("ability_description"),
+                            rs.getString("image_url")
+                    ),
+                    championId
+            );
+        } catch (DataAccessException ex) {
+            return List.of();
+        }
+    }
+
+    private List<ChampionAbilityDto> getChampionAbilitiesFromRawJson(Integer championId) {
         return jdbcTemplate.query("""
+                        WITH latest_champion AS (
+                            SELECT
+                                champion_id,
+                                version,
+                                raw_json
+                            FROM static.champions
+                            WHERE champion_id = ?
+                            ORDER BY version DESC
+                            LIMIT 1
+                        ),
+                        passive_ability AS (
+                            SELECT
+                                'PASSIVE' AS ability_key,
+                                lc.raw_json -> 'passive' ->> 'name' AS ability_name,
+                                COALESCE(
+                                    lc.raw_json -> 'passive' ->> 'description',
+                                    lc.raw_json -> 'passive' ->> 'sanitizedDescription'
+                                ) AS ability_description,
+                                CASE
+                                    WHEN lc.raw_json -> 'passive' -> 'image' ->> 'full' IS NULL THEN NULL
+                                    ELSE CONCAT(
+                                        ?,
+                                        '/',
+                                        lc.version,
+                                        '/img/passive/',
+                                        lc.raw_json -> 'passive' -> 'image' ->> 'full'
+                                    )
+                                END AS image_url,
+                                0 AS sort_order
+                            FROM latest_champion lc
+                        ),
+                        spell_abilities AS (
+                            SELECT
+                                CASE spell.ordinality
+                                    WHEN 1 THEN 'Q'
+                                    WHEN 2 THEN 'W'
+                                    WHEN 3 THEN 'E'
+                                    WHEN 4 THEN 'R'
+                                    ELSE CONCAT('SPELL_', spell.ordinality)
+                                END AS ability_key,
+                                spell.spell_json ->> 'name' AS ability_name,
+                                COALESCE(
+                                    spell.spell_json ->> 'description',
+                                    spell.spell_json ->> 'tooltip'
+                                ) AS ability_description,
+                                CASE
+                                    WHEN spell.spell_json -> 'image' ->> 'full' IS NULL THEN NULL
+                                    ELSE CONCAT(
+                                        ?,
+                                        '/',
+                                        lc.version,
+                                        '/img/spell/',
+                                        spell.spell_json -> 'image' ->> 'full'
+                                    )
+                                END AS image_url,
+                                spell.ordinality AS sort_order
+                            FROM latest_champion lc
+                            CROSS JOIN LATERAL jsonb_array_elements(
+                                COALESCE(lc.raw_json -> 'spells', '[]'::jsonb)
+                            ) WITH ORDINALITY AS spell(spell_json, ordinality)
+                        )
                         SELECT
                             ability_key,
                             ability_name,
                             ability_description,
                             image_url
-                        FROM static.champion_abilities
-                        WHERE champion_id = ?
-                        ORDER BY
-                            CASE ability_key
-                                WHEN 'PASSIVE' THEN 0
-                                WHEN 'Q' THEN 1
-                                WHEN 'W' THEN 2
-                                WHEN 'E' THEN 3
-                                WHEN 'R' THEN 4
-                                ELSE 5
-                            END
+                        FROM (
+                            SELECT *
+                            FROM passive_ability
+                            UNION ALL
+                            SELECT *
+                            FROM spell_abilities
+                        ) abilities
+                        WHERE ability_name IS NOT NULL
+                        ORDER BY sort_order
                         """,
                 (rs, rowNum) -> new ChampionAbilityDto(
                         rs.getString("ability_key"),
@@ -576,7 +678,9 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         rs.getString("ability_description"),
                         rs.getString("image_url")
                 ),
-                championId
+                championId,
+                DATA_DRAGON_BASE_URL,
+                DATA_DRAGON_BASE_URL
         );
     }
 
