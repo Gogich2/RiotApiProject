@@ -14,12 +14,20 @@ const api = {
         return fetchJson(buildApiUrl(`/champions/${encodeURIComponent(championId)}`));
     },
 
+    async getChampions() {
+        return fetchJson(buildApiUrl('/champions'));
+    },
+
     async getChampionItems(championId) {
         return fetchJson(buildApiUrl(`/champions/${encodeURIComponent(championId)}/items`));
     },
 
     async getPlayerSummary(puuid) {
         return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/summary`));
+    },
+
+    async getPlayerLeaderboards() {
+        return fetchJson(buildApiUrl('/players/leaderboard'));
     },
 
     async getPlayerMatches(puuid, limit = 20) {

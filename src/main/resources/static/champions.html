@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Champions</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<header class="site-header">
+    <a class="site-header__logo" href="index.html">Riot Stats</a>
+    <nav class="site-nav" aria-label="Primary">
+        <a class="site-nav__link" href="index.html">Home</a>
+        <a class="site-nav__link" href="champions.html">Champions</a>
+        <a class="site-nav__link" href="players.html">Players</a>
+    </nav>
+
+    <div class="search">
+        <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
+        <div class="search__results" id="globalSearchResults"></div>
+    </div>
+</header>
+
+<main class="page">
+    <section class="hero">
+        <h1 class="hero__title">All champions</h1>
+        <p class="hero__text">
+            Browse every champion in the local database and compare play volume, wins, and winrate.
+        </p>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <div class="champion-section-heading">
+                <h2 class="section__title">Champion list</h2>
+                <div class="champion-role-buttons" id="championRoleButtons" aria-label="Role sorting">
+                    <button class="role-sort-button role-sort-button--active" type="button" data-role-sort="default">
+                        All
+                    </button>
+                    <button class="role-sort-button" type="button" data-role-sort="TOP">
+                        <span class="role-sort-button__icon" data-role-icon="TOP"></span>
+                        Top
+                    </button>
+                    <button class="role-sort-button" type="button" data-role-sort="JUNGLE">
+                        <span class="role-sort-button__icon" data-role-icon="JUNGLE"></span>
+                        Jungle
+                    </button>
+                    <button class="role-sort-button" type="button" data-role-sort="MIDDLE">
+                        <span class="role-sort-button__icon" data-role-icon="MIDDLE"></span>
+                        Mid
+                    </button>
+                    <button class="role-sort-button" type="button" data-role-sort="BOTTOM">
+                        <span class="role-sort-button__icon" data-role-icon="BOTTOM"></span>
+                        Bottom
+                    </button>
+                    <button class="role-sort-button" type="button" data-role-sort="UTILITY">
+                        <span class="role-sort-button__icon" data-role-icon="UTILITY"></span>
+                        Support
+                    </button>
+                </div>
+            </div>
+        </div>
+        <input class="filter-input champion-filter" id="championFilterInput" type="text"
+               placeholder="Filter champions by name...">
+        <div class="champion-grid" id="championsGrid"></div>
+    </section>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/search.js"></script>
+<script src="js/champions.js"></script>
+</body>
+</html>

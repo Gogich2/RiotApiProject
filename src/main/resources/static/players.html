@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Champion</title>
+    <title>Players</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -21,29 +21,45 @@
 </header>
 
 <main class="page">
-    <section class="champion-hero" id="championHero"></section>
-
-    <section class="stats-grid" id="championStats"></section>
-
-    <section class="section">
-        <h2 class="section__title">Abilities</h2>
-        <div class="abilities" id="championAbilities"></div>
+    <section class="hero">
+        <h1 class="hero__title">Player leaderboards</h1>
+        <p class="hero__text">
+            Compare the strongest local performers by winrate and the most active players by total analyzed matches.
+        </p>
     </section>
 
     <section class="section">
-        <h2 class="section__title">Item statistics</h2>
+        <h2 class="section__title">Best players</h2>
         <div class="table-wrapper">
             <table class="table">
                 <thead>
                 <tr>
-                    <th>Item</th>
-                    <th>Games</th>
+                    <th>Player</th>
+                    <th>Matches</th>
                     <th>Wins</th>
                     <th>Winrate</th>
-                    <th>Pickrate</th>
+                    <th>Avg KDA</th>
                 </tr>
                 </thead>
-                <tbody id="championItemsBody"></tbody>
+                <tbody id="bestPlayersBody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2 class="section__title">Most active players</h2>
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Matches</th>
+                    <th>Wins</th>
+                    <th>Winrate</th>
+                    <th>Avg KDA</th>
+                </tr>
+                </thead>
+                <tbody id="mostActivePlayersBody"></tbody>
             </table>
         </div>
     </section>
@@ -51,6 +67,6 @@
 
 <script src="js/api.js"></script>
 <script src="js/search.js"></script>
-<script src="js/champion.js"></script>
+<script src="js/players.js"></script>
 </body>
 </html>
