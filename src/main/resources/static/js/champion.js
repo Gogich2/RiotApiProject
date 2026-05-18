@@ -74,14 +74,18 @@ function renderChampionAbilities(abilities) {
     }
 
     container.innerHTML = abilities.map(ability => `
-        <article class="ability-card">
+        <article class="ability-card" tabindex="0">
             ${ability.imageUrl ? `<img class="ability-card__icon" src="${ability.imageUrl}" alt="${getAbilityDisplayName(ability)}"
                 onerror="this.onerror=null; this.remove();">` : ''}
-            <div>
+            <div class="ability-card__content">
                 <span class="ability-card__key">${ability.abilityKey || 'Ability'}</span>
                 <h3 class="ability-card__title">${getAbilityDisplayName(ability)}</h3>
-                <p class="ability-card__text">${ability.abilityDescription || ''}</p>
             </div>
+            ${ability.abilityDescription ? `
+                <div class="ability-card__tooltip">
+                    <p class="ability-card__text">${ability.abilityDescription}</p>
+                </div>
+            ` : ''}
         </article>
     `).join('');
 }
