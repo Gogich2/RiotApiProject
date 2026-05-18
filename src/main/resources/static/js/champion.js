@@ -7,27 +7,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        const [champion, items] = await Promise.all([
-            api.getChampion(championId),
-            api.getChampionItems(championId)
-        ]);
-
+        const champion = await api.getChampion(championId);
         renderChampionHero(champion);
         renderChampionStats(champion.summary);
         renderChampionAbilities(champion.abilities || []);
-        renderChampionItems(items || []);
     } catch (error) {
         document.getElementById('championHero').innerHTML = `<div class="error-box">Could not load champion.</div>`;
+        return;
+    }
+
+    try {
+        const items = await api.getChampionItems(championId);
+        renderChampionItems(items || []);
+    } catch (error) {
+        renderChampionItemsError();
     }
 });
 
 function renderChampionHero(champion) {
+    const championName = formatChampionDisplayName(champion.championName);
+
     document.getElementById('championHero').innerHTML = `
         <div class="champion-hero__background" style="background-image: url('${champion.splashUrl || ''}')"></div>
         <div class="champion-hero__content">
-            <img class="champion-hero__icon" src="${champion.imageUrl || ''}" alt="${champion.championName}">
+            <img class="champion-hero__icon" src="${champion.imageUrl || ''}" alt="${championName}">
             <div>
-                <h1 class="champion-hero__title">${champion.championName}</h1>
+                <h1 class="champion-hero__title">${championName}</h1>
                 <p class="champion-hero__subtitle">${champion.title || ''}</p>
                 <p class="champion-hero__lore">${champion.lore || ''}</p>
             </div>
@@ -83,13 +88,80 @@ function renderChampionAbilities(abilities) {
 function renderChampionItems(items) {
     const body = document.getElementById('championItemsBody');
 
+    if (items.length === 0) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="5">
+                    <div class="empty-box">No item statistics loaded yet.</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
     body.innerHTML = items.map(item => `
         <tr>
-            <td>${item.itemId}</td>
+            <td>
+                <div class="item-cell">
+                    ${item.imageUrl ? `<img class="item-cell__icon" src="${item.imageUrl}" alt="${getItemDisplayName(item)}"
+                        onerror="this.onerror=null; this.remove();">` : ''}
+                    <div class="item-cell__content">
+                        <span class="item-cell__name">${getItemDisplayName(item)}</span>
+                        <span class="item-cell__meta">Item ID: ${item.itemId}</span>
+                    </div>
+                </div>
+            </td>
             <td>${formatNumber(item.games)}</td>
             <td>${formatNumber(item.wins)}</td>
             <td>${formatPercent(item.winrate)}</td>
             <td>${formatPercent(item.pickrate)}</td>
         </tr>
     `).join('');
+}
+
+function renderChampionItemsError() {
+    document.getElementById('championItemsBody').innerHTML = `
+        <tr>
+            <td colspan="5">
+                <div class="error-box">Could not load item statistics.</div>
+            </td>
+        </tr>
+    `;
+}
+
+function getItemDisplayName(item) {
+    if (item && item.itemName) {
+        return item.itemName;
+    }
+
+    return `Item ${item.itemId}`;
+}
+
+function formatChampionDisplayName(name) {
+    if (!name) {
+        return '';
+    }
+
+    const specialNames = {
+        AurelionSol: 'Aurelion Sol',
+        Belveth: 'Bel\'Veth',
+        Chogath: 'Cho\'Gath',
+        DrMundo: 'Dr. Mundo',
+        Kaisa: 'Kai\'Sa',
+        Khazix: 'Kha\'Zix',
+        KogMaw: 'Kog\'Maw',
+        LeeSin: 'Lee Sin',
+        MasterYi: 'Master Yi',
+        MissFortune: 'Miss Fortune',
+        Nunu: 'Nunu & Willump',
+        TwistedFate: 'Twisted Fate',
+        Velkoz: 'Vel\'Koz',
+        XinZhao: 'Xin Zhao'
+    };
+
+    if (specialNames[name]) {
+        return specialNames[name];
+    }
+
+    return name.replace(/([a-z])([A-Z])/g, '$1 $2').trim();
 }

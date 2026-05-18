@@ -13,6 +13,7 @@ import org.main.dto.frontend.PlayerSearchResultDto;
 import org.main.dto.frontend.PlayerSummaryDto;
 import org.main.dto.frontend.SearchResultDto;
 import org.main.exception.NotFoundException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.main.dto.frontend.PlayerInsightDto;
 import org.main.dto.frontend.PlayerChampionStatsDto;
@@ -326,40 +327,116 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     @Override
     public List<ChampionItemStatsDto> getChampionItems(Integer championId) {
-        return jdbcTemplate.query("""
-                        WITH champion_games AS (
-                            SELECT COUNT(*) AS total_games
-                            FROM core.participants
-                            WHERE champion_id = ?
-                        )
-                        SELECT
-                            i.item_id,
-                            COUNT(*) AS games,
-                            SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
-                            ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0 
-                                       / COUNT(*))::numeric, 2)::double precision AS winrate,
-                            ROUND((COUNT(*) * 100.0 / NULLIF((SELECT total_games 
-                                                              FROM champion_games), 0))::numeric, 2)::double precision 
-                                AS pickrate
-                        FROM core.participant_final_items i
-                        JOIN core.participants p
-                            ON p.match_id = i.match_id
-                           AND p.participant_id = i.participant_id
-                        WHERE p.champion_id = ?
-                        GROUP BY i.item_id
-                        ORDER BY games DESC
-                        LIMIT 30
-                        """,
-                (rs, rowNum) -> new ChampionItemStatsDto(
-                        getInteger(rs, "item_id"),
-                        getLong(rs, "games"),
-                        getLong(rs, "wins"),
-                        getDouble(rs, "winrate"),
-                        getDouble(rs, "pickrate")
-                ),
-                championId,
-                championId
-        );
+        try {
+            return jdbcTemplate.query("""
+                            WITH latest_items AS (
+                                SELECT
+                                    item_id,
+                                    version,
+                                    name,
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY item_id
+                                        ORDER BY version DESC
+                                    ) AS rn
+                                FROM static.items
+                            ),
+                            latest_item_version AS (
+                                SELECT MAX(version) AS version
+                                FROM static.items
+                            ),
+                            champion_games AS (
+                                SELECT COUNT(*) AS total_games
+                                FROM core.participants
+                                WHERE champion_id = ?
+                            )
+                            SELECT
+                                i.item_id,
+                                COALESCE(li.name, CONCAT('Item ', i.item_id)) AS item_name,
+                                CASE
+                                    WHEN COALESCE(li.version, liv.version) IS NULL THEN NULL
+                                    ELSE CONCAT(
+                                        ?,
+                                        '/',
+                                        COALESCE(li.version, liv.version),
+                                        '/img/item/',
+                                        i.item_id,
+                                        '.png'
+                                    )
+                                END AS image_url,
+                                COUNT(*) AS games,
+                                SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
+                                ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0
+                                           / COUNT(*))::numeric, 2)::double precision AS winrate,
+                                ROUND((COUNT(*) * 100.0 / NULLIF((SELECT total_games
+                                                                  FROM champion_games), 0))::numeric, 2)
+                                    ::double precision AS pickrate
+                            FROM core.participant_final_items i
+                            JOIN core.participants p
+                                ON p.match_id = i.match_id
+                               AND p.participant_id = i.participant_id
+                            LEFT JOIN latest_items li
+                                ON li.item_id = i.item_id
+                               AND li.rn = 1
+                            CROSS JOIN latest_item_version liv
+                            WHERE p.champion_id = ?
+                            GROUP BY i.item_id, li.name, li.version, liv.version
+                            ORDER BY games DESC
+                            LIMIT 30
+                            """,
+                    (rs, rowNum) -> new ChampionItemStatsDto(
+                            getInteger(rs, "item_id"),
+                            rs.getString("item_name"),
+                            rs.getString("image_url"),
+                            getLong(rs, "games"),
+                            getLong(rs, "wins"),
+                            getDouble(rs, "winrate"),
+                            getDouble(rs, "pickrate")
+                    ),
+                    championId,
+                    DATA_DRAGON_BASE_URL,
+                    championId
+            );
+        } catch (DataAccessException ex) {
+            return jdbcTemplate.query("""
+                            WITH champion_games AS (
+                                SELECT COUNT(*) AS total_games
+                                FROM core.participants
+                                WHERE champion_id = ?
+                            )
+                            SELECT
+                                i.item_id,
+                                CONCAT('Item ', i.item_id) AS item_name,
+                                CONCAT(?, '/15.10.1/img/item/', i.item_id, '.png') AS image_url,
+                                COUNT(*) AS games,
+                                SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
+                                ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0
+                                           / COUNT(*))::numeric, 2)::double precision AS winrate,
+                                ROUND((COUNT(*) * 100.0 / NULLIF((SELECT total_games
+                                                                  FROM champion_games), 0))::numeric, 2)
+                                    ::double precision AS pickrate
+                            FROM core.participant_final_items i
+                            JOIN core.participants p
+                                ON p.match_id = i.match_id
+                               AND p.participant_id = i.participant_id
+                            WHERE p.champion_id = ?
+                            GROUP BY i.item_id
+                            ORDER BY games DESC
+                            LIMIT 30
+                            """,
+                    (rs, rowNum) -> new ChampionItemStatsDto(
+                            getInteger(rs, "item_id"),
+                            rs.getString("item_name"),
+                            rs.getString("image_url"),
+                            getLong(rs, "games"),
+                            getLong(rs, "wins"),
+                            getDouble(rs, "winrate"),
+                            getDouble(rs, "pickrate")
+                    ),
+                    championId,
+                    DATA_DRAGON_BASE_URL,
+                    championId
+            );
+        }
     }
 
     @Override
