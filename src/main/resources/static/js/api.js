@@ -35,13 +35,19 @@ const api = {
         return fetchJson(`/api/players/${encodeURIComponent(puuid)}/ranks`);
     },
 
+    async refreshPlayerRanks(puuid) {
+        return fetchJson(`/api/players/${encodeURIComponent(puuid)}/refresh-ranks`, {
+            method: 'POST'
+        });
+    },
+
     async getPlayerRankHistory(puuid) {
         return fetchJson(`/api/players/${encodeURIComponent(puuid)}/rank-history`);
     }
 };
 
-async function fetchJson(url) {
-    const response = await fetch(url);
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
 
     if (!response.ok) {
         throw new Error(`Request failed: ${response.status}`);

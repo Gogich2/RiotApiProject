@@ -4,11 +4,8 @@ import java.util.List;
 import org.main.dto.frontend.PlayerInsightDto;
 import org.main.dto.frontend.PlayerRecentMatchDto;
 import org.main.dto.frontend.PlayerSummaryDto;
-import org.main.persistence.entity.LeagueEntryEntity;
-import org.main.persistence.entity.LeagueEntrySnapshotEntity;
 import org.main.persistence.repository.LeagueEntryRepository;
 import org.main.persistence.repository.LeagueEntrySnapshotRepository;
-import org.main.service.RankEnrichmentResult;
 import org.main.service.RankEnrichmentService;
 import org.main.service.frontend.FrontendStatsService;
 import org.main.dto.frontend.PlayerChampionStatsDto;
@@ -38,6 +35,7 @@ public class PlayerController {
         this.rankEnrichmentService = rankEnrichmentService;
         this.leagueEntryRepository = leagueEntryRepository;
         this.leagueEntrySnapshotRepository = leagueEntrySnapshotRepository;
+
     }
 
     @GetMapping("/{puuid}/summary")
@@ -59,21 +57,5 @@ public class PlayerController {
     @GetMapping("/{puuid}/insights")
     public List<PlayerInsightDto> insights(@PathVariable String puuid) {
         return frontendStatsService.getPlayerInsights(puuid);
-    }
-
-    @GetMapping("/{puuid}/ranks")
-    public List<LeagueEntryEntity> ranks(@PathVariable String puuid) {
-        RankEnrichmentResult result = rankEnrichmentService.enrichRanksForPuuidEuw(puuid);
-
-        if (result.hasEntries()) {
-            return result.entries();
-        }
-
-        return leagueEntryRepository.findByPuuidOrderByQueueTypeAsc(puuid);
-    }
-
-    @GetMapping("/{puuid}/rank-history")
-    public List<LeagueEntrySnapshotEntity> rankHistory(@PathVariable String puuid) {
-        return leagueEntrySnapshotRepository.findByPuuidOrderBySyncedAtDesc(puuid);
     }
 }

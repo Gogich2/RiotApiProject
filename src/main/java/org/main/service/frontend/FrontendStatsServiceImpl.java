@@ -123,71 +123,91 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
     @Override
     public OverviewStatsDto getOverview() {
         Long totalMatches = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*)
-                FROM core.matches
-                """, Long.class);
+            SELECT COUNT(*)
+            FROM core.matches
+            """, Long.class);
 
         Long totalPlayers = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*)
-                FROM raw.players
-                """, Long.class);
+            SELECT COUNT(*)
+            FROM raw.players
+            WHERE puuid IS NOT NULL
+              AND puuid <> ''
+              AND puuid <> 'BOT'
+            """, Long.class);
 
         Long totalParticipants = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*)
-                FROM core.participants
-                """, Long.class);
+            SELECT COUNT(DISTINCT champion_id)
+            FROM core.participants
+            WHERE champion_id IS NOT NULL
+            """, Long.class);
 
         Double averageMatchDurationMinutes = jdbcTemplate.queryForObject("""
-                SELECT ROUND((AVG(game_duration_ms) / 60000.0)::numeric, 2)::double precision
-                FROM core.matches
-                WHERE game_duration_ms IS NOT NULL
-                """, Double.class);
+            SELECT ROUND((AVG(game_duration_ms) / 60000.0)::numeric, 2)::double precision
+            FROM core.match_details_view
+            WHERE game_duration_ms IS NOT NULL
+            """, Double.class);
 
         List<ChampionStatDto> mostPopularChampions = jdbcTemplate.query("""
-                        SELECT
-                            champion_id,
-                            COALESCE(MAX(champion_name), 'Unknown') AS champion_name,
-                            COUNT(*) AS games,
-                            SUM(CASE WHEN win THEN 1 ELSE 0 END) AS wins,
-                            ROUND((SUM(CASE WHEN win THEN 1 ELSE 0 END) * 100.0
-                                       / COUNT(*))::numeric, 2)::double precision AS winrate
-                        FROM core.participants
-                        WHERE champion_id IS NOT NULL
-                        GROUP BY champion_id
-                        ORDER BY games DESC
-                        LIMIT 10
-                        """,
+                    SELECT
+                        p.champion_id,
+                        COALESCE(MAX(p.champion_name), MAX(c.name), 'Unknown') AS champion_name,
+                        CASE
+                            WHEN MAX(c.image_full) IS NULL THEN NULL
+                            ELSE CONCAT(?, '/', MAX(c.version), '/img/champion/', MAX(c.image_full))
+                        END AS image_url,
+                        COUNT(*) AS games,
+                        SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
+                        ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0
+                                   / COUNT(*))::numeric, 2)::double precision AS winrate
+                    FROM core.participants p
+                    LEFT JOIN static.champions c
+                        ON c.champion_id = p.champion_id
+                    WHERE p.champion_id IS NOT NULL
+                    GROUP BY p.champion_id
+                    ORDER BY games DESC
+                    LIMIT 10
+                    """,
                 (rs, rowNum) -> new ChampionStatDto(
                         getInteger(rs, "champion_id"),
                         rs.getString("champion_name"),
+                        rs.getString("image_url"),
                         getLong(rs, "games"),
                         getLong(rs, "wins"),
                         getDouble(rs, "winrate")
-                )
+                ),
+                DATA_DRAGON_BASE_URL
         );
 
         List<ChampionStatDto> bestWinrateChampions = jdbcTemplate.query("""
-                        SELECT
-                            champion_id,
-                            COALESCE(MAX(champion_name), 'Unknown') AS champion_name,
-                            COUNT(*) AS games,
-                            SUM(CASE WHEN win THEN 1 ELSE 0 END) AS wins,
-                            ROUND((SUM(CASE WHEN win THEN 1 ELSE 0 END) * 100.0 
-                                       / COUNT(*))::numeric, 2)::double precision AS winrate
-                        FROM core.participants
-                        WHERE champion_id IS NOT NULL
-                        GROUP BY champion_id
-                        HAVING COUNT(*) >= 10
-                        ORDER BY winrate DESC, games DESC
-                        LIMIT 10
-                        """,
+                    SELECT
+                        p.champion_id,
+                        COALESCE(MAX(p.champion_name), MAX(c.name), 'Unknown') AS champion_name,
+                        CASE
+                            WHEN MAX(c.image_full) IS NULL THEN NULL
+                            ELSE CONCAT(?, '/', MAX(c.version), '/img/champion/', MAX(c.image_full))
+                        END AS image_url,
+                        COUNT(*) AS games,
+                        SUM(CASE WHEN p.win THEN 1 ELSE 0 END) AS wins,
+                        ROUND((SUM(CASE WHEN p.win THEN 1 ELSE 0 END) * 100.0
+                                   / COUNT(*))::numeric, 2)::double precision AS winrate
+                    FROM core.participants p
+                    LEFT JOIN static.champions c
+                        ON c.champion_id = p.champion_id
+                    WHERE p.champion_id IS NOT NULL
+                    GROUP BY p.champion_id
+                    HAVING COUNT(*) >= 10
+                    ORDER BY winrate DESC, games DESC
+                    LIMIT 10
+                    """,
                 (rs, rowNum) -> new ChampionStatDto(
                         getInteger(rs, "champion_id"),
                         rs.getString("champion_name"),
+                        rs.getString("image_url"),
                         getLong(rs, "games"),
                         getLong(rs, "wins"),
                         getDouble(rs, "winrate")
-                )
+                ),
+                DATA_DRAGON_BASE_URL
         );
 
         return new OverviewStatsDto(

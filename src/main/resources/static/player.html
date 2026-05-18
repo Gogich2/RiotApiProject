@@ -20,44 +20,71 @@
 
     <section class="stats-grid" id="playerStats"></section>
 
-    <section class="section">
-        <h2 class="section__title">Best champions</h2>
+    <div class="player-tabs" id="playerTabs">
+        <button class="player-tabs__button player-tabs__button--active" type="button" data-player-tab-button="overview">
+            Overview
+        </button>
+        <button class="player-tabs__button" type="button" data-player-tab-button="champions">
+            Champion Stats
+        </button>
+        <button class="player-tabs__button" type="button" data-player-tab-button="recommendations">
+            Recommendations
+        </button>
+    </div>
+
+    <section class="section" data-player-tab-panel="champions">
+        <h2 class="section__title">Champion statistics</h2>
         <div class="player-champions" id="playerChampions"></div>
     </section>
 
-    <section class="section">
-        <h2 class="section__title">Ranked performance</h2>
-        <div class="rank-grid" id="playerRanks"></div>
-    </section>
+    <div class="player-overview" data-player-tab-panel="overview">
+        <div class="player-overview__side">
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section__title">Ranked performance</h2>
+                    <button class="button button--secondary" id="refreshRanksButton" type="button">
+                        Refresh rank
+                    </button>
+                </div>
 
-    <section class="section">
-        <h2 class="section__title">Rank history</h2>
-        <div class="rank-history-chart" id="playerRankChart"></div>
-        <div class="rank-history" id="playerRankHistory"></div>
-    </section>
+                <div class="rank-grid" id="playerRanks"></div>
+            </section>
 
-    <section class="section">
-        <h2 class="section__title">Insights and recommendations</h2>
-        <div class="insights" id="playerInsights"></div>
-    </section>
+            <section class="section">
+                <h2 class="section__title">Rank history</h2>
+                <div class="rank-history-chart" id="playerRankChart"></div>
+                <div class="rank-history" id="playerRankHistory"></div>
+            </section>
 
-    <section class="section">
-        <h2 class="section__title">Recent matches</h2>
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>Champion</th>
-                    <th>Result</th>
-                    <th>KDA</th>
-                    <th>Queue</th>
-                    <th>Version</th>
-                    <th>Duration</th>
-                </tr>
-                </thead>
-                <tbody id="playerMatchesBody"></tbody>
-            </table>
+            <section class="section">
+                <h2 class="section__title">Recommendations summary</h2>
+                <div class="insights" id="playerInsightsSummary"></div>
+            </section>
         </div>
+
+        <section class="section player-overview__matches">
+            <h2 class="section__title">Recent matches</h2>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Champion</th>
+                        <th>Result</th>
+                        <th>KDA</th>
+                        <th>Queue</th>
+                        <th>Version</th>
+                        <th>Duration</th>
+                    </tr>
+                    </thead>
+                    <tbody id="playerMatchesBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="section player-recommendations" data-player-tab-panel="recommendations">
+        <h2 class="section__title">Detailed recommendations</h2>
+        <div class="insights" id="playerInsights"></div>
     </section>
 </main>
 

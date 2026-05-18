@@ -1,3 +1,6 @@
+let activePlayerTab = 'overview';
+let cachedPlayerInsights = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
     const puuid = getQueryParam('puuid');
 
@@ -6,53 +9,188 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    try {
-        const [summary, matches] = await Promise.all([
-            api.getPlayerSummary(puuid),
-            api.getPlayerMatches(puuid, 20)
-        ]);
+    const refreshRanksButton = document.getElementById('refreshRanksButton');
 
-        renderPlayerHero(summary);
-        renderPlayerStats(summary);
-        renderPlayerMatches(matches || []);
-    } catch (error) {
-        console.error('Could not load player:', error);
-        showPlayerError('Could not load player.');
+    if (refreshRanksButton) {
+        refreshRanksButton.addEventListener('click', async () => {
+            await refreshPlayerRanks(puuid);
+        });
+    }
+
+    setupPlayerTabs();
+
+    renderPlayerRanks([]);
+    renderPlayerRankChart([]);
+    renderPlayerRankHistory([]);
+    renderPlayerInsights([]);
+    renderPlayerChampions([]);
+
+    const loadMain = async () => {
+        try {
+            const [summary, matches] = await Promise.all([
+                api.getPlayerSummary(puuid),
+                api.getPlayerMatches(puuid, 20)
+            ]);
+
+            renderPlayerHero(summary);
+            renderPlayerStats(summary);
+            renderPlayerMatches(matches || []);
+        } catch (error) {
+            console.error('Could not load player:', error);
+            showPlayerError('Could not load player.');
+        }
+    };
+
+    const loadChampions = async () => {
+        try {
+            const champions = await api.getPlayerChampions(puuid);
+            renderPlayerChampions(champions || []);
+        } catch (error) {
+            console.error('Could not load player champions:', error);
+            renderPlayerChampions([]);
+        }
+    };
+
+    const loadRanks = async () => {
+        try {
+            const ranks = await api.getPlayerRanks(puuid);
+            renderPlayerRanks(ranks || []);
+        } catch (error) {
+            console.error('Could not load player ranks:', error);
+            renderPlayerRanks([]);
+        }
+    };
+
+    const loadRankHistory = async () => {
+        try {
+            const rankHistory = await api.getPlayerRankHistory(puuid);
+            renderPlayerRankChart(rankHistory || []);
+            renderPlayerRankHistory(rankHistory || []);
+        } catch (error) {
+            console.error('Could not load rank history:', error);
+            renderPlayerRankChart([]);
+            renderPlayerRankHistory([]);
+        }
+    };
+
+    const loadInsights = async () => {
+        try {
+            cachedPlayerInsights = await api.getPlayerInsights(puuid) || [];
+            renderInsightsForActiveTab();
+        } catch (error) {
+            console.error('Could not load insights:', error);
+            cachedPlayerInsights = [];
+            renderInsightsForActiveTab();
+        }
+    };
+
+    await Promise.allSettled([
+        loadMain(),
+        loadChampions(),
+        loadRanks(),
+        loadRankHistory(),
+        loadInsights()
+    ]);
+});
+
+function setupPlayerTabs() {
+    const buttons = document.querySelectorAll('[data-player-tab-button]');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.playerTabButton;
+
+            if (!tab) {
+                return;
+            }
+
+            activePlayerTab = tab;
+            updatePlayerTabs();
+            renderInsightsForActiveTab();
+        });
+    });
+
+    updatePlayerTabs();
+}
+
+function updatePlayerTabs() {
+    document.querySelectorAll('[data-player-tab-button]').forEach(button => {
+        const isActive = button.dataset.playerTabButton === activePlayerTab;
+        button.classList.toggle('player-tabs__button--active', isActive);
+    });
+
+    document.querySelectorAll('[data-player-tab-panel]').forEach(panel => {
+        const tabs = String(panel.dataset.playerTabPanel || '').split(' ');
+        panel.hidden = !tabs.includes(activePlayerTab);
+    });
+}
+
+function renderInsightsForActiveTab() {
+    if (activePlayerTab === 'recommendations') {
+        renderDetailedRecommendations(cachedPlayerInsights);
         return;
     }
 
-    try {
-        const champions = await api.getPlayerChampions(puuid);
-        renderPlayerChampions(champions || []);
-    } catch (error) {
-        console.error('Could not load player champions:', error);
-        renderPlayerChampions([]);
+    renderRecommendationSummary(cachedPlayerInsights);
+}
+
+function renderRecommendationSummary(insights) {
+    const container = document.getElementById('playerInsightsSummary');
+
+    if (!container) {
+        return;
+    }
+
+    if (!insights || insights.length === 0) {
+        container.innerHTML = `<div class="empty-box">No insights generated for this player yet.</div>`;
+        return;
+    }
+
+    const visibleInsights = insights.slice(0, 3);
+
+    container.innerHTML = `
+        <div class="recommendation-summary">
+            ${visibleInsights.map(insight => `
+                <article class="recommendation-summary-card">
+                    <span class="recommendation-summary-card__type">
+                        ${getInsightIcon(insight.insightType)}
+                        ${escapeHtml(formatInsightType(insight.insightType))}
+                    </span>
+                    <strong>${escapeHtml(insight.title || 'Recommendation')}</strong>
+                </article>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderDetailedRecommendations(insights) {
+    renderPlayerInsights(insights || []);
+}
+
+async function refreshPlayerRanks(puuid) {
+    const button = document.getElementById('refreshRanksButton');
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Refreshing...';
     }
 
     try {
-        const [ranks, rankHistory] = await Promise.all([
-            api.getPlayerRanks(puuid),
-            api.getPlayerRankHistory(puuid)
-        ]);
-
+        const ranks = await api.refreshPlayerRanks(puuid);
         renderPlayerRanks(ranks || []);
+
+        const rankHistory = await api.getPlayerRankHistory(puuid);
         renderPlayerRankChart(rankHistory || []);
         renderPlayerRankHistory(rankHistory || []);
     } catch (error) {
-        console.error('Could not load ranks:', error);
-        renderPlayerRanks([]);
-        renderPlayerRankChart([]);
-        renderPlayerRankHistory([]);
+        console.error('Could not refresh player ranks:', error);
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Refresh rank';
+        }
     }
-
-    try {
-        const insights = await api.getPlayerInsights(puuid);
-        renderPlayerInsights(insights || []);
-    } catch (error) {
-        console.error('Could not load insights:', error);
-        renderPlayerInsights([]);
-    }
-});
+}
 
 function showPlayerError(message) {
     const hero = document.getElementById('playerHero');
@@ -616,9 +754,13 @@ function formatQueue(queueId) {
         1710: 'Arena'
     };
 
+    if (queueId === null || queueId === undefined || queueId === '') {
+        return '-';
+    }
+
     const normalized = Number(queueId);
 
-    if (!Number.isFinite(normalized)) {
+    if (!Number.isFinite(normalized) || normalized <= 0) {
         return '-';
     }
 
