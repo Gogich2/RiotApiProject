@@ -1,6 +1,12 @@
 (function () {
     const CARD_SELECTOR = '[data-match-details-card]';
     const detailsCache = new Map();
+    const timelineTypeGroups = {
+        KILLS: ['CHAMPION_KILL'],
+        OBJECTIVES: ['ELITE_MONSTER_KILL', 'BUILDING_KILL', 'TURRET_PLATE_DESTROYED'],
+        ITEMS: ['ITEM_PURCHASED', 'ITEM_DESTROYED', 'ITEM_SOLD', 'ITEM_UNDO'],
+        VISION: ['WARD_PLACED', 'WARD_KILL']
+    };
 
     async function loadDetails(matchId, puuid) {
         const cacheKey = `${matchId}::${puuid || ''}`;
@@ -32,24 +38,23 @@
 
         try {
             const details = await loadDetails(matchId, puuid);
-            renderDetailsView(container, details);
+            renderDetailsView(container, details, { standalone: true });
         } catch (error) {
             console.error('Could not load match details:', error);
             renderErrorState(container, 'Could not load match details.');
         }
     }
 
-    function renderDetailsView(container, details) {
+    function renderDetailsView(container, details, options = {}) {
         const selectedParticipant = details.selectedParticipant
             || (details.participants && details.participants[0])
             || null;
-        const timelineEvents = details.timelineEvents || [];
-        const timelineFilter = 'ALL';
+        const isStandalone = Boolean(options.standalone);
 
         container.innerHTML = `
-            <div class="match-details-view">
-                ${renderMatchHero(details.match || {}, selectedParticipant, details.teams || [])}
-                <div class="player-tabs match-tabs" data-match-tabs>
+            <div class="match-details-view ${isStandalone ? 'match-details-view--standalone' : ''}">
+                ${renderSummary(details.match || {}, selectedParticipant, details.teams || [])}
+                <div class="match-details-tabs" data-match-tabs>
                     ${renderTabButton('postgame', 'Post Game', true)}
                     ${renderTabButton('performance', 'Performance', false)}
                     ${renderTabButton('build', 'Item Build', false)}
@@ -57,16 +62,14 @@
                     ${renderTabButton('metrics', 'Metrics', false)}
                 </div>
 
-                <section class="section" data-match-tab-panel="postgame">
-                    <h2 class="section__title">Post Game</h2>
-                    <div class="match-teams">
+                <section class="match-panel" data-match-tab-panel="postgame">
+                    <div class="match-postgame">
                         ${(details.teams || []).map(team => renderPostGameTeam(team)).join('')}
                     </div>
                 </section>
 
-                <section class="section" data-match-tab-panel="performance" hidden>
-                    <h2 class="section__title">Performance</h2>
-                    <div class="table-wrapper">
+                <section class="match-panel" data-match-tab-panel="performance" hidden>
+                    <div class="table-wrapper match-performance-table">
                         <table class="table">
                             <thead>
                             <tr>
@@ -86,14 +89,12 @@
                     </div>
                 </section>
 
-                <section class="section" data-match-tab-panel="build" hidden>
-                    <h2 class="section__title">Item Build</h2>
+                <section class="match-panel" data-match-tab-panel="build" hidden>
                     ${renderItemBuild(selectedParticipant)}
                 </section>
 
-                <section class="section" data-match-tab-panel="timeline" hidden>
-                    <div class="section-header">
-                        <h2 class="section__title">Timeline</h2>
+                <section class="match-panel" data-match-tab-panel="timeline" hidden>
+                    <div class="match-timeline-toolbar">
                         <div class="match-filters" data-match-timeline-filters>
                             ${renderTimelineFilterButton('ALL', 'All', true)}
                             ${renderTimelineFilterButton('KILLS', 'Kills', false)}
@@ -103,19 +104,18 @@
                         </div>
                     </div>
                     <div class="match-timeline-layout">
+                        <div class="match-timeline-list" data-match-timeline-list>
+                            ${renderTimelineList(details.timelineEvents || [], 'ALL', details.participants || [])}
+                        </div>
                         <div class="match-timeline-map">
                             <img src="img/ui/match-map.svg" alt="Summoner's Rift map"
-                                 onerror="this.onerror=null; this.remove();">
-                        </div>
-                        <div class="match-timeline-list" data-match-timeline-list>
-                            ${renderTimelineList(timelineEvents, timelineFilter, details.participants || [])}
+                                 onerror="this.onerror=null; this.parentElement.hidden=true;">
                         </div>
                     </div>
                 </section>
 
-                <section class="section" data-match-tab-panel="metrics" hidden>
-                    <h2 class="section__title">Metrics</h2>
-                    <div class="empty-box">
+                <section class="match-panel" data-match-tab-panel="metrics" hidden>
+                    <div class="match-compact-empty">
                         ${escapeHtml(getMetricsMessage(details.metrics))}
                     </div>
                 </section>
@@ -126,41 +126,22 @@
         setupTimelineFilterInteractions(container, details);
     }
 
-    function renderTabButton(tabId, label, isActive) {
+    function renderSummary(match, participant, teams) {
         return `
-            <button class="player-tabs__button ${isActive ? 'player-tabs__button--active' : ''}"
-                    type="button" data-match-tab-button="${tabId}">
-                ${escapeHtml(label)}
-            </button>
-        `;
-    }
-
-    function renderTimelineFilterButton(filter, label, isActive) {
-        return `
-            <button class="button button--secondary match-filter-button
-                    ${isActive ? 'match-filter-button--active' : ''}"
-                    type="button" data-timeline-filter="${filter}">
-                ${escapeHtml(label)}
-            </button>
-        `;
-    }
-
-    function renderMatchHero(match, participant, teams) {
-        return `
-            <section class="match-hero">
-                <div class="match-hero__header">
-                    <div>
-                        <span class="match-hero__queue">${escapeHtml(match.queueName || 'Match')}</span>
-                        <h1 class="match-hero__title">${escapeHtml(match.matchId || 'Unknown match')}</h1>
-                        <div class="match-hero__meta">
-                            <span>${escapeHtml(match.patch || '-')}</span>
-                            <span>${escapeHtml(formatMatchDuration(match.gameDurationMs))}</span>
-                            <span>${escapeHtml(formatDateTime(match.gameCreationMs))}</span>
+            <section class="match-summary">
+                <div class="match-summary__top">
+                    <div class="match-summary__meta">
+                        <span class="match-summary__queue">${escapeHtml(match.queueName || 'Match')}</span>
+                        <strong class="match-summary__id">${escapeHtml(match.matchId || 'Unknown match')}</strong>
+                        <div class="match-summary__chips">
+                            ${renderSummaryChip(match.patch || '-')}
+                            ${renderSummaryChip(formatMatchDuration(match.gameDurationMs))}
+                            ${renderSummaryChip(formatDateTime(match.gameCreationMs))}
                         </div>
                     </div>
                     ${participant ? renderSelectedSummary(participant) : ''}
                 </div>
-                <div class="match-hero__teams">
+                <div class="match-summary__teams">
                     ${teams.map(team => renderTeamCompact(team)).join('')}
                 </div>
             </section>
@@ -168,65 +149,53 @@
     }
 
     function renderSelectedSummary(participant) {
-        const finalItems = participant.finalItems || [];
-
         return `
             <div class="match-selected">
-                <div class="match-selected__top">
-                    ${participant.championImageUrl ? `
-                        <img class="match-selected__icon"
-                             src="${escapeHtml(participant.championImageUrl)}"
-                             alt="${escapeHtml(participant.championName || 'Champion')}"
-                             onerror="this.onerror=null; this.remove();">
-                    ` : ''}
-                    <div>
-                        <div class="match-selected__name">
-                            ${escapeHtml(participant.championName || 'Unknown')}
-                        </div>
-                        <div class="match-selected__player">
-                            ${escapeHtml(formatPlayerName(participant))}
-                        </div>
+                <div class="match-selected__identity">
+                    ${renderChampionThumb(
+                        participant.championImageUrl,
+                        participant.championName || 'Champion',
+                        'match-selected__icon'
+                    )}
+                    <div class="match-selected__copy">
+                        <strong>${escapeHtml(participant.championName || 'Unknown')}</strong>
+                        <span>${escapeHtml(formatPlayerName(participant))}</span>
                     </div>
                     <span class="${participant.win ? 'result result--win' : 'result result--loss'}">
                         ${participant.win ? 'Victory' : 'Defeat'}
                     </span>
                 </div>
                 <div class="match-selected__stats">
-                    <span><strong>${escapeHtml(formatKdaValue(participant))}</strong> KDA</span>
-                    <span><strong>${formatNumberValue(getCsValue(participant))}</strong> CS</span>
-                    <span><strong>${formatNumberValue(participant.visionScore)}</strong> Vision</span>
+                    ${renderSummaryStat('KDA', formatKdaValue(participant))}
+                    ${renderSummaryStat('CS', formatNumberValue(getCsValue(participant)))}
+                    ${renderSummaryStat('Vision', formatNumberValue(participant.visionScore))}
                 </div>
-                <div class="player-match-items">
-                    ${finalItems.length > 0
-                        ? finalItems.map(item => renderItemIcon(item)).join('')
-                        : '<span class="player-match-items__empty">No final items recorded.</span>'}
+                <div class="player-match-items player-match-items--compact">
+                    ${renderItemRow(participant.finalItems || [], 'No final items')}
                 </div>
             </div>
         `;
     }
 
     function renderTeamCompact(team) {
-        const participants = team.participants || [];
-
         return `
-            <article class="match-team-compact">
-                <div class="match-team-compact__header">
+            <article class="match-team-strip">
+                <div class="match-team-strip__header">
                     <strong>${escapeHtml(team.teamName || 'Team')}</strong>
                     <span class="${team.win ? 'result result--win' : 'result result--loss'}">
                         ${team.win ? 'Victory' : 'Defeat'}
                     </span>
                 </div>
-                <div class="match-team-compact__players">
-                    ${participants.map(participant => `
-                        <div class="match-team-compact__player">
-                            ${participant.championImageUrl ? `
-                                <img class="match-team-compact__icon"
-                                     src="${escapeHtml(participant.championImageUrl)}"
-                                     alt="${escapeHtml(participant.championName || 'Champion')}"
-                                     onerror="this.onerror=null; this.remove();">
-                            ` : ''}
+                <div class="match-team-strip__players">
+                    ${(team.participants || []).map(participant => `
+                        <span class="match-team-strip__player" title="${escapeHtml(formatPlayerName(participant))}">
+                            ${renderChampionThumb(
+                                participant.championImageUrl,
+                                participant.championName || 'Champion',
+                                'match-team-strip__icon'
+                            )}
                             <span>${escapeHtml(formatPlayerName(participant))}</span>
-                        </div>
+                        </span>
                     `).join('')}
                 </div>
             </article>
@@ -235,14 +204,14 @@
 
     function renderPostGameTeam(team) {
         return `
-            <section class="match-team-card">
-                <div class="match-team-card__header">
+            <section class="match-team-table">
+                <div class="match-team-table__header">
                     <h3>${escapeHtml(team.teamName || 'Team')}</h3>
                     <span class="${team.win ? 'result result--win' : 'result result--loss'}">
                         ${team.win ? 'Victory' : 'Defeat'}
                     </span>
                 </div>
-                <div class="match-team-card__list">
+                <div class="match-team-table__rows">
                     ${(team.participants || []).map(participant => renderPostGameParticipant(participant)).join('')}
                 </div>
             </section>
@@ -250,18 +219,15 @@
     }
 
     function renderPostGameParticipant(participant) {
-        const finalItems = participant.finalItems || [];
-
         return `
             <article class="match-participant-row">
                 <div class="match-participant-row__identity">
                     <a class="match-champion-link" href="champion.html?id=${encodeURIComponent(participant.championId)}">
-                        ${participant.championImageUrl ? `
-                            <img class="match-champion-link__image"
-                                 src="${escapeHtml(participant.championImageUrl)}"
-                                 alt="${escapeHtml(participant.championName || 'Champion')}"
-                                 onerror="this.onerror=null; this.remove();">
-                        ` : ''}
+                        ${renderChampionThumb(
+                            participant.championImageUrl,
+                            participant.championName || 'Champion',
+                            'match-champion-link__image'
+                        )}
                         <span>${escapeHtml(participant.championName || 'Unknown')}</span>
                     </a>
                     <a class="match-participant-row__player"
@@ -270,20 +236,18 @@
                     </a>
                 </div>
                 <div class="match-participant-row__stats">
-                    <span><strong>${escapeHtml(formatKdaValue(participant))}</strong> KDA</span>
-                    <span><strong>${formatNumberValue(participant.totalDamageToChampions)}</strong> DMG</span>
-                    <span><strong>${formatNumberValue(participant.goldEarned)}</strong> Gold</span>
-                    <span><strong>${formatNumberValue(getCsValue(participant))}</strong> CS</span>
-                    <span><strong>${formatNumberValue(participant.visionScore)}</strong> Vision</span>
-                    <span>
-                        <strong>${formatNumberValue(participant.wardsPlaced)}</strong>/
-                        <strong>${formatNumberValue(participant.wardsKilled)}</strong> Wards
-                    </span>
+                    ${renderRowStat('KDA', formatKdaValue(participant))}
+                    ${renderRowStat('DMG', formatNumberValue(participant.totalDamageToChampions))}
+                    ${renderRowStat('Gold', formatNumberValue(participant.goldEarned))}
+                    ${renderRowStat('CS', formatNumberValue(getCsValue(participant)))}
+                    ${renderRowStat('Vision', formatNumberValue(participant.visionScore))}
+                    ${renderRowStat(
+                        'Wards',
+                        `${formatNumberValue(participant.wardsPlaced)}/${formatNumberValue(participant.wardsKilled)}`
+                    )}
                 </div>
-                <div class="player-match-items match-participant-row__items">
-                    ${finalItems.length > 0
-                        ? finalItems.map(item => renderItemIcon(item)).join('')
-                        : '<span class="player-match-items__empty">No items</span>'}
+                <div class="player-match-items player-match-items--compact match-participant-row__items">
+                    ${renderItemRow(participant.finalItems || [], 'No items')}
                 </div>
             </article>
         `;
@@ -297,7 +261,7 @@
             return `
                 <tr>
                     <td colspan="7">
-                        <div class="empty-box">No participant performance data.</div>
+                        <div class="match-compact-empty">No participant performance data.</div>
                     </td>
                 </tr>
             `;
@@ -318,7 +282,7 @@
 
     function renderItemBuild(participant) {
         if (!participant) {
-            return '<div class="empty-box">No participant selected for build details.</div>';
+            return '<div class="match-compact-empty">No participant selected for build details.</div>';
         }
 
         const runeGroups = groupRunesByStyleType(participant.runes || []);
@@ -329,25 +293,28 @@
 
         return `
             <div class="match-build">
-                <div class="match-build__section">
-                    <h3 class="match-build__title">Runes</h3>
+                <section class="match-build__section">
+                    <div class="match-build__header">
+                        <h3 class="match-build__title">Runes</h3>
+                        <span>${escapeHtml(formatPlayerName(participant))}</span>
+                    </div>
                     <div class="match-runes">
                         ${renderRuneGroup('Primary', primaryRunes)}
                         ${renderRuneGroup('Secondary', secondaryRunes)}
                     </div>
-                </div>
-                <div class="match-build__section">
+                </section>
+                <section class="match-build__section">
                     <h3 class="match-build__title">Skill order</h3>
                     ${renderSkillOrderGrid(skillOrder)}
-                </div>
-                <div class="match-build__section">
+                </section>
+                <section class="match-build__section">
                     <h3 class="match-build__title">Items timeline</h3>
                     <div class="match-build-items">
                         ${itemEvents.length > 0
                             ? itemEvents.map(event => renderItemEvent(event)).join('')
-                            : '<div class="empty-box">No item purchase events recorded.</div>'}
+                            : '<div class="match-compact-empty">No item purchase events recorded.</div>'}
                     </div>
-                </div>
+                </section>
             </div>
         `;
     }
@@ -356,8 +323,10 @@
         if (!runes || runes.length === 0) {
             return `
                 <div class="match-rune-group">
-                    <h4>${escapeHtml(label)}</h4>
-                    <div class="empty-box">No rune data.</div>
+                    <div class="match-rune-group__header">
+                        <strong>${escapeHtml(label)}</strong>
+                    </div>
+                    <div class="match-compact-empty">No rune data.</div>
                 </div>
             `;
         }
@@ -367,26 +336,20 @@
 
         return `
             <div class="match-rune-group">
-                <h4>
-                    ${styleIconUrl ? `
-                        <img class="match-rune-group__style-icon"
-                             src="${escapeHtml(styleIconUrl)}"
-                             alt="${escapeHtml(styleName)}"
-                             onerror="this.onerror=null; this.remove();">
-                    ` : ''}
-                    ${escapeHtml(styleName)}
-                </h4>
+                <div class="match-rune-group__header">
+                    ${renderRunePlaceholder(
+                        styleIconUrl,
+                        styleName,
+                        'match-rune-item match-rune-item--style'
+                    )}
+                    <strong>${escapeHtml(styleName)}</strong>
+                </div>
                 <div class="match-rune-group__items">
-                    ${runes.map(rune => `
-                        <span class="match-rune-item" title="${escapeHtml(rune.runeName || 'Rune')}">
-                            ${rune.runeIconUrl ? `
-                                <img class="match-rune-item__icon"
-                                     src="${escapeHtml(rune.runeIconUrl)}"
-                                     alt="${escapeHtml(rune.runeName || 'Rune')}"
-                                     onerror="this.onerror=null; this.remove();">
-                            ` : ''}
-                        </span>
-                    `).join('')}
+                    ${runes.map(rune => renderRunePlaceholder(
+                        rune.runeIconUrl,
+                        rune.runeName || 'Rune',
+                        `match-rune-item ${rune.isKeystone ? 'match-rune-item--keystone' : ''}`
+                    )).join('')}
                 </div>
             </div>
         `;
@@ -394,7 +357,7 @@
 
     function renderSkillOrderGrid(skillOrder) {
         if (!skillOrder || skillOrder.length === 0) {
-            return '<div class="empty-box">No skill order data recorded.</div>';
+            return '<div class="match-compact-empty">No skill order data recorded.</div>';
         }
 
         const skillMap = { 1: 'Q', 2: 'W', 3: 'E', 4: 'R' };
@@ -437,11 +400,9 @@
             <div class="match-build-item">
                 <span class="match-build-item__minute">${formatMinute(event.minute)}</span>
                 ${renderItemIcon(event)}
-                <div>
+                <div class="match-build-item__copy">
                     <strong>${escapeHtml(event.itemName || 'Item')}</strong>
-                    <div class="match-build-item__meta">
-                        ${escapeHtml(event.eventType || 'ITEM_PURCHASED')}
-                    </div>
+                    <span>${escapeHtml(event.eventType || 'ITEM_PURCHASED')}</span>
                 </div>
             </div>
         `;
@@ -451,7 +412,7 @@
         const filtered = (events || []).filter(event => timelineEventMatchesFilter(event, filter));
 
         if (filtered.length === 0) {
-            return '<div class="empty-box">No timeline events for this filter.</div>';
+            return '<div class="match-compact-empty">No timeline events for this filter.</div>';
         }
 
         return filtered.map(event => `
@@ -460,16 +421,39 @@
                 <div class="match-timeline-event__content">
                     <strong>${escapeHtml(formatTimelineEventTitle(event, participants))}</strong>
                     <div class="match-timeline-event__meta">
-                        ${event.itemName ? `<span>${escapeHtml(event.itemName)}</span>` : ''}
-                        ${event.position ? `
-                            <span>
-                                X:${formatNumberValue(event.position.x)} Y:${formatNumberValue(event.position.y)}
-                            </span>
-                        ` : ''}
+                        ${renderTimelineMeta(event)}
                     </div>
                 </div>
             </article>
         `).join('');
+    }
+
+    function renderTimelineMeta(event) {
+        const parts = [];
+
+        if (event.itemName) {
+            parts.push(`<span>${escapeHtml(event.itemName)}</span>`);
+        }
+
+        if (event.wardType) {
+            parts.push(`<span>${escapeHtml(event.wardType)}</span>`);
+        }
+
+        if (event.buildingType) {
+            parts.push(`<span>${escapeHtml(event.buildingType)}</span>`);
+        }
+
+        if (event.laneType) {
+            parts.push(`<span>${escapeHtml(event.laneType)}</span>`);
+        }
+
+        if (event.position) {
+            parts.push(`
+                <span>X:${formatNumberValue(event.position.x)} Y:${formatNumberValue(event.position.y)}</span>
+            `);
+        }
+
+        return parts.join('');
     }
 
     function setupTabInteractions(container) {
@@ -532,29 +516,22 @@
             return true;
         }
 
-        const type = event.type || '';
-
-        if (filter === 'KILLS') {
-            return type === 'CHAMPION_KILL';
-        }
-
-        if (filter === 'OBJECTIVES') {
-            return type === 'ELITE_MONSTER_KILL' || type === 'BUILDING_KILL';
-        }
+        const type = String(event.type || '').toUpperCase();
 
         if (filter === 'ITEMS') {
-            return type === 'ITEM_PURCHASED';
+            return type.startsWith('ITEM_') || timelineTypeGroups.ITEMS.includes(type);
         }
 
         if (filter === 'VISION') {
-            return type === 'WARD_PLACED' || type === 'WARD_KILL';
+            return type.includes('WARD') || timelineTypeGroups.VISION.includes(type);
         }
 
-        return true;
+        const types = timelineTypeGroups[filter];
+        return Array.isArray(types) ? types.includes(type) : true;
     }
 
     function formatTimelineEventTitle(event, participants) {
-        const type = event.type || 'EVENT';
+        const type = String(event.type || 'EVENT').toUpperCase();
 
         if (type === 'CHAMPION_KILL') {
             return `Kill: ${formatParticipantRef(participants, event.killerId)}`
@@ -562,35 +539,65 @@
         }
 
         if (type === 'ELITE_MONSTER_KILL') {
-            return `Objective taken by ${formatParticipantRef(
-                participants,
-                event.killerId || event.participantId
-            )}`;
+            return `${formatParticipantRef(participants, event.killerId || event.participantId)}`
+                + ' secured an epic monster';
         }
 
         if (type === 'BUILDING_KILL') {
-            return `Building destroyed by ${formatParticipantRef(
-                participants,
-                event.killerId || event.participantId
-            )}`;
+            const building = event.buildingType ? `${event.buildingType.toLowerCase()} ` : '';
+            return `${formatParticipantRef(participants, event.killerId || event.participantId)} destroyed a `
+                + `${building}structure`;
         }
 
+        if (type.startsWith('ITEM_')) {
+            return `${formatParticipantRef(participants, event.participantId)} ${formatItemEventVerb(type)}`;
+        }
+
+        if (type.includes('WARD')) {
+            return `${formatParticipantRef(participants, event.killerId || event.participantId)} ${formatWardEvent(type)}`;
+        }
+
+        return prettifyType(type);
+    }
+
+    function formatItemEventVerb(type) {
         if (type === 'ITEM_PURCHASED') {
-            return `${formatParticipantRef(participants, event.participantId)} purchased an item`;
+            return 'purchased an item';
         }
 
+        if (type === 'ITEM_DESTROYED') {
+            return 'used an item';
+        }
+
+        if (type === 'ITEM_SOLD') {
+            return 'sold an item';
+        }
+
+        if (type === 'ITEM_UNDO') {
+            return 'undid an item action';
+        }
+
+        return prettifyType(type).toLowerCase();
+    }
+
+    function formatWardEvent(type) {
         if (type === 'WARD_PLACED') {
-            return `${formatParticipantRef(participants, event.participantId)} placed a ward`;
+            return 'placed a ward';
         }
 
         if (type === 'WARD_KILL') {
-            return `${formatParticipantRef(
-                participants,
-                event.killerId || event.participantId
-            )} cleared vision`;
+            return 'cleared vision';
         }
 
-        return type;
+        return prettifyType(type).toLowerCase();
+    }
+
+    function prettifyType(type) {
+        return String(type || 'EVENT')
+            .toLowerCase()
+            .split('_')
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
     }
 
     function formatParticipantRef(participants, participantId) {
@@ -622,13 +629,21 @@
         }, {});
     }
 
+    function renderItemRow(items, emptyText) {
+        if (!items || items.length === 0) {
+            return `<span class="player-match-items__empty">${escapeHtml(emptyText)}</span>`;
+        }
+
+        return items.map(item => renderItemIcon(item)).join('');
+    }
+
     function renderItemIcon(item) {
         const imageUrl = item.imageUrl;
         const itemName = item.itemName || 'Item';
 
         if (!imageUrl) {
             return `
-                <span class="player-match-item player-match-item--text">
+                <span class="player-match-item player-match-item--text" title="${escapeHtml(itemName)}">
                     ${escapeHtml(itemName)}
                 </span>
             `;
@@ -639,8 +654,79 @@
                 <img class="player-match-item__image"
                      src="${escapeHtml(imageUrl)}"
                      alt="${escapeHtml(itemName)}"
-                     onerror="this.onerror=null; this.remove();">
+                     onerror="this.onerror=null; this.parentElement.remove();">
             </span>
+        `;
+    }
+
+    function renderRunePlaceholder(iconUrl, label, className) {
+        const safeLabel = escapeHtml(label || 'Rune');
+
+        if (!iconUrl) {
+            return `<span class="${className} match-rune-item--empty" title="${safeLabel}"></span>`;
+        }
+
+        return `
+            <span class="${className}" title="${safeLabel}">
+                <img class="match-rune-item__icon"
+                     src="${escapeHtml(iconUrl)}"
+                     alt="${safeLabel}"
+                     onerror="this.onerror=null; this.parentElement.classList.add('match-rune-item--empty'); this.remove();">
+            </span>
+        `;
+    }
+
+    function renderChampionThumb(imageUrl, label, className) {
+        if (!imageUrl) {
+            return '';
+        }
+
+        return `
+            <img class="${className}"
+                 src="${escapeHtml(imageUrl)}"
+                 alt="${escapeHtml(label)}"
+                 onerror="this.onerror=null; this.remove();">
+        `;
+    }
+
+    function renderSummaryChip(value) {
+        return `<span class="match-summary__chip">${escapeHtml(value)}</span>`;
+    }
+
+    function renderSummaryStat(label, value) {
+        return `
+            <span class="match-selected__stat">
+                <small>${escapeHtml(label)}</small>
+                <strong>${escapeHtml(value)}</strong>
+            </span>
+        `;
+    }
+
+    function renderRowStat(label, value) {
+        return `
+            <span class="match-row-stat">
+                <small>${escapeHtml(label)}</small>
+                <strong>${escapeHtml(value)}</strong>
+            </span>
+        `;
+    }
+
+    function renderTabButton(tabId, label, isActive) {
+        return `
+            <button class="player-tabs__button ${isActive ? 'player-tabs__button--active' : ''}"
+                    type="button" data-match-tab-button="${tabId}">
+                ${escapeHtml(label)}
+            </button>
+        `;
+    }
+
+    function renderTimelineFilterButton(filter, label, isActive) {
+        return `
+            <button class="button button--secondary match-filter-button
+                    ${isActive ? 'match-filter-button--active' : ''}"
+                    type="button" data-timeline-filter="${filter}">
+                ${escapeHtml(label)}
+            </button>
         `;
     }
 
@@ -685,7 +771,6 @@
         }
 
         return new Date(Number(timestampMs)).toLocaleString('en-US', {
-            year: 'numeric',
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
@@ -710,7 +795,7 @@
     function renderLoadingState(container, message) {
         container.innerHTML = `
             <div class="match-details-inline__state">
-                <div class="empty-box">${escapeHtml(message)}</div>
+                <div class="match-compact-empty">${escapeHtml(message)}</div>
             </div>
         `;
     }

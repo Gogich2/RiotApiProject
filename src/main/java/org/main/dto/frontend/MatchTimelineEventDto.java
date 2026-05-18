@@ -9,6 +9,9 @@ public record MatchTimelineEventDto(
         Integer victimId,
         Integer itemId,
         String itemName,
+        String wardType,
+        String buildingType,
+        String laneType,
         MatchTimelinePositionDto position
 ) {
 }

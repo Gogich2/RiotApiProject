@@ -161,6 +161,7 @@ function setupMatchDetailsInline(puuid) {
 }
 
 async function toggleMatchDetails(card, panel, matchId, puuid) {
+    const button = card.querySelector('[data-match-details-button]');
     const isAlreadyExpanded = expandedMatchId === matchId && card.classList.contains('player-match-card--expanded');
 
     if (isAlreadyExpanded) {
@@ -172,6 +173,10 @@ async function toggleMatchDetails(card, panel, matchId, puuid) {
     collapseExpandedMatchCard(card.closest('#playerMatchesBody'));
     expandedMatchId = matchId;
     card.classList.add('player-match-card--expanded');
+    if (button) {
+        button.setAttribute('aria-expanded', 'true');
+        button.textContent = 'Hide details';
+    }
     panel.hidden = false;
     window.MatchDetailsView.renderLoadingState(panel, 'Loading match details...');
 
@@ -207,10 +212,16 @@ function collapseExpandedMatchCard(container) {
 function collapseMatchCard(card) {
     card.classList.remove('player-match-card--expanded');
     const panel = card.querySelector('[data-match-details-panel]');
+    const button = card.querySelector('[data-match-details-button]');
 
     if (panel) {
         panel.hidden = true;
         panel.innerHTML = '';
+    }
+
+    if (button) {
+        button.setAttribute('aria-expanded', 'false');
+        button.textContent = 'View details';
     }
 }
 
@@ -769,7 +780,7 @@ function renderPlayerMatches(matches) {
                         </a>
                     </div>
                     <button class="button button--secondary player-match-card__button"
-                            data-match-details-button type="button">
+                            data-match-details-button type="button" aria-expanded="false">
                         View details
                     </button>
                 </div>

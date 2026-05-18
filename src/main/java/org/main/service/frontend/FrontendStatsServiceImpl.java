@@ -32,12 +32,16 @@ import org.main.dto.frontend.PlayerSearchResultDto;
 import org.main.dto.frontend.PlayerSummaryDto;
 import org.main.dto.frontend.SearchResultDto;
 import org.main.exception.NotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FrontendStatsServiceImpl implements FrontendStatsService {
+
+    private static final Logger log = LoggerFactory.getLogger(FrontendStatsServiceImpl.class);
 
     private static final int SEARCH_LIMIT = 8;
 
@@ -1017,13 +1021,13 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                                 ls.name AS style_name,
                                 CASE
                                     WHEN ls.icon IS NULL THEN NULL
-                                    ELSE CONCAT(?, '/', ls.version, '/img/', ls.icon)
+                                    ELSE CONCAT(?, '/img/', ls.icon)
                                 END AS style_icon_url,
                                 r.rune_id,
                                 lr.name AS rune_name,
                                 CASE
                                     WHEN lr.icon IS NULL THEN NULL
-                                    ELSE CONCAT(?, '/', lr.version, '/img/', lr.icon)
+                                    ELSE CONCAT(?, '/img/', lr.icon)
                                 END AS rune_icon_url,
                                 r.rune_slot,
                                 r.selection_order,
@@ -1183,6 +1187,9 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                                 victim_id,
                                 e.item_id,
                                 li.name AS item_name,
+                                e.ward_type,
+                                e.building_type,
+                                e.lane_type,
                                 CAST(e.position ->> 'x' AS integer) AS pos_x,
                                 CAST(e.position ->> 'y' AS integer) AS pos_y
                             FROM core.timeline_events e
@@ -1190,14 +1197,6 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                                 ON li.item_id = e.item_id
                                AND li.rn = 1
                             WHERE match_id = ?
-                              AND type IN (
-                                  'CHAMPION_KILL',
-                                  'ELITE_MONSTER_KILL',
-                                  'BUILDING_KILL',
-                                  'ITEM_PURCHASED',
-                                  'WARD_PLACED',
-                                  'WARD_KILL'
-                              )
                             ORDER BY ts_ms ASC, event_id ASC
                             """,
                     (rs, rowNum) -> new MatchTimelineEventDto(
@@ -1209,6 +1208,9 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                             getInteger(rs, "victim_id"),
                             getInteger(rs, "item_id"),
                             rs.getString("item_name"),
+                            rs.getString("ward_type"),
+                            rs.getString("building_type"),
+                            rs.getString("lane_type"),
                             buildMatchTimelinePosition(
                                     getInteger(rs, "pos_x"),
                                     getInteger(rs, "pos_y")
@@ -1217,6 +1219,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                     matchId
             );
         } catch (DataAccessException ex) {
+            log.warn("Could not load timeline events for match {}", matchId, ex);
             return List.of();
         }
     }
