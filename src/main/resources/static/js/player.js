@@ -634,22 +634,18 @@ function renderPlayerInsights(insights) {
 }
 
 function renderPlayerMatches(matches) {
-    const body = document.getElementById('playerMatchesBody');
+    const container = document.getElementById('playerMatchesBody');
 
-    if (!body) {
+    if (!container) {
         return;
     }
 
     if (!matches || matches.length === 0) {
-        body.innerHTML = `
-            <tr>
-                <td colspan="6">No recent matches found.</td>
-            </tr>
-        `;
+        container.innerHTML = `<div class="empty-box">No recent matches found.</div>`;
         return;
     }
 
-    body.innerHTML = matches.map(match => {
+    container.innerHTML = matches.map(match => {
         const championId = getValue(match, 'championId', 'champion_id');
         const championName = getValue(match, 'championName', 'champion_name') || 'Unknown';
         const championImageUrl = getValue(match, 'championImageUrl', 'champion_image_url');
@@ -657,36 +653,94 @@ function renderPlayerMatches(matches) {
         const gameVersion = getValue(match, 'gameVersion', 'game_version');
         const gameDurationMs = getValue(match, 'gameDurationMs', 'game_duration_ms');
         const gameDurationSeconds = getValue(match, 'gameDurationSeconds', 'game_duration_seconds');
+        const matchId = getValue(match, 'matchId', 'match_id');
+        const finalItems = getValue(match, 'finalItems', 'final_items') || [];
+        const matchResultClass = match.win ? 'player-match-card--win' : 'player-match-card--loss';
 
         return `
-            <tr>
-                <td>
-                    <a class="match-champion-link" href="champion.html?id=${encodeURIComponent(championId)}">
-                        ${
+            <article class="player-match-card ${matchResultClass}">
+                <div class="player-match-card__top">
+                    <div class="player-match-card__identity">
+                        <span class="${match.win ? 'result result--win' : 'result result--loss'}">
+                            ${match.win ? 'Win' : 'Loss'}
+                        </span>
+                        <a class="match-champion-link" href="champion.html?id=${encodeURIComponent(championId)}">
+                            ${
             championImageUrl
                 ? `<img
-                                    class="match-champion-link__image"
-                                    src="${escapeHtml(championImageUrl)}"
-                                    alt="${escapeHtml(championName)}"
-                                    onerror="this.onerror=null; this.remove();"
-                                >`
+                                        class="match-champion-link__image"
+                                        src="${escapeHtml(championImageUrl)}"
+                                        alt="${escapeHtml(championName)}"
+                                        onerror="this.onerror=null; this.remove();"
+                                    >`
                 : ''
         }
-                        <span>${escapeHtml(championName)}</span>
+                            <span>${escapeHtml(championName)}</span>
+                        </a>
+                    </div>
+                    <a class="button button--secondary player-match-card__button"
+                       href="match.html?id=${encodeURIComponent(matchId)}">
+                        View match details
                     </a>
-                </td>
-                <td>
-                    <span class="${match.win ? 'result result--win' : 'result result--loss'}">
-                        ${match.win ? 'Win' : 'Loss'}
+                </div>
+
+                <div class="player-match-card__meta">
+                    <span class="player-match-card__meta-item">
+                        <span class="player-match-card__label">KDA</span>
+                        <strong>${formatKda(match.kills, match.deaths, match.assists)}</strong>
                     </span>
-                </td>
-                <td>${formatKda(match.kills, match.deaths, match.assists)}</td>
-                <td>${escapeHtml(formatQueue(queueId))}</td>
-                <td>${escapeHtml(formatPatchVersion(gameVersion))}</td>
-                <td>${formatMatchDuration(gameDurationMs, gameDurationSeconds)}</td>
-            </tr>
+                    <span class="player-match-card__meta-item">
+                        <span class="player-match-card__label">Queue</span>
+                        <strong>${escapeHtml(formatQueue(queueId))}</strong>
+                    </span>
+                    <span class="player-match-card__meta-item">
+                        <span class="player-match-card__label">Patch</span>
+                        <strong>${escapeHtml(formatPatchVersion(gameVersion))}</strong>
+                    </span>
+                    <span class="player-match-card__meta-item">
+                        <span class="player-match-card__label">Duration</span>
+                        <strong>${formatMatchDuration(gameDurationMs, gameDurationSeconds)}</strong>
+                    </span>
+                </div>
+
+                <div class="player-match-card__items">
+                    <span class="player-match-card__label">Final items</span>
+                    <div class="player-match-items">
+                        ${
+            finalItems.length > 0
+                ? finalItems.map(item => renderMatchItem(item)).join('')
+                : `<span class="player-match-items__empty">No final items recorded.</span>`
+        }
+                    </div>
+                </div>
+            </article>
         `;
     }).join('');
+}
+
+function renderMatchItem(item) {
+    const itemId = getValue(item, 'itemId', 'item_id');
+    const itemName = getValue(item, 'itemName', 'item_name') || `Item ${itemId}`;
+    const imageUrl = getValue(item, 'imageUrl', 'image_url');
+
+    if (!imageUrl) {
+        return `
+            <span class="player-match-item player-match-item--text" title="${escapeHtml(itemName)}">
+                <span class="player-match-item__fallback">${escapeHtml(itemName)}</span>
+            </span>
+        `;
+    }
+
+    return `
+        <span class="player-match-item" title="${escapeHtml(itemName)}">
+            <img
+                class="player-match-item__image"
+                src="${escapeHtml(imageUrl)}"
+                alt="${escapeHtml(itemName)}"
+                onerror="this.onerror=null; this.remove();"
+            >
+        </span>
+    `;
 }
 
 function getValue(object, camelCaseKey, snakeCaseKey) {

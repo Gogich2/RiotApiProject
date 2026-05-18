@@ -1,11 +1,15 @@
 package org.main.service.frontend;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.main.dto.frontend.ChampionAbilityDto;
 import org.main.dto.frontend.ChampionDetailsDto;
 import org.main.dto.frontend.ChampionItemStatsDto;
 import org.main.dto.frontend.ChampionSearchResultDto;
 import org.main.dto.frontend.ChampionStatDto;
+import org.main.dto.frontend.PlayerMatchItemDto;
 import org.main.dto.frontend.PlayerLeaderboardDto;
 import org.main.dto.frontend.PlayerLeaderboardResponseDto;
 import org.main.dto.frontend.ChampionSummaryDto;
@@ -558,46 +562,48 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
     public List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit) {
         int safeLimit = limit <= 0 ? 20 : Math.min(limit, 50);
 
-        return jdbcTemplate.query("""
-                    WITH latest_champions AS (
+        List<PlayerRecentMatchRow> rows = jdbcTemplate.query("""
+                        WITH latest_champions AS (
+                            SELECT
+                                champion_id,
+                                version,
+                                image_full,
+                                ROW_NUMBER() OVER (
+                                    PARTITION BY champion_id
+                                    ORDER BY version DESC
+                                ) AS rn
+                            FROM static.champions
+                        )
                         SELECT
-                            champion_id,
-                            version,
-                            image_full,
-                            ROW_NUMBER() OVER (
-                                PARTITION BY champion_id
-                                ORDER BY version DESC
-                            ) AS rn
-                        FROM static.champions
-                    )
-                    SELECT
-                        p.match_id,
-                        p.champion_id,
-                        COALESCE(p.champion_name, 'Unknown') AS champion_name,
-                        CASE
-                            WHEN lc.image_full IS NULL THEN NULL
-                            ELSE CONCAT(?, '/', lc.version, '/img/champion/', lc.image_full)
-                        END AS champion_image_url,
-                        p.win,
-                        p.kills,
-                        p.deaths,
-                        p.assists,
-                        m.queue_id,
-                        m.game_version,
-                        m.game_creation_ms,
-                        m.game_duration_ms
-                    FROM core.participants p
-                    JOIN core.match_details_view m
-                        ON m.match_id = p.match_id
-                    LEFT JOIN latest_champions lc
-                        ON lc.champion_id = p.champion_id
-                       AND lc.rn = 1
-                    WHERE p.puuid = ?
-                    ORDER BY m.game_creation_ms DESC NULLS LAST
-                    LIMIT ?
-                    """,
-                (rs, rowNum) -> new PlayerRecentMatchDto(
+                            p.match_id,
+                            p.participant_id,
+                            p.champion_id,
+                            COALESCE(p.champion_name, 'Unknown') AS champion_name,
+                            CASE
+                                WHEN lc.image_full IS NULL THEN NULL
+                                ELSE CONCAT(?, '/', lc.version, '/img/champion/', lc.image_full)
+                            END AS champion_image_url,
+                            p.win,
+                            p.kills,
+                            p.deaths,
+                            p.assists,
+                            m.queue_id,
+                            m.game_version,
+                            m.game_creation_ms,
+                            m.game_duration_ms
+                        FROM core.participants p
+                        JOIN core.match_details_view m
+                            ON m.match_id = p.match_id
+                        LEFT JOIN latest_champions lc
+                            ON lc.champion_id = p.champion_id
+                           AND lc.rn = 1
+                        WHERE p.puuid = ?
+                        ORDER BY m.game_creation_ms DESC NULLS LAST
+                        LIMIT ?
+                        """,
+                (rs, rowNum) -> new PlayerRecentMatchRow(
                         rs.getString("match_id"),
+                        getInteger(rs, "participant_id"),
                         getInteger(rs, "champion_id"),
                         rs.getString("champion_name"),
                         rs.getString("champion_image_url"),
@@ -614,6 +620,111 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                 puuid,
                 safeLimit
         );
+
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, List<PlayerMatchItemDto>> itemsByMatchParticipant = loadRecentMatchItems(rows);
+        List<PlayerRecentMatchDto> matches = new ArrayList<>();
+
+        for (PlayerRecentMatchRow row : rows) {
+            matches.add(new PlayerRecentMatchDto(
+                    row.matchId(),
+                    row.championId(),
+                    row.championName(),
+                    row.championImageUrl(),
+                    row.win(),
+                    row.kills(),
+                    row.deaths(),
+                    row.assists(),
+                    row.queueId(),
+                    row.gameVersion(),
+                    row.gameCreationMs(),
+                    row.gameDurationMs(),
+                    itemsByMatchParticipant.getOrDefault(row.key(), List.of())
+            ));
+        }
+
+        return matches;
+    }
+
+    private Map<String, List<PlayerMatchItemDto>> loadRecentMatchItems(List<PlayerRecentMatchRow> matches) {
+        List<String> matchIds = new ArrayList<>();
+
+        for (PlayerRecentMatchRow match : matches) {
+            matchIds.add(match.matchId());
+        }
+
+        String placeholders = String.join(", ", java.util.Collections.nCopies(matchIds.size(), "?"));
+        Object[] params = new Object[matchIds.size() + 1];
+        params[0] = DATA_DRAGON_BASE_URL;
+
+        for (int i = 0; i < matchIds.size(); i++) {
+            params[i + 1] = matchIds.get(i);
+        }
+
+        Map<String, List<PlayerMatchItemDto>> itemsByMatchParticipant = new LinkedHashMap<>();
+
+        try {
+            jdbcTemplate.query("""
+                            WITH latest_items AS (
+                                SELECT
+                                    item_id,
+                                    version,
+                                    name,
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY item_id
+                                        ORDER BY version DESC
+                                    ) AS rn
+                                FROM static.items
+                            ),
+                            latest_item_version AS (
+                                SELECT MAX(version) AS version
+                                FROM static.items
+                            )
+                            SELECT
+                                i.match_id,
+                                i.participant_id,
+                                i.item_id,
+                                i.item_slot,
+                                COALESCE(li.name, CONCAT('Item ', i.item_id)) AS item_name,
+                                CASE
+                                    WHEN COALESCE(li.version, liv.version) IS NULL THEN NULL
+                                    ELSE CONCAT(?, '/', COALESCE(li.version, liv.version), '/img/item/', i.item_id,
+                                        '.png')
+                                END AS image_url
+                            FROM core.participant_final_items i
+                            LEFT JOIN latest_items li
+                                ON li.item_id = i.item_id
+                               AND li.rn = 1
+                            CROSS JOIN latest_item_version liv
+                            WHERE i.match_id IN (""" + placeholders + ") " + """
+                              AND i.item_id IS NOT NULL
+                              AND i.item_id > 0
+                            ORDER BY i.match_id, i.participant_id, i.item_slot ASC
+                            """,
+                    rs -> {
+                        String key = buildMatchParticipantKey(
+                                rs.getString("match_id"),
+                                getInteger(rs, "participant_id")
+                        );
+                        PlayerMatchItemDto item = new PlayerMatchItemDto(
+                                getInteger(rs, "item_id"),
+                                rs.getString("item_name"),
+                                rs.getString("image_url"),
+                                getInteger(rs, "item_slot")
+                        );
+
+                        itemsByMatchParticipant.computeIfAbsent(key, unused -> new ArrayList<>()).add(item);
+                    },
+                    params
+            );
+        } catch (DataAccessException ex) {
+            return Map.of();
+        }
+
+        return itemsByMatchParticipant;
     }
 
     private List<ChampionAbilityDto> getChampionAbilities(Integer championId) {
@@ -855,6 +966,30 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     private Long nullToZero(Long value) {
         return value == null ? 0L : value;
+    }
+
+    private String buildMatchParticipantKey(String matchId, Integer participantId) {
+        return matchId + ":" + participantId;
+    }
+
+    private record PlayerRecentMatchRow(
+            String matchId,
+            Integer participantId,
+            Integer championId,
+            String championName,
+            String championImageUrl,
+            Boolean win,
+            Integer kills,
+            Integer deaths,
+            Integer assists,
+            Integer queueId,
+            String gameVersion,
+            Long gameCreationMs,
+            Long gameDurationMs
+    ) {
+        private String key() {
+            return matchId + ":" + participantId;
+        }
     }
 
     private Integer getInteger(java.sql.ResultSet rs, String columnName) throws java.sql.SQLException {

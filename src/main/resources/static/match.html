@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Match Details</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<header class="site-header">
+    <a class="site-header__logo" href="index.html">Riot Stats</a>
+    <nav class="site-nav" aria-label="Primary">
+        <a class="site-nav__link" href="index.html">Home</a>
+        <a class="site-nav__link" href="champions.html">Champions</a>
+        <a class="site-nav__link" href="players.html">Players</a>
+    </nav>
+
+    <div class="search">
+        <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
+        <div class="search__results" id="globalSearchResults"></div>
+    </div>
+</header>
+
+<main class="page">
+    <section class="hero">
+        <h1 class="hero__title">Match details</h1>
+        <p class="hero__text" id="matchPlaceholderText">Match details coming soon.</p>
+    </section>
+
+    <section class="section">
+        <div class="empty-box" id="matchPlaceholderBox">Match details coming soon.</div>
+    </section>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/search.js"></script>
+<script src="js/match.js"></script>
+</body>
+</html>

@@ -915,6 +915,111 @@ body:has(#playerHero) .section__title {
     padding: 10px 12px;
 }
 
+.player-match-list {
+    display: grid;
+    gap: 12px;
+}
+
+.player-match-card {
+    padding: 14px;
+    border-radius: 14px;
+    background: #141927;
+    border: 1px solid #252936;
+}
+
+.player-match-card--win {
+    box-shadow: inset 3px 0 0 #22c55e;
+}
+
+.player-match-card--loss {
+    box-shadow: inset 3px 0 0 #ef4444;
+}
+
+.player-match-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.player-match-card__identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.player-match-card__button {
+    flex: 0 0 auto;
+}
+
+.player-match-card__meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.player-match-card__meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #111625;
+    border: 1px solid #252936;
+}
+
+.player-match-card__label {
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.player-match-card__items {
+    margin-top: 14px;
+}
+
+.player-match-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.player-match-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #111625;
+    border: 1px solid #30384a;
+    overflow: hidden;
+}
+
+.player-match-item--text {
+    width: auto;
+    max-width: 180px;
+    height: auto;
+    padding: 7px 10px;
+}
+
+.player-match-item__image {
+    width: 42px;
+    height: 42px;
+    display: block;
+}
+
+.player-match-item__fallback,
+.player-match-items__empty {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
 .match-champion-link {
     display: inline-flex;
     align-items: center;
@@ -1289,6 +1394,15 @@ body:has(#playerHero) .section__title {
         width: 100%;
     }
 
+    .player-match-card__top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .player-match-card__meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     [data-player-tab-panel="champions"] .player-champions {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1375,6 +1489,10 @@ body:has(#playerHero) .section__title {
     }
 
     [data-player-tab-panel="champions"] .player-champions {
+        grid-template-columns: 1fr;
+    }
+
+    .player-match-card__meta {
         grid-template-columns: 1fr;
     }
 }

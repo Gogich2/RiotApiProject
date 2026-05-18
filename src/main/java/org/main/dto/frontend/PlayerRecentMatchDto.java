@@ -1,5 +1,7 @@
 package org.main.dto.frontend;
 
+import java.util.List;
+
 public record PlayerRecentMatchDto(
         String matchId,
         Integer championId,
@@ -12,6 +14,7 @@ public record PlayerRecentMatchDto(
         Integer queueId,
         String gameVersion,
         Long gameCreationMs,
-        Long gameDurationMs
+        Long gameDurationMs,
+        List<PlayerMatchItemDto> finalItems
 ) {
 }
