@@ -2,6 +2,7 @@ package org.main.controller.frontend;
 
 import org.main.dto.frontend.ChampionDetailsDto;
 import org.main.dto.frontend.ChampionItemStatsDto;
+import org.main.dto.frontend.ChampionStatDto;
 import org.main.dto.frontend.ChampionSummaryDto;
 import org.main.service.frontend.FrontendStatsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,11 @@ public class ChampionController {
 
     public ChampionController(FrontendStatsService frontendStatsService) {
         this.frontendStatsService = frontendStatsService;
+    }
+
+    @GetMapping
+    public List<ChampionStatDto> champions() {
+        return frontendStatsService.getChampions();
     }
 
     @GetMapping("/{championId}")

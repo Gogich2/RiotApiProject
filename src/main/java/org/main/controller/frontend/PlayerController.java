@@ -2,6 +2,7 @@ package org.main.controller.frontend;
 
 import java.util.List;
 import org.main.dto.frontend.PlayerInsightDto;
+import org.main.dto.frontend.PlayerLeaderboardResponseDto;
 import org.main.dto.frontend.PlayerRecentMatchDto;
 import org.main.dto.frontend.PlayerSummaryDto;
 import org.main.persistence.repository.LeagueEntryRepository;
@@ -36,6 +37,11 @@ public class PlayerController {
         this.leagueEntryRepository = leagueEntryRepository;
         this.leagueEntrySnapshotRepository = leagueEntrySnapshotRepository;
 
+    }
+
+    @GetMapping("/leaderboard")
+    public PlayerLeaderboardResponseDto leaderboard() {
+        return frontendStatsService.getPlayerLeaderboards();
     }
 
     @GetMapping("/{puuid}/summary")

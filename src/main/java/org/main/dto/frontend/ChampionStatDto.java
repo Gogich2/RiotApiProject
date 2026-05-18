@@ -6,6 +6,7 @@ public record ChampionStatDto(
         String imageUrl,
         Long games,
         Long wins,
-        Double winrate
+        Double winrate,
+        String primaryRole
 ) {
 }
