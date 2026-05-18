@@ -1,87 +1,110 @@
-## Збірка проєкту
+# Deployment Notes
+
+## Local Spring Boot mode
+
+Run the backend and the built-in static frontend:
+
 ```bash
 mvn clean package
+java -jar target/RiotApiPractice-1.0-SNAPSHOT.jar
 ```
 
-У результаті буде створено `.jar` файл у папці `target`.
-
-## Налаштування СУБД
-
-### Створення бази даних
-Після встановлення PostgreSQL потрібно створити базу даних:
-
-```sql
-CREATE DATABASE riot_api_project;
-```
-
-### Створення користувача
-```sql
-CREATE USER riot_user WITH PASSWORD 'strong_password';
-GRANT ALL PRIVILEGES ON DATABASE riot_api_project TO riot_user;
-```
-
-### Налаштування `application.properties`
-У файлі `src/main/resources/application.properties` потрібно вказати параметри підключення до БД.
-
-Приклад:
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/riot_api_project
-spring.datasource.username=riot_user
-spring.datasource.password=strong_password
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.jpa.hibernate.ddl-auto=update
-```
-
-## Розгортання коду
-
-### Збірка застосунку
-```bash
-mvn clean package
-```
-
-### Запуск jar-файлу
-```bash
-java -jar target\RiotApiPractice-1.0-SNAPSHOT.jar
-```
-
-## Запуск у production
-Для production можна використовувати `.bat`-скрипт або запуск через Планувальник завдань Windows.
-
-Приклад запуску через `.bat`:
-
-```bat
-@echo off
-cd /d D:\Projects\RiotApiProject
-java -jar target\RiotApiPractice-1.0-SNAPSHOT.jar
-pause
-```
-
-## Перевірка працездатності
-
-### Перевірка запуску застосунку
-Відкрити в браузері:
+Open:
 
 ```text
 http://localhost:8080
 ```
 
-### Перевірка через curl
+In this mode the frontend uses relative API URLs such as `/api/search`, so no extra configuration is required.
+
+## Experimental GitHub Pages + ngrok mode
+
+This repository also contains a static copy of the frontend under `docs/` for GitHub Pages experiments.
+
+### 1. Run the backend locally
+
+Start Spring Boot on port `8080` as usual.
+
+### 2. Expose the backend with ngrok
+
+Example:
+
 ```bash
-curl http://localhost:8080
+ngrok http 8080
 ```
 
-### Перевірка PostgreSQL
-Потрібно переконатися, що:
+Copy the generated HTTPS forwarding URL, for example:
 
-- застосунок запускається без помилок;
-- у консолі немає помилок підключення до БД;
-- таблиці створюються або оновлюються коректно.
+```text
+https://example-name.ngrok-free.app
+```
 
-## Ознаки успішного розгортання
-Розгортання вважається успішним, якщо:
+Do not commit a personal ngrok URL into the repository.
 
-- застосунок запускається без критичних помилок;
-- є стабільне підключення до PostgreSQL;
-- застосунок відповідає на HTTP-запити;
-- дані коректно зберігаються в базі даних.
+### 3. Configure the frontend API base URL
+
+The frontend now supports two modes:
+
+- default local mode: no config, uses relative `/api/...`
+- hosted mode: set an external backend base URL and the frontend will call `{baseUrl}/api/...`
+
+The simplest experimental setup is to configure it in browser storage:
+
+```js
+localStorage.setItem('riot-stats-api-base-url', 'https://example-name.ngrok-free.app');
+```
+
+To switch back to local relative mode:
+
+```js
+localStorage.removeItem('riot-stats-api-base-url');
+```
+
+Optional alternative:
+
+```js
+window.RIOT_STATS_CONFIG = {
+  apiBaseUrl: 'https://example-name.ngrok-free.app'
+};
+```
+
+If you use `window.RIOT_STATS_CONFIG`, load it before `js/api.js`.
+
+### 4. Test the hosted frontend
+
+Open the GitHub Pages site and verify these endpoints through the UI:
+
+- `/api/search`
+- `/api/players/{puuid}/summary`
+- `/api/players/{puuid}/matches`
+- `/api/players/{puuid}/champions`
+- `/api/players/{puuid}/ranks`
+- `/api/players/{puuid}/rank-history`
+- `/api/players/{puuid}/insights`
+- `/api/champions/{championId}`
+- `/api/champions/{championId}/items`
+
+Suggested manual checks:
+
+1. Search for a player or champion from the home page.
+2. Open a player page and verify summary, matches, champions, ranks, rank history, and insights.
+3. Open a champion page and verify hero, abilities, and item statistics.
+
+## CORS notes
+
+The backend CORS allowlist is configurable through:
+
+```properties
+app.cors.allowed-origins
+```
+
+Default development-oriented origins include:
+
+- `http://localhost:8080`
+- `http://127.0.0.1:8080`
+- `http://localhost:5500`
+- `http://127.0.0.1:5500`
+- `https://gogich2.github.io`
+- `null`
+
+For a different GitHub Pages origin, override `APP_CORS_ALLOWED_ORIGINS`.

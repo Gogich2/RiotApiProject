@@ -284,7 +284,7 @@ function renderPlayerChampions(champions) {
     }
 
     container.innerHTML = champions.map(champion => `
-        <a class="player-champion-card" href="/champion.html?id=${encodeURIComponent(champion.championId)}">
+        <a class="player-champion-card" href="champion.html?id=${encodeURIComponent(champion.championId)}">
             ${
         champion.imageUrl
             ? `<img
@@ -661,7 +661,7 @@ function renderPlayerMatches(matches) {
         return `
             <tr>
                 <td>
-                    <a class="match-champion-link" href="/champion.html?id=${encodeURIComponent(championId)}">
+                    <a class="match-champion-link" href="champion.html?id=${encodeURIComponent(championId)}">
                         ${
             championImageUrl
                 ? `<img
@@ -823,7 +823,7 @@ function getRankImageUrl(tier) {
         return null;
     }
 
-    return `/img/ranks/${normalized}.png`;
+    return `img/ranks/${normalized}.png`;
 }
 
 function getRankScore(entry) {

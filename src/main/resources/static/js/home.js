@@ -54,7 +54,7 @@ function renderChampionTable(elementId, champions) {
     body.innerHTML = champions.map(champion => `
         <tr>
             <td>
-                <a class="home-champion-link" href="/champion.html?id=${encodeURIComponent(champion.championId)}">
+                <a class="home-champion-link" href="champion.html?id=${encodeURIComponent(champion.championId)}">
                     ${
         champion.imageUrl
             ? `<img

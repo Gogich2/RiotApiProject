@@ -552,13 +552,13 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
     }
 
     private List<ChampionAbilityDto> getChampionAbilities(Integer championId) {
-        List<ChampionAbilityDto> abilities = getChampionAbilitiesFromStaticTable(championId);
+        List<ChampionAbilityDto> abilities = getChampionAbilitiesFromRawJson(championId);
 
         if (!abilities.isEmpty()) {
             return abilities;
         }
 
-        return getChampionAbilitiesFromRawJson(championId);
+        return getChampionAbilitiesFromStaticTable(championId);
     }
 
     private List<ChampionAbilityDto> getChampionAbilitiesFromStaticTable(Integer championId) {
@@ -634,7 +634,11 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                                     WHEN 2 THEN 'W'
                                     WHEN 3 THEN 'E'
                                     WHEN 4 THEN 'R'
-                                    ELSE CONCAT('SPELL_', spell.ordinality)
+                                    ELSE COALESCE(
+                                        NULLIF(spell.spell_json ->> 'id', ''),
+                                        NULLIF(spell.spell_json ->> 'key', ''),
+                                        CONCAT('SPELL_', spell.ordinality)
+                                    )
                                 END AS ability_key,
                                 spell.spell_json ->> 'name' AS ability_name,
                                 COALESCE(

@@ -75,15 +75,27 @@ function renderChampionAbilities(abilities) {
 
     container.innerHTML = abilities.map(ability => `
         <article class="ability-card">
-            ${ability.imageUrl ? `<img class="ability-card__icon" src="${ability.imageUrl}" alt="${ability.abilityName}"
+            ${ability.imageUrl ? `<img class="ability-card__icon" src="${ability.imageUrl}" alt="${getAbilityDisplayName(ability)}"
                 onerror="this.onerror=null; this.remove();">` : ''}
             <div>
-                <span class="ability-card__key">${ability.abilityKey}</span>
-                <h3 class="ability-card__title">${ability.abilityName}</h3>
+                <span class="ability-card__key">${ability.abilityKey || 'Ability'}</span>
+                <h3 class="ability-card__title">${getAbilityDisplayName(ability)}</h3>
                 <p class="ability-card__text">${ability.abilityDescription || ''}</p>
             </div>
         </article>
     `).join('');
+}
+
+function getAbilityDisplayName(ability) {
+    if (ability && ability.abilityName) {
+        return ability.abilityName;
+    }
+
+    if (ability && ability.abilityKey) {
+        return ability.abilityKey;
+    }
+
+    return 'Unknown ability';
 }
 
 function renderChampionItems(items) {
