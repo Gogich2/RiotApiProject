@@ -1,15 +1,29 @@
 from sqlalchemy import text
 
 from db import engine
+from rules.champion_strength_insights import generate_champion_strength_insights
+from rules.cs_insights import generate_cs_insights
+from rules.damage_insights import generate_damage_insights
+from rules.deaths_insights import generate_deaths_insights
 from rules.vision_insights import generate_vision_insights
+
+
+GENERATED_INSIGHT_TYPES = (
+    "VISION_WEAKNESS",
+    "HIGH_DEATHS",
+    "LOW_DAMAGE",
+    "CS_WEAKNESS",
+    "STRONG_CHAMPION",
+    "CONSISTENT_PERFORMER",
+)
 
 
 def clear_old_insights() -> None:
     with engine.begin() as conn:
         conn.execute(text("""
             delete from analyzed.player_insights
-            where insight_type in ('VISION_WEAKNESS')
-        """))
+            where insight_type = any(:insight_types)
+        """), {"insight_types": list(GENERATED_INSIGHT_TYPES)})
 
 
 def normalize_insight(insight: dict) -> dict:
@@ -83,5 +97,9 @@ def generate_all_insights() -> int:
 
     insights = []
     insights.extend(generate_vision_insights())
+    insights.extend(generate_deaths_insights())
+    insights.extend(generate_damage_insights())
+    insights.extend(generate_cs_insights())
+    insights.extend(generate_champion_strength_insights())
 
     return save_insights(insights)
