@@ -23,6 +23,12 @@ def parse_args() -> argparse.Namespace:
         help="Maximum players to process in refresh-stale mode. Default: 20.",
     )
     parser.add_argument(
+        "--min-matches",
+        type=int,
+        default=5,
+        help="Minimum analyzed match rows required for refresh-stale candidates. Default: 5.",
+    )
+    parser.add_argument(
         "--stale-hours",
         type=float,
         help="Refresh generated insights older than this many hours.",
@@ -41,6 +47,9 @@ def parse_args() -> argparse.Namespace:
 
     if args.mode == "refresh-stale" and args.limit < 1:
         parser.error("--limit must be greater than 0")
+
+    if args.mode == "refresh-stale" and args.min_matches < 1:
+        parser.error("--min-matches must be greater than 0")
 
     if args.stale_hours is not None and args.stale_days != 1:
         parser.error("Use either --stale-hours or --stale-days, not both")
@@ -70,9 +79,10 @@ def main() -> None:
         print("Skipped/error count: 0")
         return
 
-    result = refresh_stale_insights(args.limit, stale_hours)
+    result = refresh_stale_insights(args.limit, stale_hours, args.min_matches)
     print(f"Refresh limit: {args.limit}")
     print(f"Stale threshold hours: {stale_hours}")
+    print(f"Minimum match rows: {args.min_matches}")
     print(f"Candidate player count: {result['candidate_count']}")
     print(f"Refreshed player count: {result['refreshed_count']}")
     print(f"Generated insight count: {result['generated_count']}")

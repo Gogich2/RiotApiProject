@@ -237,16 +237,18 @@ def generate_insights_for_player(puuid: str) -> int:
     return save_insights(curated_insights)
 
 
-def find_stale_player_puuids(limit: int, stale_hours: float) -> list[str]:
+def find_stale_player_puuids(limit: int, stale_hours: float, min_matches: int) -> list[str]:
     with engine.begin() as conn:
         rows = conn.execute(text("""
             with player_match_recency as (
                 select
                     puuid,
-                    max(created_at) as latest_match_at
+                    max(created_at) as latest_match_at,
+                    count(*) as match_count
                 from analyzed.v_player_match_stats
                 where puuid is not null
                 group by puuid
+                having count(*) >= :min_matches
             ),
             generated_insight_recency as (
                 select
@@ -270,14 +272,15 @@ def find_stale_player_puuids(limit: int, stale_hours: float) -> list[str]:
         """), {
             "insight_types": list(GENERATED_INSIGHT_TYPES),
             "stale_hours": stale_hours,
+            "min_matches": min_matches,
             "limit": limit,
         })
 
         return [str(row.puuid) for row in rows]
 
 
-def refresh_stale_insights(limit: int, stale_hours: float) -> dict[str, int]:
-    puuids = find_stale_player_puuids(limit, stale_hours)
+def refresh_stale_insights(limit: int, stale_hours: float, min_matches: int) -> dict[str, int]:
+    puuids = find_stale_player_puuids(limit, stale_hours, min_matches)
     refreshed_count = 0
     generated_count = 0
     error_count = 0

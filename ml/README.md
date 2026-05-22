@@ -58,19 +58,19 @@ python ml/src/main.py
 
 ### Refresh stale players gradually
 
-Refresh at most 20 players whose generated insights are missing, stale, or older than their latest match data:
+Refresh at most 20 players whose generated insights are missing, stale, or older than their latest match data. By default, candidates must have at least 5 analyzed rows in `analyzed.v_player_match_stats`:
 
 ```bash
-python ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24
+python ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24 --min-matches 5
 ```
 
 You can use days instead of hours:
 
 ```bash
-python ml/src/main.py --mode refresh-stale --limit 20 --stale-days 1
+python ml/src/main.py --mode refresh-stale --limit 20 --stale-days 1 --min-matches 5
 ```
 
-This mode processes a limited, stable batch ordered with missing generated insights first, then oldest generated insights first. It does not run a full all-player refresh.
+This mode processes a limited, stable batch ordered with missing generated insights first, then oldest generated insights first. It does not run a full all-player refresh, and it skips low-sample players so a batch is not spent on one-match players that cannot produce useful recommendations.
 
 ### Regenerate one player
 
@@ -80,20 +80,22 @@ python ml/src/main.py --mode player --puuid SOME_PUUID
 
 This regenerates insights only for that `puuid`. It deletes old generated insight types only for that player and leaves manual or unrelated insight types untouched.
 
+Player mode does not enforce `--min-matches`; it may be used for any specific `puuid`.
+
 ### Scheduled refresh examples
 
 Windows Task Scheduler action:
 
 ```text
 Program/script: C:\Path\To\Python\python.exe
-Arguments: ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24
+Arguments: ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24 --min-matches 5
 Start in: D:\Games\RiotApiPractice
 ```
 
 Cron example:
 
 ```cron
-*/30 * * * * cd /path/to/RiotApiPractice && python ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24
+*/30 * * * * cd /path/to/RiotApiPractice && python ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24 --min-matches 5
 ```
 
 ## Data Contract
