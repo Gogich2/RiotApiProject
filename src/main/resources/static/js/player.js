@@ -770,7 +770,7 @@ function renderRecommendationGroup(group) {
         <section class="recommendation-group">
             <div class="recommendation-group__header">
                 <h4>${escapeHtml(group.category.label)}</h4>
-                <span>${group.insights.length}</span>
+                <span>${escapeHtml(formatInsightCount(group.insights.length))}</span>
             </div>
 
             <div class="recommendation-group__cards">
@@ -783,6 +783,7 @@ function renderRecommendationGroup(group) {
 function renderRecommendationCard(insight, category) {
     const actionHint = getInsightActionHint(insight.insightType);
     const impactLabel = getImpactLabel(insight);
+    const shouldRenderAction = actionHint && !hasDuplicateAdvice(insight.description, actionHint);
 
     return `
         <article class="insight-card insight-card--${escapeHtml(category.key)}">
@@ -796,14 +797,33 @@ function renderRecommendationCard(insight, category) {
             <h3 class="insight-card__title">${escapeHtml(insight.title || 'Recommendation')}</h3>
             <p class="insight-card__text">${escapeHtml(insight.description || '')}</p>
 
-            ${actionHint ? `
+            ${shouldRenderAction ? `
                 <div class="insight-card__action">
-                    <span>Action</span>
+                    <span>Suggested action</span>
                     <p>${escapeHtml(actionHint)}</p>
                 </div>
             ` : ''}
         </article>
     `;
+}
+
+function formatInsightCount(count) {
+    return `${count} ${count === 1 ? 'insight' : 'insights'}`;
+}
+
+function hasDuplicateAdvice(description, actionHint) {
+    const normalizedDescription = normalizeAdviceText(description);
+    const normalizedAction = normalizeAdviceText(actionHint);
+
+    return normalizedAction.length > 0 && normalizedDescription.includes(normalizedAction);
+}
+
+function normalizeAdviceText(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[.,]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function getCuratedRecommendations(insights, maxTotal, maxPerCategory) {
