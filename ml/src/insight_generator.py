@@ -39,12 +39,15 @@ ACTIONABLE_NEGATIVE_TYPES = {
 }
 
 
-def clear_old_insights() -> None:
+def clear_old_insights(puuid: str | None = None) -> None:
+    puuid_filter = "and puuid = :puuid" if puuid is not None else ""
+
     with engine.begin() as conn:
-        conn.execute(text("""
+        conn.execute(text(f"""
             delete from analyzed.player_insights
             where insight_type = any(:insight_types)
-        """), {"insight_types": list(GENERATED_INSIGHT_TYPES)})
+              {puuid_filter}
+        """), {"insight_types": list(GENERATED_INSIGHT_TYPES), "puuid": puuid})
 
 
 def normalize_insight(insight: dict) -> dict:
@@ -202,17 +205,96 @@ def safe_int(value) -> int:
         return 0
 
 
+def generate_candidate_insights(puuid: str | None = None) -> list[dict]:
+    insights = []
+    insights.extend(generate_vision_insights(puuid))
+    insights.extend(generate_deaths_insights(puuid))
+    insights.extend(generate_damage_insights(puuid))
+    insights.extend(generate_cs_insights(puuid))
+    insights.extend(generate_champion_strength_insights(puuid))
+
+    return insights
+
+
 def generate_all_insights() -> int:
     clear_old_insights()
 
-    insights = []
-    insights.extend(generate_vision_insights())
-    insights.extend(generate_deaths_insights())
-    insights.extend(generate_damage_insights())
-    insights.extend(generate_cs_insights())
-    insights.extend(generate_champion_strength_insights())
+    insights = generate_candidate_insights()
 
     curated_insights = rank_and_limit_insights(insights)
     print(f"Curated insights after ranking and limits: {len(curated_insights)}")
 
     return save_insights(curated_insights)
+
+
+def generate_insights_for_player(puuid: str) -> int:
+    insights = generate_candidate_insights(puuid)
+    curated_insights = rank_and_limit_insights(insights)
+
+    print(f"Curated insights for player {puuid}: {len(curated_insights)}")
+
+    clear_old_insights(puuid)
+    return save_insights(curated_insights)
+
+
+def find_stale_player_puuids(limit: int, stale_hours: float) -> list[str]:
+    with engine.begin() as conn:
+        rows = conn.execute(text("""
+            with player_match_recency as (
+                select
+                    puuid,
+                    max(created_at) as latest_match_at
+                from analyzed.v_player_match_stats
+                where puuid is not null
+                group by puuid
+            ),
+            generated_insight_recency as (
+                select
+                    puuid,
+                    max(created_at) as latest_generated_at
+                from analyzed.player_insights
+                where insight_type = any(:insight_types)
+                group by puuid
+            )
+            select p.puuid
+            from player_match_recency p
+            left join generated_insight_recency g on g.puuid = p.puuid
+            where g.latest_generated_at is null
+               or g.latest_generated_at < now() - (:stale_hours * interval '1 hour')
+               or p.latest_match_at > g.latest_generated_at
+            order by
+                case when g.latest_generated_at is null then 0 else 1 end,
+                g.latest_generated_at nulls first,
+                p.puuid
+            limit :limit
+        """), {
+            "insight_types": list(GENERATED_INSIGHT_TYPES),
+            "stale_hours": stale_hours,
+            "limit": limit,
+        })
+
+        return [str(row.puuid) for row in rows]
+
+
+def refresh_stale_insights(limit: int, stale_hours: float) -> dict[str, int]:
+    puuids = find_stale_player_puuids(limit, stale_hours)
+    refreshed_count = 0
+    generated_count = 0
+    error_count = 0
+
+    print(f"Candidate player count: {len(puuids)}")
+
+    for puuid in puuids:
+        try:
+            generated_count += generate_insights_for_player(puuid)
+            refreshed_count += 1
+        except Exception as exc:
+            error_count += 1
+            print(f"Error refreshing player {puuid}: {exc}")
+
+    return {
+        "candidate_count": len(puuids),
+        "refreshed_count": refreshed_count,
+        "generated_count": generated_count,
+        "error_count": error_count,
+    }

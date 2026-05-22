@@ -1,4 +1,5 @@
 import pandas as pd
+from sqlalchemy import text
 
 from db import engine
 
@@ -10,7 +11,7 @@ MIN_CS_BELOW_BASELINE_RATIO = 0.15
 MILLISECONDS_PER_MINUTE = 60_000
 
 
-def load_data() -> pd.DataFrame:
+def load_data(puuid: str | None = None) -> pd.DataFrame:
     query = """
         select
             puuid,
@@ -22,12 +23,22 @@ def load_data() -> pd.DataFrame:
         from analyzed.v_player_match_stats
         where puuid is not null
           and champion_id is not null
+          and (
+              :puuid is null
+              or puuid = :puuid
+              or champion_id in (
+                  select distinct champion_id
+                  from analyzed.v_player_match_stats
+                  where puuid = :puuid
+                    and champion_id is not null
+              )
+          )
           and total_minions_killed is not null
           and game_duration_ms is not null
           and game_duration_ms > 0
     """
 
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(text(query), engine, params={"puuid": puuid})
 
     if df.empty:
         return df
@@ -40,8 +51,8 @@ def load_data() -> pd.DataFrame:
     return df[df["cs_per_minute"].notna()]
 
 
-def generate_cs_insights() -> list[dict]:
-    df = load_data()
+def generate_cs_insights(puuid: str | None = None) -> list[dict]:
+    df = load_data(puuid)
 
     if df.empty:
         return []
@@ -54,7 +65,9 @@ def generate_cs_insights() -> list[dict]:
 
     insights = []
 
-    for (puuid, champion_id), group in df.groupby(["puuid", "champion_id"], dropna=False):
+    player_df = df[df["puuid"] == puuid] if puuid is not None else df
+
+    for (puuid, champion_id), group in player_df.groupby(["puuid", "champion_id"], dropna=False):
         if len(group) < MIN_PLAYER_CHAMPION_MATCHES:
             continue
 

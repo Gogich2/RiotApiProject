@@ -1,4 +1,5 @@
 import pandas as pd
+from sqlalchemy import text
 
 from db import engine
 
@@ -10,7 +11,7 @@ MIN_DAMAGE_BELOW_BASELINE_RATIO = 0.15
 DAMAGE_COLUMN = "total_damage_dealt_to_champions"
 
 
-def load_data() -> pd.DataFrame:
+def load_data(puuid: str | None = None) -> pd.DataFrame:
     query = f"""
         select
             puuid,
@@ -20,15 +21,25 @@ def load_data() -> pd.DataFrame:
         from analyzed.v_player_match_stats
         where puuid is not null
           and champion_id is not null
+          and (
+              :puuid is null
+              or puuid = :puuid
+              or champion_id in (
+                  select distinct champion_id
+                  from analyzed.v_player_match_stats
+                  where puuid = :puuid
+                    and champion_id is not null
+              )
+          )
           and {DAMAGE_COLUMN} is not null
           and {DAMAGE_COLUMN} > 0
     """
 
-    return pd.read_sql(query, engine)
+    return pd.read_sql(text(query), engine, params={"puuid": puuid})
 
 
-def generate_damage_insights() -> list[dict]:
-    df = load_data()
+def generate_damage_insights(puuid: str | None = None) -> list[dict]:
+    df = load_data(puuid)
 
     if df.empty:
         return []
@@ -41,7 +52,9 @@ def generate_damage_insights() -> list[dict]:
 
     insights = []
 
-    for (puuid, champion_id), group in df.groupby(["puuid", "champion_id"], dropna=False):
+    player_df = df[df["puuid"] == puuid] if puuid is not None else df
+
+    for (puuid, champion_id), group in player_df.groupby(["puuid", "champion_id"], dropna=False):
         if len(group) < MIN_PLAYER_CHAMPION_MATCHES:
             continue
 

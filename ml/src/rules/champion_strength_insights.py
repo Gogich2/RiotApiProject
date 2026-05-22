@@ -1,4 +1,5 @@
 import pandas as pd
+from sqlalchemy import text
 
 from db import engine
 
@@ -12,7 +13,7 @@ MIN_AVG_KDA = 2.5
 MAX_KDA_COEFFICIENT_OF_VARIATION = 0.55
 
 
-def load_data() -> pd.DataFrame:
+def load_data(puuid: str | None = None) -> pd.DataFrame:
     query = """
         select
             puuid,
@@ -24,6 +25,7 @@ def load_data() -> pd.DataFrame:
             assists
         from analyzed.v_player_match_stats
         where puuid is not null
+          and (:puuid is null or puuid = :puuid)
           and champion_id is not null
           and win is not null
           and kills is not null
@@ -31,7 +33,7 @@ def load_data() -> pd.DataFrame:
           and assists is not null
     """
 
-    df = pd.read_sql(query, engine)
+    df = pd.read_sql(text(query), engine, params={"puuid": puuid})
 
     if df.empty:
         return df
@@ -40,8 +42,8 @@ def load_data() -> pd.DataFrame:
     return df
 
 
-def generate_champion_strength_insights() -> list[dict]:
-    df = load_data()
+def generate_champion_strength_insights(puuid: str | None = None) -> list[dict]:
+    df = load_data(puuid)
 
     if df.empty:
         return []

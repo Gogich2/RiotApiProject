@@ -42,6 +42,60 @@ If your Windows `python` launcher is not configured, use:
 py ml/src/main.py
 ```
 
+Running without arguments keeps the existing full generation behavior. It deletes and rewrites only the generated insight types listed below.
+
+### Full generation
+
+```bash
+python ml/src/main.py --mode all
+```
+
+`--mode all` is also the default:
+
+```bash
+python ml/src/main.py
+```
+
+### Refresh stale players gradually
+
+Refresh at most 20 players whose generated insights are missing, stale, or older than their latest match data:
+
+```bash
+python ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24
+```
+
+You can use days instead of hours:
+
+```bash
+python ml/src/main.py --mode refresh-stale --limit 20 --stale-days 1
+```
+
+This mode processes a limited, stable batch ordered with missing generated insights first, then oldest generated insights first. It does not run a full all-player refresh.
+
+### Regenerate one player
+
+```bash
+python ml/src/main.py --mode player --puuid SOME_PUUID
+```
+
+This regenerates insights only for that `puuid`. It deletes old generated insight types only for that player and leaves manual or unrelated insight types untouched.
+
+### Scheduled refresh examples
+
+Windows Task Scheduler action:
+
+```text
+Program/script: C:\Path\To\Python\python.exe
+Arguments: ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24
+Start in: D:\Games\RiotApiPractice
+```
+
+Cron example:
+
+```cron
+*/30 * * * * cd /path/to/RiotApiPractice && python ml/src/main.py --mode refresh-stale --limit 20 --stale-hours 24
+```
+
 ## Data Contract
 
 Reads from:
