@@ -1,6 +1,8 @@
 let activePlayerTab = 'overview';
 let cachedPlayerInsights = [];
 let expandedMatchId = null;
+const MAX_RECOMMENDATION_CARDS = 8;
+const MAX_RECOMMENDATION_CARDS_PER_CATEGORY = 3;
 
 document.addEventListener('DOMContentLoaded', async () => {
     const puuid = getQueryParam('puuid');
@@ -253,15 +255,14 @@ function renderRecommendationSummary(insights) {
         return;
     }
 
-    const visibleInsights = insights.slice(0, 3);
+    const visibleInsights = getCuratedRecommendations(insights, 3, 1);
 
     container.innerHTML = `
         <div class="recommendation-summary">
             ${visibleInsights.map(insight => `
                 <article class="recommendation-summary-card">
-                    <span class="recommendation-summary-card__type">
-                        ${getInsightIcon(insight.insightType)}
-                        ${escapeHtml(formatInsightType(insight.insightType))}
+                    <span class="recommendation-summary-card__type recommendation-badge recommendation-badge--${escapeHtml(getInsightCategory(insight.insightType).key)}">
+                        ${escapeHtml(getInsightCategory(insight.insightType).label)}
                     </span>
                     <strong>${escapeHtml(insight.title || 'Recommendation')}</strong>
                 </article>
@@ -723,21 +724,202 @@ function renderPlayerInsights(insights) {
         return;
     }
 
-    container.innerHTML = insights.map(insight => `
-        <article class="insight-card">
-            <div class="insight-card__header">
-                <span class="insight-card__type">
-                    ${getInsightIcon(insight.insightType)}
-                    ${escapeHtml(formatInsightType(insight.insightType))}
-                </span>
-                ${insight.score !== null && insight.score !== undefined
-        ? `<span class="insight-card__score">${formatDecimal(insight.score)}</span>`
-        : ''}
+    const visibleInsights = getCuratedRecommendations(
+        insights,
+        MAX_RECOMMENDATION_CARDS,
+        MAX_RECOMMENDATION_CARDS_PER_CATEGORY
+    );
+    const groupedInsights = groupRecommendationsByCategory(visibleInsights);
+    const focusCategory = visibleInsights.length > 0
+        ? getInsightCategory(visibleInsights[0].insightType)
+        : getInsightCategory(null);
+    const isLimited = insights.length > visibleInsights.length;
+
+    container.innerHTML = `
+        <div class="recommendations-dashboard">
+            <header class="recommendations-dashboard__header">
+                <div>
+                    <span class="recommendations-dashboard__eyebrow">Coaching focus</span>
+                    <h3 class="recommendations-dashboard__title">${escapeHtml(focusCategory.label)}</h3>
+                    <p class="recommendations-dashboard__text">
+                        Generated from analyzed recent match data. Start with the highest-impact patterns below.
+                    </p>
+                </div>
+
+                <div class="recommendations-dashboard__meta">
+                    <strong>${visibleInsights.length}</strong>
+                    <span>visible insights</span>
+                </div>
+            </header>
+
+            ${isLimited ? `
+                <div class="recommendations-dashboard__note">
+                    Showing top insights only to keep the coaching plan focused.
+                </div>
+            ` : ''}
+
+            <div class="recommendation-groups">
+                ${groupedInsights.map(group => renderRecommendationGroup(group)).join('')}
             </div>
+        </div>
+    `;
+}
+
+function renderRecommendationGroup(group) {
+    return `
+        <section class="recommendation-group">
+            <div class="recommendation-group__header">
+                <h4>${escapeHtml(group.category.label)}</h4>
+                <span>${group.insights.length}</span>
+            </div>
+
+            <div class="recommendation-group__cards">
+                ${group.insights.map(insight => renderRecommendationCard(insight, group.category)).join('')}
+            </div>
+        </section>
+    `;
+}
+
+function renderRecommendationCard(insight, category) {
+    const actionHint = getInsightActionHint(insight.insightType);
+    const impactLabel = getImpactLabel(insight);
+
+    return `
+        <article class="insight-card insight-card--${escapeHtml(category.key)}">
+            <div class="insight-card__header">
+                <span class="insight-card__type recommendation-badge recommendation-badge--${escapeHtml(category.key)}">
+                    ${escapeHtml(category.label)}
+                </span>
+                <span class="insight-card__impact">${escapeHtml(impactLabel)}</span>
+            </div>
+
             <h3 class="insight-card__title">${escapeHtml(insight.title || 'Recommendation')}</h3>
             <p class="insight-card__text">${escapeHtml(insight.description || '')}</p>
+
+            ${actionHint ? `
+                <div class="insight-card__action">
+                    <span>Action</span>
+                    <p>${escapeHtml(actionHint)}</p>
+                </div>
+            ` : ''}
         </article>
-    `).join('');
+    `;
+}
+
+function getCuratedRecommendations(insights, maxTotal, maxPerCategory) {
+    const categoryCounts = new Map();
+    const curated = [];
+
+    [...insights].sort(compareInsightsForDisplay).forEach(insight => {
+        const category = getInsightCategory(insight.insightType);
+        const currentCount = categoryCounts.get(category.key) || 0;
+
+        if (curated.length >= maxTotal || currentCount >= maxPerCategory) {
+            return;
+        }
+
+        categoryCounts.set(category.key, currentCount + 1);
+        curated.push(insight);
+    });
+
+    return curated;
+}
+
+function groupRecommendationsByCategory(insights) {
+    const groups = new Map();
+
+    insights.forEach(insight => {
+        const category = getInsightCategory(insight.insightType);
+
+        if (!groups.has(category.key)) {
+            groups.set(category.key, {
+                category,
+                insights: []
+            });
+        }
+
+        groups.get(category.key).insights.push(insight);
+    });
+
+    return Array.from(groups.values());
+}
+
+function compareInsightsForDisplay(left, right) {
+    const leftCategory = getInsightCategory(left.insightType);
+    const rightCategory = getInsightCategory(right.insightType);
+
+    if (leftCategory.priority !== rightCategory.priority) {
+        return leftCategory.priority - rightCategory.priority;
+    }
+
+    return Number(left.id || 0) - Number(right.id || 0);
+}
+
+function getInsightCategory(type) {
+    const categories = {
+        VISION_CONTROL: { key: 'vision', label: 'Vision control', priority: 10 },
+        VISION_WEAKNESS: { key: 'vision', label: 'Vision control', priority: 10 },
+        HIGH_DEATHS: { key: 'safety', label: 'Combat safety', priority: 20 },
+        DEATHS_WEAKNESS: { key: 'safety', label: 'Combat safety', priority: 20 },
+        KDA_WEAKNESS: { key: 'safety', label: 'Combat safety', priority: 20 },
+        LOW_DAMAGE: { key: 'damage', label: 'Damage output', priority: 30 },
+        CS_WEAKNESS: { key: 'farming', label: 'Farming / CS', priority: 40 },
+        FARM_WEAKNESS: { key: 'farming', label: 'Farming / CS', priority: 40 },
+        STRONG_CHAMPION: { key: 'strength', label: 'Champion strengths', priority: 50 },
+        CHAMPION_WEAKNESS: { key: 'strength', label: 'Champion strengths', priority: 50 },
+        CONSISTENT_PERFORMER: { key: 'consistency', label: 'Consistency', priority: 60 }
+    };
+
+    return categories[type] || { key: 'other', label: 'Other', priority: 100 };
+}
+
+function getInsightActionHint(type) {
+    const hints = {
+        VISION_CONTROL: 'Try placing earlier river wards before objectives and swapping to Oracle Lens after lane phase.',
+        VISION_WEAKNESS: 'Try placing earlier river wards before objectives and swapping to Oracle Lens after lane phase.',
+        HIGH_DEATHS: 'Play slower before objectives, avoid face-checking, and wait for teammates before entering fog.',
+        DEATHS_WEAKNESS: 'Play slower before objectives, avoid face-checking, and wait for teammates before entering fog.',
+        KDA_WEAKNESS: 'Play slower before objectives, avoid face-checking, and wait for teammates before entering fog.',
+        LOW_DAMAGE: 'Look for safer trades, join fights after key cooldowns, and avoid dying before major fights.',
+        CS_WEAKNESS: 'Focus on last-hitting during the first 10 minutes and catch side waves before grouping.',
+        FARM_WEAKNESS: 'Focus on last-hitting during the first 10 minutes and catch side waves before grouping.',
+        STRONG_CHAMPION: 'This champion looks promising. Consider using it more often in similar matchups.',
+        CONSISTENT_PERFORMER: 'Use this pick when you need a stable game plan and fewer high-risk decisions.'
+    };
+
+    return hints[type] || '';
+}
+
+function getImpactLabel(insight) {
+    const score = Number(insight.score);
+
+    if (!Number.isFinite(score)) {
+        return 'Coaching note';
+    }
+
+    const type = insight.insightType;
+
+    if (type === 'STRONG_CHAMPION' || type === 'CONSISTENT_PERFORMER') {
+        return 'Reliable pick';
+    }
+
+    if (type === 'VISION_WEAKNESS' || type === 'VISION_CONTROL') {
+        return score >= 20 ? 'High impact' : 'Medium impact';
+    }
+
+    if (type === 'HIGH_DEATHS' || type === 'DEATHS_WEAKNESS') {
+        return score >= 7 ? 'High impact' : 'Medium impact';
+    }
+
+    if (type === 'LOW_DAMAGE') {
+        return 'High impact';
+    }
+
+    if (type === 'CS_WEAKNESS') {
+        return score < 4.5 ? 'High impact' : 'Medium impact';
+    }
+
+    return 'Medium impact';
 }
 
 function renderPlayerMatches(matches) {
@@ -1059,7 +1241,13 @@ function calculateGamesChange(current, previous) {
 
 function formatInsightType(type) {
     const labels = {
+        VISION_CONTROL: 'Vision control',
         VISION_WEAKNESS: 'Vision control',
+        HIGH_DEATHS: 'Combat safety',
+        LOW_DAMAGE: 'Damage output',
+        CS_WEAKNESS: 'Farming / CS',
+        STRONG_CHAMPION: 'Champion strengths',
+        CONSISTENT_PERFORMER: 'Consistency',
         KDA_WEAKNESS: 'Fight survival',
         FARM_WEAKNESS: 'Farming',
         GOLD_WEAKNESS: 'Gold efficiency',
@@ -1088,19 +1276,25 @@ function prettifyInsightType(type) {
 
 function getInsightIcon(type) {
     const icons = {
-        VISION_WEAKNESS: '👁️',
-        KDA_WEAKNESS: '⚔️',
-        FARM_WEAKNESS: '🌾',
-        GOLD_WEAKNESS: '🪙',
-        ITEM_BUILD_WEAKNESS: '🛡️',
-        ITEM_TIMING_WEAKNESS: '⏱️',
-        RUNE_WEAKNESS: '✨',
-        SKILL_ORDER_WEAKNESS: '⬆️',
-        CHAMPION_WEAKNESS: '🎯',
-        DEATHS_WEAKNESS: '💀'
+        VISION_CONTROL: 'VIS',
+        VISION_WEAKNESS: 'VIS',
+        HIGH_DEATHS: 'SAFE',
+        LOW_DAMAGE: 'DMG',
+        CS_WEAKNESS: 'CS',
+        STRONG_CHAMPION: 'PICK',
+        CONSISTENT_PERFORMER: 'KDA',
+        KDA_WEAKNESS: 'SAFE',
+        FARM_WEAKNESS: 'CS',
+        GOLD_WEAKNESS: 'GOLD',
+        ITEM_BUILD_WEAKNESS: 'ITEM',
+        ITEM_TIMING_WEAKNESS: 'TIME',
+        RUNE_WEAKNESS: 'RUNE',
+        SKILL_ORDER_WEAKNESS: 'SKILL',
+        CHAMPION_WEAKNESS: 'PICK',
+        DEATHS_WEAKNESS: 'SAFE'
     };
 
-    return icons[type] || '💡';
+    return icons[type] || 'NOTE';
 }
 
 function formatSignedNumber(value) {

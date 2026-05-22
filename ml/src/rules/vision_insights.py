@@ -61,10 +61,10 @@ def generate_vision_insights() -> list[dict]:
 
         champion_name = get_champion_name(group)
 
-        title_en = "Vision score may affect your results"
+        title_en = "Improve vision around objective setup"
         description_en = (
-            f"On {champion_name}, your average vision score in wins is {win_vision:.1f}, "
-            f"while in losses it is {loss_vision:.1f}. Better vision control may help improve consistency."
+            f"On {champion_name}, your wins show better vision control. "
+            f"Place river wards earlier and swap to Oracle Lens after lane phase."
         )
 
         title_uk = "Огляд мапи може впливати на твої результати"

@@ -1,7 +1,11 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+
+ML_ROOT = Path(__file__).resolve().parents[1]
+
+load_dotenv(ML_ROOT / ".env")
 
 
 def get_database_url() -> str:

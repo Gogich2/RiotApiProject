@@ -66,8 +66,8 @@ def generate_deaths_insights() -> list[dict]:
             "insight_type": "HIGH_DEATHS",
             "title": "Deaths are higher than expected",
             "description": (
-                f"On {champion_name}, you average {avg_deaths:.1f} deaths per game. "
-                f"The champion baseline is {baseline_deaths:.1f}, so reducing risky deaths could improve your results."
+                f"On {champion_name}, your deaths are above the champion baseline. "
+                f"Slow down before objectives and wait for teammates before entering fog."
             ),
             "title_uk": "Забагато смертей",
             "description_uk": (

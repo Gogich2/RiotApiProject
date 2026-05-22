@@ -828,15 +828,129 @@ body:has(#playerHero) .section__title {
 
 .insights {
     display: grid;
-    gap: 10px;
+    gap: 12px;
 }
 
 .player-recommendations .insights {
+    grid-template-columns: 1fr;
+}
+
+.recommendations-dashboard {
+    display: grid;
+    gap: 12px;
+}
+
+.recommendations-dashboard__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px;
+    border-radius: 12px;
+    background:
+            linear-gradient(90deg, rgba(37, 99, 235, 0.14), rgba(20, 25, 39, 0)),
+            #141927;
+    border: 1px solid #2b3650;
+}
+
+.recommendations-dashboard__eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: #8ab4ff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.recommendations-dashboard__title {
+    margin: 0 0 5px;
+    font-size: 22px;
+}
+
+.recommendations-dashboard__text {
+    max-width: 620px;
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.recommendations-dashboard__meta {
+    display: grid;
+    gap: 2px;
+    min-width: 112px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #101624;
+    border: 1px solid #293552;
+    text-align: center;
+}
+
+.recommendations-dashboard__meta strong {
+    font-size: 26px;
+}
+
+.recommendations-dashboard__meta span,
+.recommendations-dashboard__note {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.recommendations-dashboard__note {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #111625;
+    border: 1px dashed #33415f;
+}
+
+.recommendation-groups {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.recommendation-group {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+.recommendation-group__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 2px;
+}
+
+.recommendation-group__header h4 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.recommendation-group__header span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    border-radius: 999px;
+    background: #20263a;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.recommendation-group__cards {
+    display: grid;
+    gap: 10px;
 }
 
 .insight-card {
-    padding: 14px;
+    display: grid;
+    gap: 9px;
+    padding: 13px;
     border-radius: 12px;
     background: #141927;
     border: 1px solid #252936;
@@ -844,35 +958,97 @@ body:has(#playerHero) .section__title {
 
 .insight-card__header {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 8px;
 }
 
-.insight-card__type {
+.recommendation-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    color: #8ab4ff;
-    font-size: 12px;
+    width: fit-content;
+    min-height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    color: #dbeafe;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(96, 165, 250, 0.28);
+    font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
 }
 
-.insight-card__score {
+.recommendation-badge--safety {
+    color: #fecaca;
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(248, 113, 113, 0.24);
+}
+
+.recommendation-badge--damage {
+    color: #fed7aa;
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(251, 146, 60, 0.24);
+}
+
+.recommendation-badge--farming {
+    color: #bbf7d0;
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(74, 222, 128, 0.24);
+}
+
+.recommendation-badge--strength,
+.recommendation-badge--consistency {
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.13);
+    border-color: rgba(167, 139, 250, 0.26);
+}
+
+.recommendation-badge--other {
+    color: #d1d5db;
+    background: rgba(156, 163, 175, 0.12);
+    border-color: rgba(209, 213, 219, 0.18);
+}
+
+.insight-card__impact {
     color: #cbd5e1;
     font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
 }
 
 .insight-card__title {
-    margin: 0 0 7px;
+    margin: 0;
     font-size: 15px;
+    line-height: 1.35;
 }
 
 .insight-card__text {
     margin: 0;
     color: #cbd5e1;
     font-size: 13px;
+    line-height: 1.45;
+}
+
+.insight-card__action {
+    display: grid;
+    gap: 4px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: #101624;
+    border: 1px solid #273148;
+}
+
+.insight-card__action span {
+    color: #8ab4ff;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.insight-card__action p {
+    margin: 0;
+    color: #d1d5db;
+    font-size: 12px;
     line-height: 1.45;
 }
 
@@ -884,24 +1060,20 @@ body:has(#playerHero) .section__title {
 .recommendation-summary-card {
     display: grid;
     gap: 6px;
-    padding: 14px;
-    border-radius: 14px;
+    padding: 12px;
+    border-radius: 12px;
     background: #171b25;
     border: 1px solid #252936;
 }
 
 .recommendation-summary-card__type {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #8ab4ff;
-    font-size: 12px;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-size: 10px;
 }
 
 .recommendation-summary-card strong {
     color: #f3f4f6;
+    font-size: 13px;
+    line-height: 1.35;
 }
 
 /* MATCHES */
@@ -2288,6 +2460,10 @@ body:has(#playerHero) .section__title {
         grid-template-columns: 1fr;
     }
 
+    .recommendation-groups {
+        grid-template-columns: 1fr;
+    }
+
     .match-participant-row {
         grid-template-columns: 1fr;
     }
@@ -2378,6 +2554,17 @@ body:has(#playerHero) .section__title {
     }
 
     .player-tabs__button {
+        width: 100%;
+        text-align: left;
+    }
+
+    .recommendations-dashboard__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .recommendations-dashboard__meta {
+        min-width: 0;
         width: 100%;
         text-align: left;
     }

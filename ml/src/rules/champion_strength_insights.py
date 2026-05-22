@@ -85,8 +85,8 @@ def generate_strong_champion_insight(
         "insight_type": "STRONG_CHAMPION",
         "title": "This champion is one of your stronger picks",
         "description": (
-            f"On {champion_name}, your winrate is {champion_winrate * 100:.0f}%. "
-            f"Your overall baseline is {player_winrate * 100:.0f}%, so this pick is performing well for you."
+            f"On {champion_name}, your winrate is meaningfully above your overall baseline. "
+            f"Consider using this pick more often in similar matchups."
         ),
         "title_uk": "Цей чемпіон є одним із твоїх сильніших виборів",
         "description_uk": (
@@ -132,8 +132,8 @@ def generate_consistent_performer_insight(
         "insight_type": "CONSISTENT_PERFORMER",
         "title": "Your performance is consistent on this champion",
         "description": (
-            f"On {champion_name}, your average KDA is {avg_kda:.1f} with stable match-to-match results. "
-            f"This is a reliable pick when you need consistency."
+            f"On {champion_name}, your KDA is stable across matches. "
+            f"This looks like a reliable pick when you need consistency."
         ),
         "title_uk": "Ти стабільно граєш на цьому чемпіоні",
         "description_uk": (

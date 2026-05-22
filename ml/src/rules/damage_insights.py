@@ -68,8 +68,8 @@ def generate_damage_insights() -> list[dict]:
             "insight_type": "LOW_DAMAGE",
             "title": "Damage output is below the champion baseline",
             "description": (
-                f"On {champion_name}, you average {avg_damage:.0f} damage to champions. "
-                f"The champion baseline is {baseline_damage:.0f}, so look for more safe trading and fight participation."
+                f"On {champion_name}, your champion damage is below baseline. "
+                f"Look for safer trades and avoid dying before major fights."
             ),
             "title_uk": "Замало шкоди по чемпіонах",
             "description_uk": (

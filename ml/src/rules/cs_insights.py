@@ -81,8 +81,8 @@ def generate_cs_insights() -> list[dict]:
             "insight_type": "CS_WEAKNESS",
             "title": "CS pace is lower than expected",
             "description": (
-                f"On {champion_name}, you average {avg_cs:.1f} CS per minute. "
-                f"The champion baseline is {baseline_cs:.1f}, so improving wave and jungle camp collection may help."
+                f"On {champion_name}, your CS pace is below baseline. "
+                f"Prioritize first-10-minute last-hits and catch side waves before grouping."
             ),
             "title_uk": "Темп фарму нижчий за очікуваний",
             "description_uk": (
