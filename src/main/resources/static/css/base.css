@@ -1,16 +1,67 @@
+:root {
+    --font-family-base: Arial, sans-serif;
+
+    --color-bg-app-rgb: 11, 13, 23;
+    --color-bg-app: #0b0d17;
+    --color-bg-canvas: #111827;
+
+    --color-surface-1: #111625;
+    --color-surface-2: #141927;
+    --color-surface-3: #151a2b;
+    --color-surface-4: #1b2440;
+    --color-surface-hover: #20263a;
+    --color-surface-hover-strong: #253052;
+
+    --color-border-subtle: #252936;
+    --color-border-default: #30384a;
+    --color-border-strong: #33415f;
+    --color-border-hero: #252f48;
+
+    --color-text-primary: #fff9eb;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #9ca3af;
+    --color-text-inverse: #ffffff;
+
+    --color-link: #8ab4ff;
+    --color-accent: #6800ff;
+    --color-focus: #4f8cff;
+    --color-success: #86efac;
+    --color-danger-surface: #2a1620;
+    --color-danger-border: #6b2138;
+    --color-danger-text: #fecdd3;
+
+    --hero-overlay-start: rgba(42, 59, 107, 0.65);
+    --hero-overlay-end: rgba(17, 24, 39, 0.92);
+
+    --shadow-overlay: 0 18px 40px rgba(0, 0, 0, 0.35);
+
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-pill: 999px;
+
+    --space-2: 8px;
+    --space-2_5: 10px;
+    --space-3: 12px;
+    --space-3_5: 14px;
+    --space-6: 24px;
+    --space-8: 32px;
+}
+
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0b0d17;
-    color: #f3f4f6;
+    font-family: var(--font-family-base);
+    background: var(--color-bg-app);
+    color: var(--color-text-primary);
 }
 
 a {
-    color: #8ab4ff;
+    color: var(--color-link);
     text-decoration: none;
 }
 
