@@ -17,14 +17,15 @@
 .player-match-card {
     padding: 14px;
     border-radius: 14px;
-    background: var(--color-surface-2);
+    background: var(--color-surface-1);
     border: 1px solid var(--color-border-subtle);
     transition: border-color 160ms ease, background 160ms ease;
     cursor: pointer;
+    box-shadow: var(--shadow-subtle);
 }
 
 .player-match-card:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-surface-2);
     border-color: var(--color-border-accent-soft);
 }
 
@@ -68,8 +69,8 @@
     gap: 4px;
     padding: 10px 12px;
     border-radius: 12px;
-    background: var(--color-surface-1);
-    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-default);
 }
 
 .player-match-card__label {
@@ -188,7 +189,7 @@
 
 .player-match-card--expanded {
     border-color: var(--color-border-accent);
-    background: var(--color-surface-accent);
+    background: var(--color-surface-2);
 }
 
 .match-details-view--standalone {
@@ -205,8 +206,21 @@
 }
 
 .match-summary {
+    position: relative;
+    overflow: hidden;
     padding: 12px;
     background: var(--color-surface-1);
+}
+
+.match-summary::before {
+    content: "";
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 24px;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
 }
 
 .match-summary__top {
@@ -218,7 +232,7 @@
 
 .match-summary__queue {
     display: inline-block;
-    margin-bottom: 5px;
+    margin: 6px 0 5px;
     color: var(--color-accent-text);
     font-size: 11px;
     font-weight: 800;

@@ -26,6 +26,8 @@
 }
 
 .recommendations-dashboard__header {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -33,14 +35,26 @@
     gap: 20px;
     padding: 20px;
     border-radius: 14px;
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border-hero);
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-subtle);
     box-shadow: var(--shadow-card);
+}
+
+.recommendations-dashboard__header::before {
+    content: "";
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    width: 30px;
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
 }
 
 .recommendations-dashboard__eyebrow {
     display: block;
     margin-bottom: 5px;
+    margin-top: 8px;
     color: var(--color-accent-text);
     font-size: 11px;
     font-weight: 800;
@@ -67,7 +81,7 @@
     min-width: 132px;
     padding: 14px;
     border-radius: 12px;
-    background: var(--color-surface-1);
+    background: var(--color-surface-2);
     border: 1px solid var(--color-border-default);
     text-align: center;
 }
@@ -104,7 +118,7 @@
     align-content: start;
     padding: 12px;
     border-radius: 14px;
-    background: var(--color-surface-1);
+    background: var(--color-surface-2);
     border: 1px solid var(--color-border-subtle);
 }
 
@@ -148,8 +162,8 @@
     gap: 9px;
     padding: 14px;
     border-radius: 12px;
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-default);
     box-shadow: var(--shadow-subtle);
 }
 
@@ -164,9 +178,9 @@
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    min-height: 24px;
-    padding: 0 8px;
-    border-radius: var(--radius-sm);
+    min-height: 22px;
+    padding: 0 7px;
+    border-radius: 8px;
     color: var(--color-accent-text);
     background: var(--color-accent-soft);
     border: 1px solid var(--color-border-accent-soft);
@@ -258,8 +272,8 @@
     gap: 6px;
     padding: 12px;
     border-radius: 12px;
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-default);
 }
 
 .recommendation-summary-card__type {

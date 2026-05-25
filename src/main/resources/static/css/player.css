@@ -38,7 +38,7 @@ body:has(#playerHero) .section__title {
     padding: 6px;
     margin: 14px 0 18px;
     border-radius: 14px;
-    background: var(--color-surface-2);
+    background: var(--color-surface-1);
     border: 1px solid var(--color-border-subtle);
 }
 
@@ -60,7 +60,8 @@ body:has(#playerHero) .section__title {
 
 .player-tabs__button--active {
     color: var(--color-text-primary);
-    background: var(--color-accent);
+    background: var(--color-surface-accent);
+    box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
 [data-player-tab-panel][hidden] {
@@ -138,14 +139,14 @@ body:has(#playerHero) .section__title {
     min-height: 116px;
     padding: 14px;
     border-radius: 12px;
-    background: var(--color-surface-3);
+    background: var(--color-surface-2);
     border: 1px solid var(--color-border-default);
     box-shadow: inset 3px 0 0 var(--color-accent-soft);
 }
 
 .rank-card--unranked {
     grid-template-columns: 1fr;
-    background: var(--color-surface-2);
+    background: var(--color-surface-1);
 }
 
 .rank-card__image {
@@ -256,13 +257,13 @@ body:has(#playerHero) .section__title {
     align-items: center;
     padding: 10px;
     border-radius: 12px;
-    background: var(--color-surface-2);
+    background: var(--color-surface-1);
     border: 1px solid var(--color-border-subtle);
     color: var(--color-text-primary);
 }
 
 .player-champion-card:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-surface-2);
     border-color: var(--color-border-accent-soft);
     text-decoration: none;
 }
@@ -319,7 +320,7 @@ body:has(#playerHero) .section__title {
 .rank-history-card {
     padding: 14px;
     border-radius: 12px;
-    background: var(--color-surface-2);
+    background: var(--color-surface-1);
     border: 1px solid var(--color-border-subtle);
 }
 
