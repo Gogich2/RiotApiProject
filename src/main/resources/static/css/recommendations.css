@@ -33,21 +33,18 @@
     gap: 20px;
     padding: 20px;
     border-radius: 14px;
-    background:
-            linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(20, 25, 39, 0.84) 58%),
-            #151b2d;
-    border: 1px solid #344463;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-hero);
+    box-shadow: var(--shadow-card);
 }
 
 .recommendations-dashboard__eyebrow {
     display: block;
     margin-bottom: 5px;
-    color: #8ab4ff;
+    color: var(--color-accent-text);
     font-size: 11px;
     font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .recommendations-dashboard__title {
@@ -59,7 +56,7 @@
 .recommendations-dashboard__text {
     max-width: 760px;
     margin: 0;
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     font-size: 14px;
     line-height: 1.5;
 }
@@ -70,8 +67,8 @@
     min-width: 132px;
     padding: 14px;
     border-radius: 12px;
-    background: rgba(16, 22, 36, 0.92);
-    border: 1px solid #3b4b6b;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-default);
     text-align: center;
 }
 
@@ -81,15 +78,15 @@
 
 .recommendations-dashboard__meta span,
 .recommendations-dashboard__note {
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-size: 12px;
 }
 
 .recommendations-dashboard__note {
     padding: 11px 13px;
     border-radius: 10px;
-    background: #111625;
-    border: 1px dashed #33415f;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .recommendation-groups {
@@ -107,8 +104,8 @@
     align-content: start;
     padding: 12px;
     border-radius: 14px;
-    background: rgba(17, 22, 37, 0.64);
-    border: 1px solid #252f46;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .recommendation-group__header {
@@ -131,11 +128,11 @@
     min-width: 74px;
     min-height: 24px;
     padding: 0 9px;
-    border-radius: 999px;
-    background: #20263a;
-    color: #cbd5e1;
+    border-radius: var(--radius-sm);
+    background: var(--color-neutral-soft);
+    color: var(--color-text-secondary);
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
 }
 
 .recommendation-group__cards {
@@ -151,9 +148,9 @@
     gap: 9px;
     padding: 14px;
     border-radius: 12px;
-    background: #151b2b;
-    border: 1px solid #2c354d;
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-subtle);
 }
 
 .insight-card__header {
@@ -169,13 +166,12 @@
     width: fit-content;
     min-height: 24px;
     padding: 0 8px;
-    border-radius: 999px;
-    color: #dbeafe;
-    background: rgba(59, 130, 246, 0.14);
-    border: 1px solid rgba(96, 165, 250, 0.28);
+    border-radius: var(--radius-sm);
+    color: var(--color-accent-text);
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border-accent-soft);
     font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-weight: 700;
 }
 
 .recommendation-badge--safety {
@@ -185,9 +181,9 @@
 }
 
 .recommendation-badge--damage {
-    color: #fed7aa;
-    background: rgba(249, 115, 22, 0.12);
-    border-color: rgba(251, 146, 60, 0.24);
+    color: var(--color-warning-text);
+    background: var(--color-warning-soft);
+    border-color: rgba(249, 115, 22, 0.24);
 }
 
 .recommendation-badge--farming {
@@ -198,19 +194,19 @@
 
 .recommendation-badge--strength,
 .recommendation-badge--consistency {
-    color: #c4b5fd;
-    background: rgba(139, 92, 246, 0.13);
-    border-color: rgba(167, 139, 250, 0.26);
+    color: var(--color-accent-text);
+    background: var(--color-accent-soft);
+    border-color: var(--color-border-accent-soft);
 }
 
 .recommendation-badge--other {
-    color: #d1d5db;
-    background: rgba(156, 163, 175, 0.12);
-    border-color: rgba(209, 213, 219, 0.18);
+    color: var(--color-text-secondary);
+    background: var(--color-neutral-soft);
+    border-color: rgba(255, 249, 235, 0.1);
 }
 
 .insight-card__impact {
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     font-size: 12px;
     font-weight: 800;
     white-space: nowrap;
@@ -224,7 +220,7 @@
 
 .insight-card__text {
     margin: 0;
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     font-size: 13px;
     line-height: 1.45;
 }
@@ -234,21 +230,20 @@
     gap: 5px;
     padding: 10px 11px;
     border-radius: 10px;
-    background: rgba(16, 22, 36, 0.72);
-    border: 1px solid #2a354d;
-    box-shadow: inset 3px 0 0 rgba(138, 180, 255, 0.28);
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: inset 3px 0 0 var(--color-accent-soft-strong);
 }
 
 .insight-card__action span {
-    color: #8ab4ff;
+    color: var(--color-accent-text);
     font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-weight: 700;
 }
 
 .insight-card__action p {
     margin: 0;
-    color: #d1d5db;
+    color: var(--color-text-secondary);
     font-size: 12px;
     line-height: 1.45;
 }
@@ -263,8 +258,8 @@
     gap: 6px;
     padding: 12px;
     border-radius: 12px;
-    background: #171b25;
-    border: 1px solid #252936;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .recommendation-summary-card__type {
@@ -272,7 +267,7 @@
 }
 
 .recommendation-summary-card strong {
-    color: #f3f4f6;
+    color: var(--color-text-primary);
     font-size: 13px;
     line-height: 1.35;
 }

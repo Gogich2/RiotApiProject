@@ -38,8 +38,8 @@ body:has(#playerHero) .section__title {
     padding: 6px;
     margin: 14px 0 18px;
     border-radius: 14px;
-    background: #171b25;
-    border: 1px solid #252936;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .player-tabs__button {
@@ -47,19 +47,20 @@ body:has(#playerHero) .section__title {
     border: 0;
     border-radius: 10px;
     background: transparent;
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-weight: 800;
     cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
 }
 
 .player-tabs__button:hover {
-    color: #f3f4f6;
-    background: #202636;
+    color: var(--color-text-primary);
+    background: var(--color-accent-soft);
 }
 
 .player-tabs__button--active {
-    color: #ffffff;
-    background: #2563eb;
+    color: var(--color-text-primary);
+    background: var(--color-accent);
 }
 
 [data-player-tab-panel][hidden] {
@@ -78,8 +79,8 @@ body:has(#playerHero) .section__title {
     width: 88px;
     height: 88px;
     border-radius: 16px;
-    background: #111827;
-    border: 1px solid #3b82f6;
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-accent);
     object-fit: cover;
 }
 
@@ -89,7 +90,7 @@ body:has(#playerHero) .section__title {
     justify-content: center;
     font-size: 34px;
     font-weight: 900;
-    color: #8ab4ff;
+    color: var(--color-accent-text);
 }
 
 .player-hero__content {
@@ -137,15 +138,14 @@ body:has(#playerHero) .section__title {
     min-height: 116px;
     padding: 14px;
     border-radius: 12px;
-    background:
-            linear-gradient(90deg, rgba(59, 130, 246, 0.12), transparent 45%),
-            #181d32;
-    border: 1px solid #283149;
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-default);
+    box-shadow: inset 3px 0 0 var(--color-accent-soft);
 }
 
 .rank-card--unranked {
     grid-template-columns: 1fr;
-    background: #141927;
+    background: var(--color-surface-2);
 }
 
 .rank-card__image {
@@ -168,7 +168,7 @@ body:has(#playerHero) .section__title {
 }
 
 .rank-card__queue {
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     font-size: 12px;
     font-weight: 800;
     text-transform: uppercase;
@@ -176,9 +176,9 @@ body:has(#playerHero) .section__title {
 
 .rank-card__badge {
     padding: 4px 8px;
-    border-radius: 999px;
-    background: rgba(138, 180, 255, 0.14);
-    color: #cfe0ff;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent-soft);
+    color: var(--color-accent-text);
     font-size: 11px;
     font-weight: 800;
 }
@@ -192,7 +192,7 @@ body:has(#playerHero) .section__title {
 
 .rank-card__lp {
     margin-bottom: 9px;
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     font-size: 14px;
 }
 
@@ -204,15 +204,15 @@ body:has(#playerHero) .section__title {
 
 .rank-card__stats span {
     padding: 5px 8px;
-    border-radius: 999px;
-    background: #20263a;
-    color: #e5e7eb;
+    border-radius: var(--radius-sm);
+    background: var(--color-neutral-soft);
+    color: var(--color-text-secondary);
     font-size: 12px;
 }
 
 .rank-card__meta {
     margin: 0;
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-size: 13px;
 }
 
@@ -256,13 +256,14 @@ body:has(#playerHero) .section__title {
     align-items: center;
     padding: 10px;
     border-radius: 12px;
-    background: #141927;
-    border: 1px solid #252936;
-    color: #f3f4f6;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-primary);
 }
 
 .player-champion-card:hover {
-    background: #1a2033;
+    background: var(--color-surface-hover);
+    border-color: var(--color-border-accent-soft);
     text-decoration: none;
 }
 
@@ -271,7 +272,7 @@ body:has(#playerHero) .section__title {
     height: 42px;
     border-radius: 9px;
     object-fit: cover;
-    background: #111827;
+    background: var(--color-bg-canvas);
 }
 
 .player-champion-card__main {
@@ -289,15 +290,15 @@ body:has(#playerHero) .section__title {
 
 .player-champion-card__meta {
     display: block;
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-size: 12px;
 }
 
 .player-champion-card__kda {
     grid-column: 1 / -1;
     padding-top: 8px;
-    border-top: 1px solid #252936;
-    color: #cbd5e1;
+    border-top: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
     font-size: 12px;
 }
 
@@ -318,8 +319,8 @@ body:has(#playerHero) .section__title {
 .rank-history-card {
     padding: 14px;
     border-radius: 12px;
-    background: #141927;
-    border: 1px solid #252936;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .rank-chart-card__header,
@@ -332,7 +333,7 @@ body:has(#playerHero) .section__title {
 
 .rank-chart-card__eyebrow,
 .rank-history-card__count {
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-size: 12px;
 }
 
@@ -361,21 +362,21 @@ body:has(#playerHero) .section__title {
 }
 
 .rank-chart__grid {
-    stroke: #283149;
+    stroke: var(--color-border-default);
     stroke-width: 1;
 }
 
 .rank-chart__line {
     fill: none;
-    stroke: #4f8cff;
+    stroke: var(--color-accent);
     stroke-width: 4;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
 .rank-chart__point {
-    fill: #8ab4ff;
-    stroke: #111827;
+    fill: var(--color-accent);
+    stroke: var(--color-bg-canvas);
     stroke-width: 3;
     cursor: pointer;
 }
@@ -391,11 +392,11 @@ body:has(#playerHero) .section__title {
     display: grid;
     gap: 2px;
     font-size: 11px;
-    color: #9ca3af;
+    color: var(--color-text-muted);
 }
 
 .rank-chart-label strong {
-    color: #f3f4f6;
+    color: var(--color-text-primary);
 }
 
 .rank-chart-tooltip {
@@ -404,8 +405,8 @@ body:has(#playerHero) .section__title {
     display: none;
     padding: 9px 10px;
     border-radius: 10px;
-    background: #0f172a;
-    border: 1px solid #33415f;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-default);
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
     pointer-events: none;
 }
@@ -417,7 +418,7 @@ body:has(#playerHero) .section__title {
 
 .rank-chart-tooltip span,
 .rank-chart-tooltip small {
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
 }
 
 .rank-history-list {
@@ -430,8 +431,8 @@ body:has(#playerHero) .section__title {
     gap: 8px;
     padding: 10px;
     border-radius: 10px;
-    background: #111827;
-    border: 1px solid #252936;
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-subtle);
 }
 
 .rank-history-item__rank {
@@ -440,7 +441,7 @@ body:has(#playerHero) .section__title {
 }
 
 .rank-history-item__date {
-    color: #9ca3af;
+    color: var(--color-text-muted);
     font-size: 12px;
 }
 
@@ -449,14 +450,14 @@ body:has(#playerHero) .section__title {
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     font-size: 12px;
 }
 
 .rank-history-item__meta span {
     padding: 5px 7px;
-    border-radius: 999px;
-    background: #20263a;
+    border-radius: var(--radius-sm);
+    background: var(--color-neutral-soft);
 }
 
 .rank-delta--up {
