@@ -6,19 +6,20 @@
     --color-bg-canvas: #151019;
 
     --color-surface-1: #17121b;
-    --color-surface-2: #1b1521;
-    --color-surface-3: #211a29;
-    --color-surface-4: #271f31;
-    --color-surface-hover: #2d2438;
-    --color-surface-hover-strong: #362b45;
-    --color-surface-accent: #231833;
+    --color-surface-2: #21172a;
+    --color-surface-3: #2a1d35;
+    --color-surface-4: #342242;
+    --color-surface-hover: #39264a;
+    --color-surface-hover-strong: #472d5d;
+    --color-surface-accent: #4a1fb3;
+    --color-surface-accent-soft: #301b4b;
 
     --color-border-subtle: #352a40;
     --color-border-default: #463654;
     --color-border-strong: #5b4471;
-    --color-border-hero: #694688;
-    --color-border-accent: rgba(104, 0, 255, 0.48);
-    --color-border-accent-soft: rgba(104, 0, 255, 0.28);
+    --color-border-hero: #8756bf;
+    --color-border-accent: rgba(104, 0, 255, 0.7);
+    --color-border-accent-soft: rgba(104, 0, 255, 0.42);
 
     --color-text-primary: #fff9eb;
     --color-text-secondary: #e2d8c9;
@@ -28,8 +29,8 @@
     --color-link: #6800ff;
     --color-accent: #6800ff;
     --color-accent-hover: #7c2dff;
-    --color-accent-soft: rgba(104, 0, 255, 0.14);
-    --color-accent-soft-strong: rgba(104, 0, 255, 0.22);
+    --color-accent-soft: rgba(104, 0, 255, 0.2);
+    --color-accent-soft-strong: rgba(104, 0, 255, 0.32);
     --color-accent-text: #dcc8ff;
     --color-focus: #6800ff;
     --color-success: #86efac;
