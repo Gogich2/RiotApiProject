@@ -66,10 +66,33 @@
 }
 
 body {
+    position: relative;
+    min-height: 100vh;
+    isolation: isolate;
     margin: 0;
     font-family: var(--font-family-base);
     background: var(--color-bg-app);
     color: var(--color-text-primary);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.34;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            transparent 0 18px,
+            rgba(104, 0, 255, 0.09) 18px 19px
+        ),
+        repeating-linear-gradient(
+            135deg,
+            transparent 0 72px,
+            rgba(104, 0, 255, 0.05) 72px 73px
+        );
 }
 
 a {

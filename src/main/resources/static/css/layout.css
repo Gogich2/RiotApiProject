@@ -111,6 +111,8 @@
 }
 
 .page {
+    position: relative;
+    z-index: 1;
     width: min(1180px, calc(100% - 32px));
     margin: 0 auto;
     padding: 32px 0 64px;
