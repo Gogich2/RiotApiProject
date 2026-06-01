@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Champion</title>
-    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 <header class="site-header">
-    <a class="site-header__logo" href="/">Riot Stats</a>
+    <a class="site-header__logo" href="index.html">Riot Stats</a>
+    <nav class="site-nav" aria-label="Primary">
+        <a class="site-nav__link" href="index.html">Home</a>
+        <a class="site-nav__link" href="champions.html" aria-current="page">Champions</a>
+        <a class="site-nav__link" href="players.html">Players</a>
+    </nav>
 
     <div class="search">
         <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
@@ -31,7 +36,7 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th>Item ID</th>
+                    <th>Item</th>
                     <th>Games</th>
                     <th>Wins</th>
                     <th>Winrate</th>
@@ -44,8 +49,8 @@
     </section>
 </main>
 
-<script src="/js/api.js"></script>
-<script src="/js/search.js"></script>
-<script src="/js/champion.js"></script>
+<script src="js/api.js"></script>
+<script src="js/search.js"></script>
+<script src="js/champion.js"></script>
 </body>
 </html>

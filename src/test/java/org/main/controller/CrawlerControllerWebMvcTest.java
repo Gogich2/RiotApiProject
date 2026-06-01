@@ -2,6 +2,8 @@ package org.main.controller;
 
 import org.junit.jupiter.api.Test;
 import org.main.dto.CrawlResultDto;
+import org.main.persistence.repository.PlayerRepository;
+import org.main.service.BalancedDatasetCrawlerService;
 import org.main.service.CrawlerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -24,6 +26,12 @@ class CrawlerControllerWebMvcTest {
 
     @MockBean
     CrawlerService crawlerService;
+
+    @MockBean
+    BalancedDatasetCrawlerService balancedDatasetCrawlerService;
+
+    @MockBean
+    PlayerRepository playerRepository;
 
     @Test
     void crawlByPuuidUsesDefaultLimit20() throws Exception {

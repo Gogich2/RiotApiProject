@@ -51,7 +51,7 @@ public class DataDragonSyncServiceImpl implements DataDragonSyncService {
     }
 
     private void syncChampions(String version) {
-        String url = DATA_DRAGON_BASE_URL + "/cdn/" + version + "/data/" + LANGUAGE + "/champion.json";
+        String url = DATA_DRAGON_BASE_URL + "/cdn/" + version + "/data/" + LANGUAGE + "/championFull.json";
         JsonNode root = fetchJson(url);
         JsonNode data = root.path("data");
 
@@ -66,42 +66,69 @@ public class DataDragonSyncServiceImpl implements DataDragonSyncService {
                 continue;
             }
 
-            jdbcTemplate.update("""
-                    INSERT INTO static.champions
-                    (
-                        champion_id,
+            OffsetDateTime now = OffsetDateTime.now();
+            String championKey = champion.path("id").asText(null);
+            String name = champion.path("name").asText(null);
+            String title = champion.path("title").asText(null);
+            String imageFull = champion.path("image").path("full").asText(null);
+            String imageSprite = champion.path("image").path("sprite").asText(null);
+            String tagsJson = toJson(champion.path("tags"));
+            String rawJson = toJson(champion);
+
+            int updated = jdbcTemplate.update("""
+                    UPDATE static.champions
+                    SET version = ?,
+                        champion_key = ?,
+                        name = ?,
+                        title = ?,
+                        image_full = ?,
+                        image_sprite = ?,
+                        tags = ?::jsonb,
+                        raw_json = ?::jsonb,
+                        updated_at = ?
+                    WHERE champion_id = ?
+                    """,
+                    version,
+                    championKey,
+                    name,
+                    title,
+                    imageFull,
+                    imageSprite,
+                    tagsJson,
+                    rawJson,
+                    now,
+                    championId
+            );
+
+            if (updated == 0) {
+                jdbcTemplate.update("""
+                        INSERT INTO static.champions
+                        (
+                            champion_id,
+                            version,
+                            champion_key,
+                            name,
+                            title,
+                            image_full,
+                            image_sprite,
+                            tags,
+                            raw_json,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
+                        """,
+                        championId,
                         version,
-                        champion_key,
+                        championKey,
                         name,
                         title,
-                        image_full,
-                        image_sprite,
-                        tags,
-                        raw_json,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
-                    ON CONFLICT (champion_id, version) DO UPDATE
-                    SET champion_key = EXCLUDED.champion_key,
-                        name = EXCLUDED.name,
-                        title = EXCLUDED.title,
-                        image_full = EXCLUDED.image_full,
-                        image_sprite = EXCLUDED.image_sprite,
-                        tags = EXCLUDED.tags,
-                        raw_json = EXCLUDED.raw_json,
-                        updated_at = EXCLUDED.updated_at
-                    """,
-                    championId,
-                    version,
-                    champion.path("id").asText(null),
-                    champion.path("name").asText(null),
-                    champion.path("title").asText(null),
-                    champion.path("image").path("full").asText(null),
-                    champion.path("image").path("sprite").asText(null),
-                    toJson(champion.path("tags")),
-                    toJson(champion),
-                    OffsetDateTime.now()
-            );
+                        imageFull,
+                        imageSprite,
+                        tagsJson,
+                        rawJson,
+                        now
+                );
+            }
         }
     }
 
@@ -122,57 +149,94 @@ public class DataDragonSyncServiceImpl implements DataDragonSyncService {
                 continue;
             }
 
-            jdbcTemplate.update("""
-                    INSERT INTO static.items
-                    (
-                        item_id,
+            OffsetDateTime now = OffsetDateTime.now();
+            String name = item.path("name").asText(null);
+            String description = item.path("description").asText(null);
+            String plaintext = item.path("plaintext").asText(null);
+            String imageFull = item.path("image").path("full").asText(null);
+            String imageSprite = item.path("image").path("sprite").asText(null);
+            Integer goldBase = nullableInt(item.path("gold").path("base"));
+            Integer goldTotal = nullableInt(item.path("gold").path("total"));
+            Integer goldSell = nullableInt(item.path("gold").path("sell"));
+            Boolean purchasable = nullableBoolean(item.path("gold").path("purchasable"));
+            String tagsJson = toJson(item.path("tags"));
+            String mapsJson = toJson(item.path("maps"));
+            String rawJson = toJson(item);
+
+            int updated = jdbcTemplate.update("""
+                    UPDATE static.items
+                    SET version = ?,
+                        name = ?,
+                        description = ?,
+                        plaintext = ?,
+                        image_full = ?,
+                        image_sprite = ?,
+                        gold_base = ?,
+                        gold_total = ?,
+                        gold_sell = ?,
+                        purchasable = ?,
+                        tags = ?::jsonb,
+                        maps = ?::jsonb,
+                        raw_json = ?::jsonb,
+                        updated_at = ?
+                    WHERE item_id = ?
+                    """,
+                    version,
+                    name,
+                    description,
+                    plaintext,
+                    imageFull,
+                    imageSprite,
+                    goldBase,
+                    goldTotal,
+                    goldSell,
+                    purchasable,
+                    tagsJson,
+                    mapsJson,
+                    rawJson,
+                    now,
+                    itemId
+            );
+
+            if (updated == 0) {
+                jdbcTemplate.update("""
+                        INSERT INTO static.items
+                        (
+                            item_id,
+                            version,
+                            name,
+                            description,
+                            plaintext,
+                            image_full,
+                            image_sprite,
+                            gold_base,
+                            gold_total,
+                            gold_sell,
+                            purchasable,
+                            tags,
+                            maps,
+                            raw_json,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?)
+                        """,
+                        itemId,
                         version,
                         name,
                         description,
                         plaintext,
-                        image_full,
-                        image_sprite,
-                        gold_base,
-                        gold_total,
-                        gold_sell,
+                        imageFull,
+                        imageSprite,
+                        goldBase,
+                        goldTotal,
+                        goldSell,
                         purchasable,
-                        tags,
-                        maps,
-                        raw_json,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, ?)
-                    ON CONFLICT (item_id, version) DO UPDATE
-                    SET name = EXCLUDED.name,
-                        description = EXCLUDED.description,
-                        plaintext = EXCLUDED.plaintext,
-                        image_full = EXCLUDED.image_full,
-                        image_sprite = EXCLUDED.image_sprite,
-                        gold_base = EXCLUDED.gold_base,
-                        gold_total = EXCLUDED.gold_total,
-                        gold_sell = EXCLUDED.gold_sell,
-                        purchasable = EXCLUDED.purchasable,
-                        tags = EXCLUDED.tags,
-                        maps = EXCLUDED.maps,
-                        raw_json = EXCLUDED.raw_json,
-                        updated_at = EXCLUDED.updated_at
-                    """,
-                    itemId,
-                    version,
-                    item.path("name").asText(null),
-                    item.path("description").asText(null),
-                    item.path("plaintext").asText(null),
-                    item.path("image").path("full").asText(null),
-                    item.path("image").path("sprite").asText(null),
-                    nullableInt(item.path("gold").path("base")),
-                    nullableInt(item.path("gold").path("total")),
-                    nullableInt(item.path("gold").path("sell")),
-                    nullableBoolean(item.path("gold").path("purchasable")),
-                    toJson(item.path("tags")),
-                    toJson(item.path("maps")),
-                    toJson(item),
-                    OffsetDateTime.now()
-            );
+                        tagsJson,
+                        mapsJson,
+                        rawJson,
+                        now
+                );
+            }
         }
     }
 
@@ -192,45 +256,74 @@ public class DataDragonSyncServiceImpl implements DataDragonSyncService {
                 continue;
             }
 
-            jdbcTemplate.update("""
-                    INSERT INTO static.summoner_spells
-                    (
-                        spell_id,
+            OffsetDateTime now = OffsetDateTime.now();
+            String spellKey = spell.path("id").asText(null);
+            String name = spell.path("name").asText(null);
+            String description = spell.path("description").asText(null);
+            String tooltip = spell.path("tooltip").asText(null);
+            String imageFull = spell.path("image").path("full").asText(null);
+            String imageSprite = spell.path("image").path("sprite").asText(null);
+            String modesJson = toJson(spell.path("modes"));
+            String rawJson = toJson(spell);
+
+            int updated = jdbcTemplate.update("""
+                    UPDATE static.summoner_spells
+                    SET version = ?,
+                        spell_key = ?,
+                        name = ?,
+                        description = ?,
+                        tooltip = ?,
+                        image_full = ?,
+                        image_sprite = ?,
+                        modes = ?::jsonb,
+                        raw_json = ?::jsonb,
+                        updated_at = ?
+                    WHERE spell_id = ?
+                    """,
+                    version,
+                    spellKey,
+                    name,
+                    description,
+                    tooltip,
+                    imageFull,
+                    imageSprite,
+                    modesJson,
+                    rawJson,
+                    now,
+                    spellId
+            );
+
+            if (updated == 0) {
+                jdbcTemplate.update("""
+                        INSERT INTO static.summoner_spells
+                        (
+                            spell_id,
+                            version,
+                            spell_key,
+                            name,
+                            description,
+                            tooltip,
+                            image_full,
+                            image_sprite,
+                            modes,
+                            raw_json,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
+                        """,
+                        spellId,
                         version,
-                        spell_key,
+                        spellKey,
                         name,
                         description,
                         tooltip,
-                        image_full,
-                        image_sprite,
-                        modes,
-                        raw_json,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
-                    ON CONFLICT (spell_id, version) DO UPDATE
-                    SET spell_key = EXCLUDED.spell_key,
-                        name = EXCLUDED.name,
-                        description = EXCLUDED.description,
-                        tooltip = EXCLUDED.tooltip,
-                        image_full = EXCLUDED.image_full,
-                        image_sprite = EXCLUDED.image_sprite,
-                        modes = EXCLUDED.modes,
-                        raw_json = EXCLUDED.raw_json,
-                        updated_at = EXCLUDED.updated_at
-                    """,
-                    spellId,
-                    version,
-                    spell.path("id").asText(null),
-                    spell.path("name").asText(null),
-                    spell.path("description").asText(null),
-                    spell.path("tooltip").asText(null),
-                    spell.path("image").path("full").asText(null),
-                    spell.path("image").path("sprite").asText(null),
-                    toJson(spell.path("modes")),
-                    toJson(spell),
-                    OffsetDateTime.now()
-            );
+                        imageFull,
+                        imageSprite,
+                        modesJson,
+                        rawJson,
+                        now
+                );
+            }
         }
     }
 
@@ -249,30 +342,49 @@ public class DataDragonSyncServiceImpl implements DataDragonSyncService {
                 continue;
             }
 
-            jdbcTemplate.update("""
-                    INSERT INTO static.rune_styles
-                    (
-                        style_id,
-                        version,
-                        name,
-                        icon,
-                        raw_json,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?::jsonb, ?)
-                    ON CONFLICT (style_id, version) DO UPDATE
-                    SET name = EXCLUDED.name,
-                        icon = EXCLUDED.icon,
-                        raw_json = EXCLUDED.raw_json,
-                        updated_at = EXCLUDED.updated_at
+            OffsetDateTime styleUpdatedAt = OffsetDateTime.now();
+            String styleName = style.path("name").asText(null);
+            String styleIcon = style.path("icon").asText(null);
+            String styleRawJson = toJson(style);
+
+            int updatedStyle = jdbcTemplate.update("""
+                    UPDATE static.rune_styles
+                    SET version = ?,
+                        name = ?,
+                        icon = ?,
+                        raw_json = ?::jsonb,
+                        updated_at = ?
+                    WHERE style_id = ?
                     """,
-                    styleId,
                     version,
-                    style.path("name").asText(null),
-                    style.path("icon").asText(null),
-                    toJson(style),
-                    OffsetDateTime.now()
+                    styleName,
+                    styleIcon,
+                    styleRawJson,
+                    styleUpdatedAt,
+                    styleId
             );
+
+            if (updatedStyle == 0) {
+                jdbcTemplate.update("""
+                        INSERT INTO static.rune_styles
+                        (
+                            style_id,
+                            version,
+                            name,
+                            icon,
+                            raw_json,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?::jsonb, ?)
+                        """,
+                        styleId,
+                        version,
+                        styleName,
+                        styleIcon,
+                        styleRawJson,
+                        styleUpdatedAt
+                );
+            }
 
             JsonNode slots = style.path("slots");
 
@@ -295,42 +407,67 @@ public class DataDragonSyncServiceImpl implements DataDragonSyncService {
                         continue;
                     }
 
-                    jdbcTemplate.update("""
-                            INSERT INTO static.runes
-                            (
-                                rune_id,
-                                version,
-                                style_id,
-                                name,
-                                short_desc,
-                                long_desc,
-                                icon,
-                                slot_index,
-                                raw_json,
-                                updated_at
-                            )
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)
-                            ON CONFLICT (rune_id, version) DO UPDATE
-                            SET style_id = EXCLUDED.style_id,
-                                name = EXCLUDED.name,
-                                short_desc = EXCLUDED.short_desc,
-                                long_desc = EXCLUDED.long_desc,
-                                icon = EXCLUDED.icon,
-                                slot_index = EXCLUDED.slot_index,
-                                raw_json = EXCLUDED.raw_json,
-                                updated_at = EXCLUDED.updated_at
+                    OffsetDateTime runeUpdatedAt = OffsetDateTime.now();
+                    String runeName = rune.path("name").asText(null);
+                    String shortDesc = rune.path("shortDesc").asText(null);
+                    String longDesc = rune.path("longDesc").asText(null);
+                    String runeIcon = rune.path("icon").asText(null);
+                    String runeRawJson = toJson(rune);
+
+                    int updatedRune = jdbcTemplate.update("""
+                            UPDATE static.runes
+                            SET version = ?,
+                                style_id = ?,
+                                name = ?,
+                                short_desc = ?,
+                                long_desc = ?,
+                                icon = ?,
+                                slot_index = ?,
+                                raw_json = ?::jsonb,
+                                updated_at = ?
+                            WHERE rune_id = ?
                             """,
-                            runeId,
                             version,
                             styleId,
-                            rune.path("name").asText(null),
-                            rune.path("shortDesc").asText(null),
-                            rune.path("longDesc").asText(null),
-                            rune.path("icon").asText(null),
+                            runeName,
+                            shortDesc,
+                            longDesc,
+                            runeIcon,
                             slotIndex,
-                            toJson(rune),
-                            OffsetDateTime.now()
+                            runeRawJson,
+                            runeUpdatedAt,
+                            runeId
                     );
+
+                    if (updatedRune == 0) {
+                        jdbcTemplate.update("""
+                                INSERT INTO static.runes
+                                (
+                                    rune_id,
+                                    version,
+                                    style_id,
+                                    name,
+                                    short_desc,
+                                    long_desc,
+                                    icon,
+                                    slot_index,
+                                    raw_json,
+                                    updated_at
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)
+                                """,
+                                runeId,
+                                version,
+                                styleId,
+                                runeName,
+                                shortDesc,
+                                longDesc,
+                                runeIcon,
+                                slotIndex,
+                                runeRawJson,
+                                runeUpdatedAt
+                        );
+                    }
                 }
             }
         }

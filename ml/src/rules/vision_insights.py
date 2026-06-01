@@ -1,9 +1,10 @@
 import pandas as pd
+from sqlalchemy import text
 
 from db import engine
 
 
-def load_data() -> pd.DataFrame:
+def load_data(puuid: str | None = None) -> pd.DataFrame:
     query = """
         select
             puuid,
@@ -13,14 +14,15 @@ def load_data() -> pd.DataFrame:
             vision_score
         from analyzed.v_player_match_stats
         where puuid is not null
+          and (:puuid is null or puuid = :puuid)
           and vision_score is not null
     """
 
-    return pd.read_sql(query, engine)
+    return pd.read_sql(text(query), engine, params={"puuid": puuid})
 
 
-def generate_vision_insights() -> list[dict]:
-    df = load_data()
+def generate_vision_insights(puuid: str | None = None) -> list[dict]:
+    df = load_data(puuid)
 
     print(f"Loaded rows: {len(df)}")
 
@@ -61,10 +63,10 @@ def generate_vision_insights() -> list[dict]:
 
         champion_name = get_champion_name(group)
 
-        title_en = "Vision score may affect your results"
+        title_en = "Improve vision around objective setup"
         description_en = (
-            f"On {champion_name}, your average vision score in wins is {win_vision:.1f}, "
-            f"while in losses it is {loss_vision:.1f}. Better vision control may help improve consistency."
+            f"On {champion_name}, your wins show better vision control. "
+            f"Place river wards earlier and swap to Oracle Lens after lane phase."
         )
 
         title_uk = "Огляд мапи може впливати на твої результати"

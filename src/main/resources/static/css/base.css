@@ -1,0 +1,106 @@
+:root {
+    --font-family-base: Arial, sans-serif;
+
+    --color-bg-app-rgb: 16, 11, 18;
+    --color-bg-app: #100b12;
+    --color-bg-canvas: #151019;
+
+    --color-surface-1: #17121b;
+    --color-surface-2: #21172a;
+    --color-surface-3: #2a1d35;
+    --color-surface-4: #342242;
+    --color-surface-hover: #39264a;
+    --color-surface-hover-strong: #472d5d;
+    --color-surface-accent: #4a1fb3;
+    --color-surface-accent-soft: #301b4b;
+
+    --color-border-subtle: #352a40;
+    --color-border-default: #463654;
+    --color-border-strong: #5b4471;
+    --color-border-hero: #8756bf;
+    --color-border-accent: rgba(104, 0, 255, 0.7);
+    --color-border-accent-soft: rgba(104, 0, 255, 0.42);
+
+    --color-text-primary: #fff9eb;
+    --color-text-secondary: #e2d8c9;
+    --color-text-muted: #b9ac9e;
+    --color-text-inverse: #fff9eb;
+
+    --color-link: #6800ff;
+    --color-accent: #6800ff;
+    --color-accent-hover: #7c2dff;
+    --color-accent-soft: rgba(104, 0, 255, 0.2);
+    --color-accent-soft-strong: rgba(104, 0, 255, 0.32);
+    --color-accent-text: #dcc8ff;
+    --color-focus: #6800ff;
+    --color-success: #86efac;
+    --color-success-soft: rgba(34, 197, 94, 0.14);
+    --color-danger-surface: #2a1620;
+    --color-danger-border: #6b2138;
+    --color-danger-text: #fecdd3;
+    --color-danger-soft: rgba(239, 68, 68, 0.14);
+    --color-warning-soft: rgba(249, 115, 22, 0.14);
+    --color-warning-text: #f3c79b;
+    --color-neutral-soft: rgba(255, 249, 235, 0.06);
+
+    --shadow-overlay: 0 18px 40px rgba(0, 0, 0, 0.35);
+    --shadow-card: 0 10px 24px rgba(0, 0, 0, 0.18);
+    --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.14);
+
+    --radius-sm: 10px;
+    --radius-md: 12px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-pill: 999px;
+
+    --space-2: 8px;
+    --space-2_5: 10px;
+    --space-3: 12px;
+    --space-3_5: 14px;
+    --space-6: 24px;
+    --space-8: 32px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    position: relative;
+    min-height: 100vh;
+    isolation: isolate;
+    margin: 0;
+    font-family: var(--font-family-base);
+    background: var(--color-bg-app);
+    color: var(--color-text-primary);
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.34;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            transparent 0 18px,
+            rgba(104, 0, 255, 0.09) 18px 19px
+        ),
+        repeating-linear-gradient(
+            135deg,
+            transparent 0 72px,
+            rgba(104, 0, 255, 0.05) 72px 73px
+        );
+}
+
+a {
+    color: var(--color-link);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+

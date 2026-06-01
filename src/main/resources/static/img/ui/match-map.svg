@@ -1,0 +1,68 @@
+<svg class="match-map" viewBox="0 0 420 420" role="img" aria-label="Match timeline map">
+    <defs>
+        <linearGradient id="mapBg" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#10172a"/>
+            <stop offset="100%" stop-color="#1d1230"/>
+        </linearGradient>
+
+        <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+
+    <rect width="420" height="420" rx="28" fill="url(#mapBg)"/>
+
+    <!-- River -->
+    <path
+            d="M74 348 C130 286, 145 230, 196 199 C246 168, 284 130, 346 72"
+            fill="none"
+            stroke="#27395f"
+            stroke-width="34"
+            stroke-linecap="round"
+            opacity="0.75"
+    />
+
+    <!-- Jungle zones -->
+    <path
+            d="M58 285 C82 225, 126 194, 178 178 C144 146, 101 137, 62 158 C39 197, 34 245, 58 285Z"
+            fill="#17213a"
+            opacity="0.95"
+    />
+    <path
+            d="M362 135 C338 195, 294 226, 242 242 C276 274, 319 283, 358 262 C381 223, 386 175, 362 135Z"
+            fill="#241a3a"
+            opacity="0.95"
+    />
+
+    <!-- Lanes -->
+    <path d="M58 362 L362 58" stroke="#34446d" stroke-width="10" stroke-linecap="round" opacity="0.65"/>
+    <path d="M42 78 C125 80, 190 86, 250 124 C307 160, 340 218, 342 342"
+          stroke="#2e3a63" stroke-width="9" fill="none" opacity="0.55"/>
+    <path d="M78 378 C80 295, 86 230, 124 170 C160 113, 218 80, 342 78"
+          stroke="#2e3a63" stroke-width="9" fill="none" opacity="0.55"/>
+
+    <!-- Bases -->
+    <circle cx="54" cy="366" r="26" fill="#2563eb" opacity="0.24"/>
+    <circle cx="366" cy="54" r="26" fill="#ef4444" opacity="0.24"/>
+
+    <!-- Towers -->
+    <g fill="#64748b" opacity="0.75">
+        <circle cx="108" cy="312" r="8"/>
+        <circle cx="160" cy="260" r="8"/>
+        <circle cx="214" cy="206" r="8"/>
+        <circle cx="260" cy="160" r="8"/>
+        <circle cx="312" cy="108" r="8"/>
+    </g>
+
+    <!-- Event points example -->
+    <g filter="url(#softGlow)">
+        <circle cx="145" cy="258" r="9" fill="#3b82f6"/>
+        <circle cx="220" cy="198" r="9" fill="#ef4444"/>
+        <circle cx="278" cy="150" r="9" fill="#3b82f6"/>
+        <circle cx="310" cy="222" r="9" fill="#ef4444"/>
+    </g>
+</svg>

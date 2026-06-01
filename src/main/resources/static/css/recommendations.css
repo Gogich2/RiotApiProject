@@ -1,0 +1,289 @@
+/* INSIGHTS */
+
+.insights {
+    display: grid;
+    gap: 12px;
+}
+
+.player-recommendations .insights {
+    grid-template-columns: 1fr;
+}
+
+.player-recommendations {
+    width: 100%;
+}
+
+.player-recommendations .section__title {
+    margin-bottom: 12px;
+    font-size: 20px;
+}
+
+.recommendations-dashboard {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 14px;
+}
+
+.recommendations-dashboard__header {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 14px;
+    background: var(--color-surface-4);
+    border: 1px solid var(--color-border-hero);
+    box-shadow: var(--shadow-card);
+}
+
+.recommendations-dashboard__header::before {
+    content: "";
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    width: 30px;
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+}
+
+.recommendations-dashboard__eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 8px;
+    color: var(--color-accent-text);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.recommendations-dashboard__title {
+    margin: 0 0 5px;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.recommendations-dashboard__text {
+    max-width: 760px;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.recommendations-dashboard__meta {
+    display: grid;
+    gap: 2px;
+    min-width: 132px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-accent-soft);
+    text-align: center;
+}
+
+.recommendations-dashboard__meta strong {
+    font-size: 26px;
+}
+
+.recommendations-dashboard__meta span,
+.recommendations-dashboard__note {
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.recommendations-dashboard__note {
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-subtle);
+}
+
+.recommendation-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+    align-items: start;
+    width: 100%;
+    gap: 14px;
+}
+
+.recommendation-group {
+    display: grid;
+    min-width: 0;
+    gap: 10px;
+    align-content: start;
+    padding: 12px;
+    border-radius: 14px;
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-default);
+    box-shadow: inset 3px 0 0 var(--color-accent-soft-strong);
+}
+
+.recommendation-group__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 2px 2px;
+}
+
+.recommendation-group__header h4 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.recommendation-group__header span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 74px;
+    min-height: 24px;
+    padding: 0 9px;
+    border-radius: var(--radius-sm);
+    background: var(--color-neutral-soft);
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.recommendation-group__cards {
+    display: grid;
+    width: 100%;
+    gap: 10px;
+}
+
+.insight-card {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 9px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border-default);
+    box-shadow: var(--shadow-subtle);
+}
+
+.insight-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.recommendation-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 22px;
+    padding: 0 7px;
+    border-radius: 8px;
+    color: var(--color-accent-text);
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border-accent-soft);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.recommendation-badge--safety {
+    color: var(--color-accent-text);
+    background: var(--color-surface-accent-soft);
+    border-color: var(--color-border-accent-soft);
+}
+
+.recommendation-badge--damage {
+    color: var(--color-warning-text);
+    background: var(--color-warning-soft);
+    border-color: rgba(249, 115, 22, 0.24);
+}
+
+.recommendation-badge--farming {
+    color: var(--color-accent-text);
+    background: var(--color-surface-accent-soft);
+    border-color: var(--color-border-accent-soft);
+}
+
+.recommendation-badge--strength,
+.recommendation-badge--consistency {
+    color: var(--color-accent-text);
+    background: var(--color-accent-soft);
+    border-color: var(--color-border-accent-soft);
+}
+
+.recommendation-badge--other {
+    color: var(--color-text-secondary);
+    background: var(--color-neutral-soft);
+    border-color: rgba(255, 249, 235, 0.1);
+}
+
+.insight-card__impact {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.insight-card__title {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.insight-card__text {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.insight-card__action {
+    display: grid;
+    gap: 5px;
+    padding: 10px 11px;
+    border-radius: 10px;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: inset 3px 0 0 var(--color-accent-soft-strong);
+}
+
+.insight-card__action span {
+    color: var(--color-accent-text);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.insight-card__action p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.recommendation-summary {
+    display: grid;
+    gap: 10px;
+}
+
+.recommendation-summary-card {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-default);
+}
+
+.recommendation-summary-card__type {
+    font-size: 10px;
+}
+
+.recommendation-summary-card strong {
+    color: var(--color-text-primary);
+    font-size: 13px;
+    line-height: 1.35;
+}
+

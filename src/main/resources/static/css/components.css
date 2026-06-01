@@ -1,0 +1,207 @@
+.button {
+    padding: 9px 13px;
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    background: var(--color-accent);
+    color: var(--color-text-primary);
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.button:hover {
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button--secondary {
+    border-color: var(--color-border-accent-soft);
+    background: var(--color-surface-2);
+    color: var(--color-accent-text);
+}
+
+.button--secondary:hover {
+    background: var(--color-surface-3);
+    border-color: var(--color-border-accent);
+}
+
+.filter-input {
+    min-width: min(280px, 100%);
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-1);
+    color: var(--color-text-primary);
+    outline: none;
+}
+
+.filter-input:focus {
+    border-color: var(--color-focus);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-3);
+    border: 1px solid var(--color-border-default);
+    border-top: 3px solid var(--color-accent);
+    box-shadow: var(--shadow-subtle);
+}
+
+.stat-card__label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--color-text-muted);
+}
+
+.stat-card__value {
+    font-size: 24px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-1);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table tbody tr:hover {
+    background: var(--color-neutral-soft);
+}
+
+.table th,
+.table td {
+    padding: 13px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.table th {
+    color: var(--color-text-muted);
+    font-weight: 700;
+}
+
+.error-box,
+.empty-box {
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    background: var(--color-danger-surface);
+    border: 1px solid var(--color-danger-border);
+    color: var(--color-danger-text);
+}
+
+.empty-box {
+    background: var(--color-surface-1);
+    border-color: var(--color-border-subtle);
+    color: var(--color-text-muted);
+}
+
+/* HOME */
+
+.home-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+}
+
+.home-hero__eyebrow {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--color-accent-text);
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.home-tables {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.home-champion-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-primary);
+    font-weight: 800;
+}
+
+.home-champion-link:hover {
+    color: var(--color-accent-hover);
+    text-decoration: none;
+}
+
+.home-champion-link__image {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-default);
+    object-fit: cover;
+}
+
+.winrate-pill {
+    display: inline-flex;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    background: var(--color-neutral-soft);
+    color: var(--color-success);
+    border: 1px solid rgba(34, 197, 94, 0.18);
+    font-weight: 800;
+}
+
+.player-leaderboard-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-primary);
+    font-weight: 800;
+}
+
+.player-leaderboard-link:hover {
+    color: var(--color-accent-hover);
+    text-decoration: none;
+}
+
+.player-leaderboard-link__image {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-canvas);
+    border: 1px solid var(--color-border-default);
+    object-fit: cover;
+    flex: 0 0 auto;
+}
+
+.player-leaderboard-link__content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.player-leaderboard-link__content span {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+

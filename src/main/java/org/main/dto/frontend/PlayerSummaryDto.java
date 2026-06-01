@@ -4,6 +4,7 @@ public record PlayerSummaryDto(
         String puuid,
         String gameName,
         String tagLine,
+        Integer profileIconId,
         Long matches,
         Long wins,
         Double winrate,

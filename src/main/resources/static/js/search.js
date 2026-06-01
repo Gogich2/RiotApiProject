@@ -48,7 +48,7 @@ function renderSearchResults(data, container) {
     }
 
     const championHtml = champions.map(champion => `
-        <a class="search__item" href="/champion.html?id=${champion.championId}">
+        <a class="search__item" href="champion.html?id=${champion.championId}">
             <span class="search__item-type">Champion</span>
             <strong>${champion.championName}</strong>
             <span>${formatNumber(champion.games)} games</span>
@@ -56,7 +56,7 @@ function renderSearchResults(data, container) {
     `).join('');
 
     const playerHtml = players.map(player => `
-        <a class="search__item" href="/player.html?puuid=${encodeURIComponent(player.puuid)}">
+        <a class="search__item" href="player.html?puuid=${encodeURIComponent(player.puuid)}">
             <span class="search__item-type">Player</span>
             <strong>${player.gameName || 'Unknown'}${player.tagLine ? '#' + player.tagLine : ''}</strong>
             <span>${formatNumber(player.matches)} matches</span>
