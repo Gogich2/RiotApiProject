@@ -43,3 +43,4 @@ ml/.venv/
 ml/.env
 ml/models/*.joblib
 ml/**/__pycache__/
+.worktrees/
