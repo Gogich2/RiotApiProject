@@ -335,16 +335,38 @@ function renderPlayerHero(player) {
                 ${escapeHtml(getPlayerInitials(playerName))}
             </div>
         `;
+    const summary = getPlayerPerformanceSummary(player);
 
     hero.innerHTML = `
         <div class="player-hero">
-            ${iconMarkup}
+            <div class="player-hero__identity">
+                ${iconMarkup}
 
-            <div class="player-hero__content">
-                <h1 class="hero__title">${escapeHtml(playerName)}${escapeHtml(tagLine)}</h1>
-                <p class="hero__text">
-                    Player profile based on analyzed Riot API matches, ranked data and generated recommendations.
-                </p>
+                <div class="player-hero__content">
+                    <span class="player-hero__eyebrow">Player dossier</span>
+                    <div class="player-hero__heading">
+                        <h1 class="hero__title">${escapeHtml(playerName)}</h1>
+                        ${tagLine ? `<span class="player-hero__tag">${escapeHtml(tagLine)}</span>` : ''}
+                    </div>
+                    <p class="hero__text">
+                        Ranked performance, champion pool efficiency, match detail review, and recommendation output in one profile.
+                    </p>
+                    <div class="player-hero__badges">
+                        <span class="player-hero__badge">${formatNumber(player.matches)} matches</span>
+                        <span class="player-hero__badge">${formatPercent(player.winrate)} win rate</span>
+                        <span class="player-hero__badge">
+                            ${formatDecimal(player.averageKills)}/${formatDecimal(player.averageDeaths)}/${formatDecimal(player.averageAssists)} KDA
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="player-hero__summary">
+                <article class="player-hero__summary-card">
+                    <span>Current read</span>
+                    <strong>${escapeHtml(summary.label)}</strong>
+                    <p>${escapeHtml(summary.description)}</p>
+                </article>
             </div>
         </div>
     `;
@@ -763,6 +785,38 @@ function renderPlayerInsights(insights) {
             </div>
         </div>
     `;
+}
+
+function getPlayerPerformanceSummary(player) {
+    const matches = Number(player.matches || 0);
+    const winrate = Number(player.winrate || 0);
+    const averageDamage = Number(player.averageDamageToChampions || 0);
+
+    if (matches >= 25 && winrate >= 55) {
+        return {
+            label: 'Reliable positive sample',
+            description: `Strong result set with ${formatNumber(matches)} matches and ${formatPercent(winrate)} win rate.`
+        };
+    }
+
+    if (averageDamage >= 20000) {
+        return {
+            label: 'High pressure profile',
+            description: `Damage output trends high at ${formatNumber(averageDamage)} average champion damage.`
+        };
+    }
+
+    if (matches < 10) {
+        return {
+            label: 'Early sample',
+            description: 'Useful for directional reads, but the data set is still small.'
+        };
+    }
+
+    return {
+        label: 'Developing trend',
+        description: `Current sample sits at ${formatPercent(winrate)} win rate across ${formatNumber(matches)} matches.`
+    };
 }
 
 function renderRecommendationGroup(group) {
