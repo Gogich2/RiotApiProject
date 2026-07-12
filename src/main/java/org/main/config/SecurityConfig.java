@@ -2,6 +2,9 @@ package org.main.config;
 
 import java.time.Clock;
 import org.main.account.security.AppSessionAuthenticationFilter;
+import org.main.account.security.DiscordAuthenticationSuccessHandler;
+import org.main.account.security.DiscordOAuth2UserService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,7 +22,9 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            AppSessionAuthenticationFilter sessionFilter
+            AppSessionAuthenticationFilter sessionFilter,
+            ObjectProvider<DiscordOAuth2UserService> oauthUserServiceProvider,
+            ObjectProvider<DiscordAuthenticationSuccessHandler> oauthHandlerProvider
     ) throws Exception {
         CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         http.authorizeHttpRequests(authorize -> authorize.
@@ -35,6 +40,14 @@ public class SecurityConfig {
                         accessDeniedHandler((request, response, exception) ->
                                 response.sendError(HttpStatus.FORBIDDEN.value()))).
                 addFilterBefore(sessionFilter, AnonymousAuthenticationFilter.class);
+        DiscordOAuth2UserService oauthUserService = oauthUserServiceProvider.getIfAvailable();
+        DiscordAuthenticationSuccessHandler oauthHandler = oauthHandlerProvider.getIfAvailable();
+        if (oauthUserService != null && oauthHandler != null) {
+            http.oauth2Login(oauth -> oauth.
+                    userInfoEndpoint(userInfo -> userInfo.userService(oauthUserService)).
+                    successHandler(oauthHandler).
+                    failureHandler(oauthHandler));
+        }
         return http.build();
     }
 
