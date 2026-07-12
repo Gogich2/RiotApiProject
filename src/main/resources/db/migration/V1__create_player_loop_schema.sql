@@ -28,7 +28,7 @@ create index ix_oauth_identity_user on app.oauth_identity(user_id);
 create table app.user_session (
     id uuid primary key,
     user_id uuid not null references app.app_user(id) on delete cascade,
-    token_hash char(64) not null,
+    token_hash varchar(64) not null,
     expires_at timestamptz not null,
     last_used_at timestamptz not null,
     revoked_at timestamptz,
@@ -43,7 +43,7 @@ create table app.account_action_token (
     id uuid primary key,
     user_id uuid not null references app.app_user(id) on delete cascade,
     token_type varchar(32) not null,
-    token_hash char(64) not null,
+    token_hash varchar(64) not null,
     expires_at timestamptz not null,
     consumed_at timestamptz,
     created_at timestamptz not null,
