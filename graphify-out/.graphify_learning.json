@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-07-13T19:29:00.378925+00:00",
+  "nodes": {
+    "src_main_java_org_main_client_riotapihttpclient_riotapihttpclient": {
+      "code_fingerprint": "25733d6a808febdf5ed75e2ce7445003ae06683752da54f2a3edf595ffe79ccb",
+      "label": "RiotApiHttpClient",
+      "last": "2026-07-13T19:21:50.098245+00:00",
+      "neg": 1,
+      "provenance": [
+        {
+          "date": "2026-07-13T19:21:50.098245+00:00",
+          "outcome": "corrected",
+          "q": "check the api key separately, if it works look into the crawler functionality"
+        },
+        {
+          "date": "2026-07-13T18:08:25.453781+00:00",
+          "outcome": "useful",
+          "q": "can you start the crawler?"
+        }
+      ],
+      "score": -0.001177052,
+      "source_file": "src/main/java/org/main/client/RiotApiHttpClient.java",
+      "status": "contested",
+      "uses": 1,
+      "verdict": "dead end"
+    },
+    "src_main_java_org_main_controller_crawlercontroller_crawlercontroller": {
+      "code_fingerprint": "1710c008bd14c97df6715c0cb7484afcb073eba1c765335d0ff2ff333d480c59",
+      "label": "CrawlerController",
+      "last": "2026-07-13T19:21:50.098245+00:00",
+      "neg": 1,
+      "provenance": [
+        {
+          "date": "2026-07-13T19:21:50.098245+00:00",
+          "outcome": "corrected",
+          "q": "check the api key separately, if it works look into the crawler functionality"
+        },
+        {
+          "date": "2026-07-13T18:08:25.453781+00:00",
+          "outcome": "useful",
+          "q": "can you start the crawler?"
+        }
+      ],
+      "score": -0.001177052,
+      "source_file": "src/main/java/org/main/controller/CrawlerController.java",
+      "status": "contested",
+      "uses": 1,
+      "verdict": "dead end"
+    },
+    "src_main_java_org_main_service_balanceddatasetcrawlerserviceimpl_balanceddatasetcrawlerserviceimpl": {
+      "code_fingerprint": "15825a8ad9437975a5ad11f0a3b5d153a928d54405f034a0248fb74d60094cd4",
+      "label": "BalancedDatasetCrawlerServiceImpl",
+      "last": "2026-07-13T18:08:25.453781+00:00",
+      "provenance": [
+        {
+          "date": "2026-07-13T18:08:25.453781+00:00",
+          "outcome": "useful",
+          "q": "can you start the crawler?"
+        }
+      ],
+      "score": 0.99870789,
+      "source_file": "src/main/java/org/main/service/BalancedDatasetCrawlerServiceImpl.java",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_main_java_org_main_service_crawlerserviceimpl_crawlerserviceimpl": {
+      "code_fingerprint": "d39e0ee19369855cdc70eb7708ddf670df3c2a2de496932701cad28f675527fb",
+      "label": "CrawlerServiceImpl",
+      "last": "2026-07-13T19:21:50.098245+00:00",
+      "neg": 1,
+      "provenance": [
+        {
+          "date": "2026-07-13T19:21:50.098245+00:00",
+          "outcome": "corrected",
+          "q": "check the api key separately, if it works look into the crawler functionality"
+        },
+        {
+          "date": "2026-07-13T18:08:25.453781+00:00",
+          "outcome": "useful",
+          "q": "can you start the crawler?"
+        }
+      ],
+      "score": -0.001177052,
+      "source_file": "src/main/java/org/main/service/CrawlerServiceImpl.java",
+      "status": "contested",
+      "uses": 1,
+      "verdict": "dead end"
+    }
+  },
+  "version": 1
+}

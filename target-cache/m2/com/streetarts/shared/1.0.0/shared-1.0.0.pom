@@ -1,0 +1,13 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.streetarts</groupId>
+        <artifactId>streetarts</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>shared</artifactId>
+
+    <dependencies />
+</project>

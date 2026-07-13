@@ -22,6 +22,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         renderChampionItemsError();
     }
+
+    await championBuilds.mount({
+        championId,
+        root: document.getElementById('championBuilds'),
+        apiClient: api,
+        sessionStorage: window.sessionStorage,
+        history: window.history,
+        location: window.location
+    });
 });
 
 function renderChampionHero(champion) {

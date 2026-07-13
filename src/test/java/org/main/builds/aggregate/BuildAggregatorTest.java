@@ -60,8 +60,8 @@ class BuildAggregatorTest {
         assertThat(weightedWinner.games()).isEqualTo(6);
         assertThat(weightedWinner.wins()).isEqualTo(5);
         assertThat(weightedWinner.weightedScore()).isCloseTo(4.2, within(0.000000001));
-        assertThat(weightedWinner.pickRate()).isEqualTo(0.58);
-        assertThat(weightedWinner.winRate()).isEqualTo(0.83);
+        assertThat(weightedWinner.pickRate()).isCloseTo(7.0 / 12.0, within(0.000000001));
+        assertThat(weightedWinner.winRate()).isCloseTo(5.0 / 6.0, within(0.000000001));
     }
 
     @Test

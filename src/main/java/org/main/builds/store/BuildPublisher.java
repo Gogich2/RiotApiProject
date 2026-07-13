@@ -26,14 +26,16 @@ public class BuildPublisher {
             int payloadSchemaVersion,
             PatchWindow window,
             BuildQueue queue,
-            OffsetDateTime watermark
+            OffsetDateTime watermark,
+            int sourceMatchCount
     ) {
         AggregationRun run = repository.findRun(runId).
                 orElseThrow(() -> new IllegalArgumentException("Aggregation run was not found"));
         int validationCount = validator.validate(
                 run, runId, result, aggregationVersion, window, queue, watermark);
         repository.insertSnapshots(runId, result.cohorts(), aggregationVersion,
-                payloadSchemaVersion, window, queue, watermark, validationCount);
+                payloadSchemaVersion, window, queue, watermark,
+                sourceMatchCount, validationCount);
         repository.publishRun(runId);
     }
 }

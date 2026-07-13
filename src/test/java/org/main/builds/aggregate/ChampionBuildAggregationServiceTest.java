@@ -106,7 +106,7 @@ class ChampionBuildAggregationServiceTest {
         ArgumentCaptor<AggregationResult> resultCaptor =
                 ArgumentCaptor.forClass(AggregationResult.class);
         verify(publisher).publish(eq(RUN_ID), resultCaptor.capture(), eq(1), eq(1), eq(WINDOW),
-                eq(BuildQueue.SOLO_DUO), eq(WATERMARK));
+                eq(BuildQueue.SOLO_DUO), eq(WATERMARK), eq(2));
         assertThat(resultCaptor.getValue().cohorts()).
                 isNotEmpty().
                 allSatisfy(cohort -> assertThat(cohort.comparisonGames()).isZero());
@@ -197,7 +197,7 @@ class ChampionBuildAggregationServiceTest {
         verify(snapshotRepository).failRun(RUN_ID, "EMPTY_OBSERVATIONS");
         verify(aggregator, never()).aggregate(any(), any(), any());
         verify(publisher, never()).publish(any(), any(), any(Integer.class),
-                any(Integer.class), any(), any(), any());
+                any(Integer.class), any(), any(), any(), any(Integer.class));
         verify(snapshotRepository, never()).publishRun(any());
     }
 
@@ -212,7 +212,7 @@ class ChampionBuildAggregationServiceTest {
         when(aggregator.aggregate(WINDOW, BuildQueue.SOLO_DUO, List.of(observation))).
                 thenReturn(result);
         doThrow(new IllegalStateException("database-secret-should-not-leak")).when(publisher).
-                publish(RUN_ID, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+                publish(RUN_ID, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK, 1);
 
         AggregationOutcome outcome = service.refresh(BuildQueue.SOLO_DUO);
 
@@ -220,7 +220,8 @@ class ChampionBuildAggregationServiceTest {
         verify(snapshotRepository).failRun(RUN_ID, "PUBLISH");
         verify(snapshotRepository, never()).publishRun(any());
         verify(snapshotRepository, never()).insertSnapshots(any(), any(),
-                any(Integer.class), any(Integer.class), any(), any(), any(), any(Integer.class));
+                any(Integer.class), any(Integer.class), any(), any(), any(),
+                any(Integer.class), any(Integer.class));
     }
 
     @Test

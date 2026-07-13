@@ -55,7 +55,10 @@ public class ChampionBuildService {
         BuildQueue selectedQueue = requestedQueue == null
                 ? defaultQueue(availability) : requestedQueue;
         List<BuildSnapshot> selected = byQueue.get(selectedQueue);
-        List<PatchOption> patches = selected.stream().
+        List<BuildSnapshot> patchCandidates = selected.isEmpty()
+                ? byQueue.values().stream().flatMap(List::stream).toList()
+                : selected;
+        List<PatchOption> patches = patchCandidates.stream().
                 map(snapshot -> snapshot.window().anchorPatch()).
                 distinct().
                 sorted(Comparator.comparing(PatchVersion::parse).reversed()).
@@ -145,8 +148,13 @@ public class ChampionBuildService {
         List<BuildSnapshot> historical = snapshots.findHistoricalBaselines(
                 properties.aggregationVersion(), anchorPatch,
                 queue, championId, role, properties.historicalLookbackPatches());
-        if (!historical.isEmpty()) {
-            return available(historical.getFirst(), requested,
+        Optional<BuildSnapshot> recentHistorical = historical.stream().
+                filter(snapshot -> withinHistoricalLookback(
+                        anchorPatch, snapshot.window().anchorPatch())).
+                max(Comparator.comparing(
+                        snapshot -> PatchVersion.parse(snapshot.window().anchorPatch())));
+        if (recentHistorical.isPresent()) {
+            return available(recentHistorical.get(), requested,
                     BuildFallbackReason.REQUESTED_PATCH_UNAVAILABLE, true);
         }
         return unavailable(requested);
@@ -292,6 +300,15 @@ public class ChampionBuildService {
 
     private double percentRate(double rate) {
         return Math.round(rate * 10000.0) / 100.0;
+    }
+
+    private boolean withinHistoricalLookback(String requestedPatch, String candidatePatch) {
+        PatchVersion requested = PatchVersion.parse(requestedPatch);
+        PatchVersion candidate = PatchVersion.parse(candidatePatch);
+        int distance = requested.minor() - candidate.minor();
+        return requested.major() == candidate.major()
+                && distance > 0
+                && distance <= properties.historicalLookbackPatches();
     }
 
     private String explanation(BuildFallbackReason reason) {

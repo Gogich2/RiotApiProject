@@ -2,9 +2,39 @@
 
 **Date:** 2026-07-13
 
-**Status:** Approved for implementation planning
+**Status:** Implemented (2026-07-13)
 
 **Parent design:** `2026-07-13-player-loop-matchup-builds-design.md`
+
+## Implementation Notes
+
+- The champion build interface keeps the existing purple/cream dark tactical
+  tokens and uses the native HTML, CSS, and JavaScript stack without new
+  dependencies, fonts, or icons.
+- Deterministic Chrome inspection covered mocked loading, unavailable Flex,
+  champion-role fallback, stale-cache, and retained request-error states at
+  375, 768, 1024, and 1440 CSS pixels. Every inspected width had zero document
+  overflow, 44-pixel minimum controls, a solid 2-pixel keyboard focus outline,
+  visible evidence, preserved backend ordering, and readable state copy.
+- The opponent rail remains horizontally scrollable, including at 375 pixels.
+  Component layout progresses from one column at 375 to two at 768 and a
+  balanced 12-column composition at 1024 and 1440. Max-priority skills remain
+  a compact left-to-right sequence at every target width.
+- Interaction transitions name exact properties and remain below 300ms.
+  Reduced-motion inspection reported a 0.001-second transition duration.
+- The full compiled JUnit suite is green: 201 tests pass, the 32 focused
+  final-review regressions pass, and Checkstyle reports zero violations. Live
+  application and database-backed browser verification remains deferred
+  because background process approval is unavailable at the current usage
+  limit, the local database has not yet applied the build migration, and the
+  Docker engine required by Testcontainers is stopped. Deterministic inspection
+  used the real page and CSS with mocked public API responses in installed
+  Chrome.
+- Final review corrections bound history to adjacent same-major patches, use a
+  cross-queue patch only as a time anchor for an unavailable queue, round
+  component percentages once at the API boundary, and persist the frozen
+  source match-ID count. Independent re-review approved the corrections with
+  no remaining findings.
 
 ## Goal
 

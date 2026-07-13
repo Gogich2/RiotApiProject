@@ -80,17 +80,18 @@ class BuildPublisherIT {
         UUID runId = repository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
         AggregationResult result = result(12, payload());
 
-        publisher.publish(runId, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+        publisher.publish(runId, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK, 3);
 
         AggregationRun run = repository.findLatestRun("16.13", BuildQueue.SOLO_DUO).orElseThrow();
         BuildSnapshot snapshot = repository.findPublished(lookup()).orElseThrow();
         assertThat(run.id()).isEqualTo(runId);
         assertThat(run.state()).isEqualTo("COMPLETED");
-        assertThat(run.sourceMatchCount()).isEqualTo(12);
+        assertThat(run.sourceMatchCount()).isEqualTo(3);
         assertThat(run.validationCount()).isEqualTo(1);
         assertThat(run.snapshotCount()).isEqualTo(1);
         assertThat(run.completedAt()).isEqualTo(OffsetDateTime.parse("2026-07-01T13:00:00Z"));
         assertThat(snapshot.runId()).isEqualTo(runId);
+        assertThat(snapshot.sourceMatchCount()).isEqualTo(3);
         assertThat(snapshot.publicationState()).isEqualTo("PUBLISHED");
         assertThat(snapshot.payload()).isEqualTo(payload());
     }
@@ -101,7 +102,7 @@ class BuildPublisherIT {
         UUID second = repository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1));
 
         publisher.publish(second, result(15, payload()), 1, 1, WINDOW,
-                BuildQueue.SOLO_DUO, WATERMARK.plusHours(1));
+                BuildQueue.SOLO_DUO, WATERMARK.plusHours(1), 15);
 
         assertThat(repository.findPublished(lookup())).get().extracting(BuildSnapshot::runId).
                 isEqualTo(second);
@@ -117,7 +118,7 @@ class BuildPublisherIT {
 
         assertThatThrownBy(() -> publisher.publish(failed,
                 new AggregationResult(List.of(), Set.of(), 0), 1, 1, WINDOW,
-                BuildQueue.SOLO_DUO, WATERMARK.plusHours(1))).
+                BuildQueue.SOLO_DUO, WATERMARK.plusHours(1), 0)).
                 isInstanceOf(IllegalArgumentException.class);
         repository.failRun(failed, "VALIDATION:empty-result-category-that-is-safely-bounded-xxxxxxxxxxxx");
 
@@ -143,7 +144,7 @@ class BuildPublisherIT {
                 payload().skillMaxPriority());
 
         assertThatThrownBy(() -> publisher.publish(failed, result(12, incomplete), 1, 1,
-                WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1))).
+                WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1), 12)).
                 isInstanceOf(IllegalArgumentException.class);
 
         assertThat(repository.findPublished(lookup())).get().extracting(BuildSnapshot::runId).
@@ -170,7 +171,7 @@ class BuildPublisherIT {
         context.getBean(FailurePoint.class).value = "publishRun";
 
         assertThatThrownBy(() -> publisher.publish(replacement, result(15, payload()),
-                1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1))).
+                1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1), 15)).
                 isInstanceOf(IllegalStateException.class).
                 hasMessage("forced publication failure");
 
@@ -192,7 +193,7 @@ class BuildPublisherIT {
         context.getBean(FailurePoint.class).value = "insertSnapshots";
 
         assertThatThrownBy(() -> publisher.publish(replacement, result(15, payload()),
-                1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1))).
+                1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1), 15)).
                 isInstanceOf(IllegalStateException.class).
                 hasMessage("forced insertion failure");
 
@@ -215,7 +216,7 @@ class BuildPublisherIT {
                 2, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1));
 
         publisher.publish(versionOne, result(12, payload()), 1, 1,
-                WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+                WINDOW, BuildQueue.SOLO_DUO, WATERMARK, 12);
 
         assertThat(repository.findRun(versionOne)).get().extracting(AggregationRun::state).
                 isEqualTo("COMPLETED");
@@ -229,7 +230,7 @@ class BuildPublisherIT {
         UUID runId = repository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
 
         publisher.publish(runId, result(12, payload()), 1, 1,
-                WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+                WINDOW, BuildQueue.SOLO_DUO, WATERMARK, 12);
 
         assertThat(repository.findRun(runId)).get().extracting(AggregationRun::validationCount).
                 isEqualTo(37);
@@ -239,7 +240,7 @@ class BuildPublisherIT {
     void findsAnExactOpponentSnapshotWithANonNullLookupKey() {
         AggregationResult result = resultWithExact(payload());
         UUID runId = repository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
-        publisher.publish(runId, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+        publisher.publish(runId, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK, 12);
 
         assertThat(repository.findPublished(new BuildLookup(
                 1, WINDOW, BuildQueue.SOLO_DUO, 22, BuildRole.MIDDLE, 55))).
@@ -265,6 +266,18 @@ class BuildPublisherIT {
 
         assertThat(historical).extracting(snapshot -> snapshot.window().anchorPatch()).
                 containsExactly("16.11", "16.10");
+    }
+
+    @Test
+    void historicalBaselinesRejectRowsOutsideAdjacentPatchLookback() {
+        publish(1, new PatchWindow("16.2", "16.1"), BuildQueue.SOLO_DUO,
+                WATERMARK, result(12, payload()));
+
+        List<BuildSnapshot> historical = repository.findHistoricalBaselines(
+                new BuildLookup(1, new PatchWindow("16.9", "16.8"),
+                        BuildQueue.SOLO_DUO, 22, BuildRole.MIDDLE, null), 2);
+
+        assertThat(historical).isEmpty();
     }
 
     @Test
@@ -297,7 +310,8 @@ class BuildPublisherIT {
             AggregationResult result
     ) {
         UUID runId = repository.startRun(version, window, queue, watermark);
-        publisher.publish(runId, result, version, 1, window, queue, watermark);
+        publisher.publish(runId, result, version, 1, window, queue, watermark,
+                result.sourceObservationCount());
         return runId;
     }
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/src/main/java/org/main/service/analysis/MatchAnalysisServiceImpl.java" value="f8ae8148-8dfd-4052-bc84-7b87b7179b94" />
+    <file url="file://$PROJECT_DIR$/src/main/java/org/main/service/frontend/FrontendStatsServiceImpl.java" value="f8ae8148-8dfd-4052-bc84-7b87b7179b94" />
+  </component>
+</project>

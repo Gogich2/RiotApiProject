@@ -35,8 +35,86 @@
         <div class="abilities" id="championAbilities"></div>
     </section>
 
+    <section class="section champion-builds" id="championBuilds" aria-labelledby="championBuildsTitle">
+        <h2 class="section__title" id="championBuildsTitle">Builds</h2>
+
+        <div class="build-filter-bar">
+            <fieldset>
+                <legend>Queue</legend>
+                <div class="build-queue-tabs" id="buildQueueTabs"></div>
+            </fieldset>
+
+            <div>
+                <label for="buildPatchSelect">Patch</label>
+                <select id="buildPatchSelect" name="patch"></select>
+            </div>
+
+            <fieldset>
+                <legend>Role</legend>
+                <div class="build-role-tabs" id="buildRoleTabs"></div>
+            </fieldset>
+
+            <div>
+                <label for="buildOpponentSearch">Opponent</label>
+                <input id="buildOpponentSearch" type="search" role="combobox"
+                       aria-autocomplete="list" aria-controls="buildOpponentRail"
+                       aria-expanded="false" placeholder="Search opponents">
+            </div>
+        </div>
+
+        <div class="build-opponent-rail" id="buildOpponentRail" role="listbox"
+             aria-label="Opponent choices"></div>
+        <p class="build-state" id="buildOpponentEmpty" hidden>No opponents match your search.</p>
+
+        <div class="build-state" id="buildStatus" aria-live="polite" aria-atomic="true">
+            <p id="buildLoadingState" hidden>Loading build data…</p>
+            <p class="build-state--stale" id="buildFallbackState" hidden></p>
+            <p class="build-state--unavailable" id="buildInsufficientState" hidden></p>
+            <p class="build-state--unavailable" id="buildUnavailableState" hidden></p>
+        </div>
+        <div class="build-state build-state--error" id="buildRequestError"
+             role="status" aria-live="polite" hidden>
+            <span>Could not refresh build data.</span>
+            <button type="button" id="buildRetryButton">Retry</button>
+        </div>
+
+        <div id="buildContent" hidden>
+            <div class="build-component-grid">
+                <section aria-labelledby="buildStartingItemsTitle">
+                    <h3 id="buildStartingItemsTitle">Starting items</h3>
+                    <div class="build-item-sequence" id="buildStartingItems"></div>
+                </section>
+                <section aria-labelledby="buildBootsCoreTitle">
+                    <h3 id="buildBootsCoreTitle">Boots and core</h3>
+                    <div class="build-item-sequence" id="buildBootsCore"></div>
+                </section>
+                <section aria-labelledby="buildRunesTitle">
+                    <h3 id="buildRunesTitle">Runes and shards</h3>
+                    <div class="build-rune-page" id="buildRunes"></div>
+                </section>
+                <section aria-labelledby="buildSpellsTitle">
+                    <h3 id="buildSpellsTitle">Summoner spells</h3>
+                    <div class="build-item-sequence" id="buildSpells"></div>
+                </section>
+                <section aria-labelledby="buildSkillOrderTitle">
+                    <h3 id="buildSkillOrderTitle">Skill order</h3>
+                    <div class="build-skill-order" id="buildSkillOrder"></div>
+                </section>
+                <section aria-labelledby="buildMaxPriorityTitle">
+                    <h3 id="buildMaxPriorityTitle">Max priority</h3>
+                    <div class="build-skill-order" id="buildMaxPriority"></div>
+                </section>
+                <section aria-labelledby="buildSituationalItemsTitle">
+                    <h3 id="buildSituationalItemsTitle">Situational items</h3>
+                    <div class="build-item-sequence" id="buildSituationalItems"></div>
+                </section>
+            </div>
+            <div class="build-evidence" id="buildEvidence"></div>
+        </div>
+    </section>
+
     <section class="section">
-        <h2 class="section__title">Item statistics</h2>
+        <h2 class="section__title">Stored item statistics</h2>
         <div class="table-wrapper">
             <table class="table">
                 <thead>
@@ -57,6 +135,7 @@
 <script src="js/api.js"></script>
 <script src="js/account.js"></script>
 <script src="js/search.js"></script>
+<script src="js/champion-builds.js"></script>
 <script src="js/champion.js"></script>
 </body>
 </html>

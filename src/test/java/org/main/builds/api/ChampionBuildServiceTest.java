@@ -103,6 +103,25 @@ class ChampionBuildServiceTest {
     }
 
     @Test
+    void usesLatestKnownPatchAsAnchorForExplicitUnavailableFlex() {
+        BuildSnapshot baseline = snapshot(CURRENT, BuildQueue.SOLO_DUO,
+                BuildRole.BOTTOM, null, BuildScope.CHAMPION_ROLE, 80, PUBLISHED);
+        when(snapshots.findPublishedForChampion(
+                1, BuildQueue.SOLO_DUO, 22)).thenReturn(List.of(baseline));
+        when(snapshots.findPublishedForChampion(
+                1, BuildQueue.FLEX, 22)).thenReturn(List.of());
+
+        ChampionBuildOptionsResponse response = service.options(
+                22, 440, null, BuildRole.BOTTOM);
+
+        assertThat(response.defaults()).isEqualTo(
+                new RequestedFilters(440, "16.13", BuildRole.BOTTOM, null));
+        assertThat(response.patches()).containsExactly(new PatchOption("16.13"));
+        assertThat(response.roles()).noneMatch(RoleOption::available);
+        assertThat(response.opponents()).isEmpty();
+    }
+
+    @Test
     void queueAvailabilityAndDefaultUseTheRequestedPatchAndRole() {
         BuildSnapshot soloBottom = snapshot(CURRENT, BuildQueue.SOLO_DUO,
                 BuildRole.BOTTOM, null, BuildScope.CHAMPION_ROLE, 80, PUBLISHED);
@@ -167,6 +186,21 @@ class ChampionBuildServiceTest {
                 isEqualTo(BuildFallbackReason.REQUESTED_PATCH_UNAVAILABLE);
         verify(snapshots).findHistoricalBaselines(1, "16.13", BuildQueue.SOLO_DUO,
                 22, BuildRole.BOTTOM, 2);
+    }
+
+    @Test
+    void rejectsHistoricalBaselineOutsideAdjacentPatchLookback() {
+        BuildSnapshot tooOld = snapshot(new PatchWindow("16.2", "16.1"),
+                BuildQueue.SOLO_DUO, BuildRole.BOTTOM, null,
+                BuildScope.CHAMPION_ROLE, 40, PUBLISHED.minusDays(90));
+        when(snapshots.findHistoricalBaselines(1, "16.9", BuildQueue.SOLO_DUO,
+                22, BuildRole.BOTTOM, 2)).thenReturn(List.of(tooOld));
+
+        ChampionBuildResponse response = service.builds(
+                22, 420, "16.9", BuildRole.BOTTOM, null);
+
+        assertThat(response.available()).isFalse();
+        assertThat(response.fallbackReason()).isEqualTo(BuildFallbackReason.DATA_UNAVAILABLE);
     }
 
     @Test
@@ -293,7 +327,7 @@ class ChampionBuildServiceTest {
 
         assertThat(response.winRate()).isEqualTo(58.33);
         assertThat(response.build().startingItems().getFirst().pickRate()).isEqualTo(100.0);
-        assertThat(response.build().startingItems().getFirst().winRate()).isEqualTo(50.0);
+        assertThat(response.build().startingItems().getFirst().winRate()).isEqualTo(58.33);
     }
 
     private BuildSnapshot snapshot(PatchWindow window, BuildQueue queue, BuildRole role,
@@ -323,7 +357,7 @@ class ChampionBuildServiceTest {
     private BuildSnapshotPayload payload(int games, int wins) {
         return new BuildSnapshotPayload(
                 List.of(new BuildChoice(List.of(1055), games, wins,
-                        1.0, 0.5, games)),
+                        1.0, games == 0 ? 0.0 : (double) wins / games, games)),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(1, 2, 3));
     }

@@ -46,9 +46,9 @@ final class BuildComponentRanker {
                 map(candidate -> new BuildChoice(candidate.value().values(),
                         candidate.anchorPicks() + candidate.comparisonPicks(),
                         candidate.anchorWins() + candidate.comparisonWins(),
-                        round(denominator == 0 ? 0
-                                : rules.weightedPickScore(candidate) / denominator),
-                        round(rules.weightedWinRate(candidate)),
+                        denominator == 0 ? 0
+                                : rules.weightedPickScore(candidate) / denominator,
+                        rules.weightedWinRate(candidate),
                         rules.weightedPickScore(candidate))).
                 toList();
     }
@@ -59,10 +59,6 @@ final class BuildComponentRanker {
             counts.add(observation.patch().equals(window.anchorPatch()), observation.win());
         }
         return counts;
-    }
-
-    private static double round(double value) {
-        return Math.round(value * 100.0) / 100.0;
     }
 
     private record Ids(List<Integer> values) implements Comparable<Ids> {

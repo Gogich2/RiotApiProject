@@ -65,12 +65,9 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
             PatchWindow window,
             BuildQueue queue,
             OffsetDateTime watermark,
+            int sourceMatchCount,
             int validationCount
     ) {
-        int sourceMatchCount = cohorts.stream().
-                filter(cohort -> cohort.scope() == BuildScope.CHAMPION_ROLE).
-                mapToInt(AggregatedCohort::games).
-                sum();
         OffsetDateTime calculatedAt = now();
         jdbc.batchUpdate("""
                 insert into builds.champion_build_snapshot (
@@ -191,15 +188,16 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
                 where aggregation_version = ? and queue_id = ? and champion_id = ?
                   and role = ? and opponent_champion_id is null
                   and publication_state = 'PUBLISHED'
-                  and (split_part(anchor_patch, '.', 1)::integer,
-                       split_part(anchor_patch, '.', 2)::integer) < (?, ?)
+                  and split_part(anchor_patch, '.', 1)::integer = ?
+                  and split_part(anchor_patch, '.', 2)::integer between ? and ?
                 order by split_part(anchor_patch, '.', 1)::integer desc,
                          split_part(anchor_patch, '.', 2)::integer desc
                 limit ?
                 """.formatted(SNAPSHOT_COLUMNS), this::mapSnapshot,
                 lookup.aggregationVersion(), lookup.queue().id(), lookup.championId(),
                 lookup.role().name(), patchPart(lookup.window().anchorPatch(), 0),
-                patchPart(lookup.window().anchorPatch(), 1), limit);
+                patchPart(lookup.window().anchorPatch(), 1) - limit,
+                patchPart(lookup.window().anchorPatch(), 1) - 1, limit);
     }
 
     @Override
@@ -220,15 +218,16 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
                 where aggregation_version = ? and queue_id = ? and champion_id = ?
                   and role = ? and opponent_champion_id is null
                   and publication_state = 'PUBLISHED'
-                  and (split_part(anchor_patch, '.', 1)::integer,
-                       split_part(anchor_patch, '.', 2)::integer) < (?, ?)
+                  and split_part(anchor_patch, '.', 1)::integer = ?
+                  and split_part(anchor_patch, '.', 2)::integer between ? and ?
                 order by split_part(anchor_patch, '.', 1)::integer desc,
                          split_part(anchor_patch, '.', 2)::integer desc,
                          published_at desc, id desc
                 limit ?
                 """.formatted(SNAPSHOT_COLUMNS), this::mapSnapshot,
                 aggregationVersion, queue.id(), championId, role.name(),
-                patchPart(anchorPatch, 0), patchPart(anchorPatch, 1), limit);
+                patchPart(anchorPatch, 0), patchPart(anchorPatch, 1) - limit,
+                patchPart(anchorPatch, 1) - 1, limit);
     }
 
     @Override

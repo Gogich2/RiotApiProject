@@ -144,7 +144,8 @@ public final class DefaultChampionBuildAggregationService
             AggregationResult result = aggregator.aggregate(window, queue, observations);
             failureCategory = "PUBLISH";
             publisher.publish(runId, result, properties.aggregationVersion(),
-                    properties.payloadSchemaVersion(), window, queue, watermark);
+                    properties.payloadSchemaVersion(), window, queue, watermark,
+                    matchIds.size());
             return new AggregationOutcome(AggregationOutcome.Status.PUBLISHED,
                     patch, matchIds.size(), result.cohorts().size(), runId);
         } catch (RuntimeException exception) {

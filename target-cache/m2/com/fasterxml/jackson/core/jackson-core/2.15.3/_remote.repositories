@@ -1,0 +1,5 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Jan 06 03:32:22 EET 2026
+jackson-core-2.15.3-sources.jar>central=
+jackson-core-2.15.3.jar>central=
+jackson-core-2.15.3.pom>central=

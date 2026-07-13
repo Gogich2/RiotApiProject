@@ -1,0 +1,78 @@
+<h2>How should matchup builds live on a champion page?</h2>
+<p class="subtitle">All options assume EUW1, separate Solo/Flex data, current + previous patch weighting, and visible sample confidence.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-nav">AHRI <span style="opacity:.55">Overview</span> <strong>Builds</strong> <span style="opacity:.55">Matchups</span></div>
+      <div style="padding:14px;background:#faf7f0">
+        <div style="display:grid;grid-template-columns:150px 1fr;gap:12px">
+          <div style="border:1px solid #d7d0c3;padding:10px;background:white">
+            <div class="label">Opponent</div>
+            <div style="padding:8px 0;border-bottom:1px solid #ddd"><strong>vs Zed</strong><br><small>1,284 games</small></div>
+            <div style="padding:8px 0;border-bottom:1px solid #ddd">vs Yasuo</div>
+            <div style="padding:8px 0">vs LeBlanc</div>
+          </div>
+          <div style="border:1px solid #d7d0c3;padding:12px;background:white">
+            <small>MID · SOLO/DUO · 15.14 + 15.13</small>
+            <h3 style="margin:6px 0">Ahri into Zed</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+              <div class="placeholder" style="height:50px">Runes</div>
+              <div class="placeholder" style="height:50px">Core items</div>
+              <div class="placeholder" style="height:50px">Skill order</div>
+            </div>
+            <p style="font-size:12px;margin:9px 0 0">High confidence · 1,284 games · 52.3% WR</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Matchup-first workspace</h3>
+      <p>Opponent list stays visible while the detailed build updates. Fast for players who arrive with a matchup question.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-nav">AHRI <span style="opacity:.55">Overview</span> <strong>Builds</strong></div>
+      <div style="padding:14px;background:#faf7f0">
+        <div style="display:flex;gap:7px;margin-bottom:10px">
+          <button class="mock-button">MID</button><button class="mock-button">vs ZED</button><button class="mock-button">SOLO</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="placeholder" style="height:65px">Recommended build</div>
+          <div class="placeholder" style="height:65px">Alternative build</div>
+          <div class="placeholder" style="height:65px">Runes + spells</div>
+          <div class="placeholder" style="height:65px">Skill order</div>
+        </div>
+        <p style="font-size:12px;margin:9px 0 0">Based on 1,284 games · historical fallback available</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Build dashboard</h3>
+      <p>Compact filter bar with modular cards. Easier on mobile, but opponent discovery is less prominent.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mock-nav">AHRI <span style="opacity:.55">Overview</span> <strong>Matchup matrix</strong></div>
+      <div style="padding:14px;background:#faf7f0">
+        <div style="border:1px solid #d7d0c3;background:white">
+          <div style="display:grid;grid-template-columns:1.2fr .7fr 1.5fr .8fr;font-size:12px;font-weight:bold;padding:8px;border-bottom:1px solid #ccc"><span>Opponent</span><span>Win rate</span><span>Core</span><span>Games</span></div>
+          <div style="display:grid;grid-template-columns:1.2fr .7fr 1.5fr .8fr;font-size:12px;padding:8px;border-bottom:1px solid #eee"><span>Zed</span><span>52.3%</span><span>Orb → Boots → Malignance</span><span>1,284</span></div>
+          <div style="display:grid;grid-template-columns:1.2fr .7fr 1.5fr .8fr;font-size:12px;padding:8px;border-bottom:1px solid #eee"><span>Yasuo</span><span>49.8%</span><span>Orb → Boots → Luden</span><span>947</span></div>
+          <div style="display:grid;grid-template-columns:1.2fr .7fr 1.5fr .8fr;font-size:12px;padding:8px"><span>LeBlanc</span><span>50.6%</span><span>Ring → Boots → Malignance</span><span>621</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Matchup comparison matrix</h3>
+      <p>Excellent for scanning and comparison, but dense and weaker for explaining complete runes, skills, and situational items.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p><strong>My recommendation:</strong> A on desktop, collapsing into B on mobile. Select the structure that feels most useful when preparing for a match.</p>
+</div>

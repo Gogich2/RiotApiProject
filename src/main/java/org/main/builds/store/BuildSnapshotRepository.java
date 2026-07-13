@@ -16,7 +16,8 @@ public interface BuildSnapshotRepository {
     void insertSnapshots(UUID runId, List<AggregatedCohort> cohorts,
                          int aggregationVersion, int payloadSchemaVersion,
                          PatchWindow window, BuildQueue queue,
-                         OffsetDateTime watermark, int validationCount);
+                         OffsetDateTime watermark, int sourceMatchCount,
+                         int validationCount);
 
     void publishRun(UUID runId);
 

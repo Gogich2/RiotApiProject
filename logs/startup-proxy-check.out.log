@@ -1,0 +1,107 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< org.example:RiotApiPractice >---------------------
+[INFO] Building RiotApiPractice 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.3.3:run (default-cli) > test-compile @ RiotApiPractice >>>
+[INFO] 
+[INFO] --- checkstyle:3.3.1:checkstyle (validate-style) @ RiotApiPractice ---
+[INFO] Rendering content with org.apache.maven.skins:maven-default-skin:jar:1.3 skin.
+[INFO] Starting audit...
+Audit done.
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ RiotApiPractice ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 33 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ RiotApiPractice ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ RiotApiPractice ---
+[INFO] Copying 5 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ RiotApiPractice ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.3.3:run (default-cli) < test-compile @ RiotApiPractice <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.3.3:run (default-cli) @ RiotApiPractice ---
+[INFO] Attaching agents: []
+20:17:22.329 [main] INFO org.main.RiotPractice -- Starting RiotApiPractice application
+20:17:22.588 [restartedMain] INFO org.main.RiotPractice -- Starting RiotApiPractice application
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.3)
+
+2026-07-13 20:17:23.256 [background-preinit] INFO  o.h.validator.internal.util.Version [requestId=] [path=] - HV000001: Hibernate Validator 8.0.1.Final
+2026-07-13 20:17:23.316 [restartedMain] INFO  org.main.RiotPractice [requestId=] [path=] - Starting RiotPractice using Java 23.0.2 with PID 42420 (D:\Games\RiotApiPractice\target\classes started by egors in D:\Games\RiotApiPractice)
+2026-07-13 20:17:23.318 [restartedMain] DEBUG org.main.RiotPractice [requestId=] [path=] - Running with Spring Boot v3.3.3, Spring v6.1.12
+2026-07-13 20:17:23.319 [restartedMain] INFO  org.main.RiotPractice [requestId=] [path=] - No active profile set, falling back to 1 default profile: "default"
+2026-07-13 20:17:23.402 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor [requestId=] [path=] - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-07-13 20:17:23.403 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor [requestId=] [path=] - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-07-13 20:17:25.222 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [requestId=] [path=] - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-07-13 20:17:25.382 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate [requestId=] [path=] - Finished Spring Data repository scanning in 150 ms. Found 15 JPA repository interfaces.
+2026-07-13 20:17:26.594 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer [requestId=] [path=] - Tomcat initialized with port 8080 (http)
+2026-07-13 20:17:26.614 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol [requestId=] [path=] - Initializing ProtocolHandler ["http-nio-8080"]
+2026-07-13 20:17:26.620 [restartedMain] INFO  o.a.catalina.core.StandardService [requestId=] [path=] - Starting service [Tomcat]
+2026-07-13 20:17:26.621 [restartedMain] INFO  o.a.catalina.core.StandardEngine [requestId=] [path=] - Starting Servlet engine: [Apache Tomcat/10.1.28]
+2026-07-13 20:17:26.698 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] [requestId=] [path=] - Initializing Spring embedded WebApplicationContext
+2026-07-13 20:17:26.699 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext [requestId=] [path=] - Root WebApplicationContext: initialization completed in 3294 ms
+2026-07-13 20:17:27.379 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource [requestId=] [path=] - HikariPool-1 - Starting...
+2026-07-13 20:17:27.687 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool [requestId=] [path=] - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4ae53013
+2026-07-13 20:17:27.691 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource [requestId=] [path=] - HikariPool-1 - Start completed.
+2026-07-13 20:17:27.728 [restartedMain] INFO  org.flywaydb.core.FlywayExecutor [requestId=] [path=] - Database: jdbc:postgresql://localhost:5432/postgres (PostgreSQL 18.0)
+2026-07-13 20:17:27.741 [restartedMain] WARN  o.f.c.i.database.base.Database [requestId=] [path=] - Flyway upgrade recommended: PostgreSQL 18.0 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 16.
+2026-07-13 20:17:27.804 [restartedMain] INFO  o.f.core.internal.command.DbValidate [requestId=] [path=] - Successfully validated 3 migrations (execution time 00:00.046s)
+2026-07-13 20:17:27.883 [restartedMain] INFO  o.f.core.internal.command.DbMigrate [requestId=] [path=] - Current version of schema "app": 2
+2026-07-13 20:17:27.887 [restartedMain] INFO  o.f.core.internal.command.DbMigrate [requestId=] [path=] - Schema "app" is up to date. No migration necessary.
+2026-07-13 20:17:28.071 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper [requestId=] [path=] - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-07-13 20:17:28.187 [restartedMain] INFO  org.hibernate.Version [requestId=] [path=] - HHH000412: Hibernate ORM core version 6.5.2.Final
+2026-07-13 20:17:28.247 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator [requestId=] [path=] - HHH000026: Second-level cache disabled
+2026-07-13 20:17:28.715 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo [requestId=] [path=] - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-07-13 20:17:30.526 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator [requestId=] [path=] - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-07-13 20:17:30.607 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean [requestId=] [path=] - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-07-13 20:17:30.941 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory [requestId=] [path=] - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-07-13 20:17:31.783 [restartedMain] DEBUG o.main.config.RequestLoggingFilter [requestId=] [path=] - Filter 'requestLoggingFilter' configured for use
+2026-07-13 20:17:31.787 [restartedMain] DEBUG o.m.a.s.AppSessionAuthenticationFilter [requestId=] [path=] - Filter 'appSessionAuthenticationFilter' configured for use
+2026-07-13 20:17:32.504 [restartedMain] INFO  org.main.client.RiotApiHttpClient [requestId=] [path=] - Riot API client initialized. Key prefix='RGAPI-cb***', startsWithRGAPI=true
+2026-07-13 20:17:33.499 [restartedMain] INFO  o.s.b.a.w.s.WelcomePageHandlerMapping [requestId=] [path=] - Adding welcome page: class path resource [static/index.html]
+2026-07-13 20:17:33.880 [restartedMain] INFO  o.s.b.a.e.web.EndpointLinksResolver [requestId=] [path=] - Exposing 1 endpoint beneath base path '/actuator'
+2026-07-13 20:17:34.707 [restartedMain] WARN  o.s.b.d.a.OptionalLiveReloadServer [requestId=] [path=] - Unable to start LiveReload server
+2026-07-13 20:17:34.778 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol [requestId=] [path=] - Starting ProtocolHandler ["http-nio-8080"]
+2026-07-13 20:17:34.787 [restartedMain] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext [requestId=] [path=] - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-07-13 20:17:34.794 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean [requestId=] [path=] - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-07-13 20:17:34.799 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource [requestId=] [path=] - HikariPool-1 - Shutdown initiated...
+2026-07-13 20:17:34.808 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource [requestId=] [path=] - HikariPool-1 - Shutdown completed.
+2026-07-13 20:17:34.832 [restartedMain] INFO  o.s.b.a.l.ConditionEvaluationReportLogger [requestId=] [path=] - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-07-13 20:17:34.869 [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter [requestId=] [path=] - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  18.297 s
+[INFO] Finished at: 2026-07-13T20:17:34+03:00
+[INFO] ------------------------------------------------------------------------

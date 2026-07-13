@@ -23,6 +23,23 @@ const api = {
         return fetchJson(buildApiUrl(`/champions/${encodeURIComponent(championId)}/items`));
     },
 
+    async getChampionBuildOptions(championId, { queueId, patch, role } = {}) {
+        return fetchJson(buildApiUrl(`/champions/${encodeURIComponent(championId)}/builds/options`, {
+            queueId,
+            patch,
+            role
+        }));
+    },
+
+    async getChampionBuild(championId, { queueId, patch, role, opponentId }) {
+        return fetchJson(buildApiUrl(`/champions/${encodeURIComponent(championId)}/builds`, {
+            queueId,
+            patch,
+            role,
+            opponentId
+        }));
+    },
+
     async getPlayerSummary(puuid) {
         return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/summary`));
     },
