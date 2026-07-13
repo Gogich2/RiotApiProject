@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    initializeRiotIdForm();
+
     let overview = null;
     let leaderboards = null;
 
@@ -29,6 +31,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderHomePlayers('homeMostActivePlayers', [], 'matches');
     }
 });
+
+function initializeRiotIdForm() {
+    const form = document.getElementById('riotIdForm');
+
+    if (!form) {
+        return;
+    }
+
+    const submit = document.getElementById('riotIdSubmit');
+    const status = document.getElementById('riotIdStatus');
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const gameName = form.elements.gameName.value.trim();
+        const tagLine = form.elements.tagLine.value.trim();
+
+        if (!gameName || !tagLine) {
+            setRiotIdFormState(status, 'error', 'Enter both the game name and tag line.');
+            return;
+        }
+
+        submit.disabled = true;
+        submit.textContent = 'Finding player...';
+        setRiotIdFormState(status, 'loading', `Looking up ${gameName}#${tagLine}.`);
+
+        try {
+            const resolved = await api.resolveRiotId(gameName, tagLine);
+            setRiotIdFormState(status, 'success', 'Player found. Opening the dashboard...');
+            window.location.assign(`player.html?puuid=${encodeURIComponent(resolved.puuid)}`);
+        } catch (error) {
+            if (error.status === 404) {
+                setRiotIdFormState(status, 'error', 'That Riot ID was not found on EUW1. Check the spelling and try again.');
+            } else if (error.status === 429) {
+                setRiotIdFormState(status, 'error', 'Riot is rate limiting lookups. Wait a moment, then try again.');
+            } else {
+                setRiotIdFormState(status, 'error', 'We could not open that player right now. Try again shortly.');
+            }
+            submit.disabled = false;
+            submit.textContent = 'View player';
+        }
+    });
+}
+
+function setRiotIdFormState(element, state, message) {
+    element.dataset.state = state;
+    element.textContent = message;
+}
 
 function renderMetaSnapshot(overview, leaderboards) {
     const container = document.getElementById('metaSnapshot');

@@ -212,6 +212,118 @@
     margin-top: 22px;
 }
 
+.riot-id-form {
+    display: grid;
+    gap: 10px;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--color-border-subtle);
+}
+
+.riot-id-form__fields {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) auto minmax(110px, 0.44fr) auto;
+    align-items: end;
+    gap: 10px;
+}
+
+.form-field {
+    display: grid;
+    gap: 7px;
+}
+
+.form-label {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.form-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: rgba(10, 7, 20, 0.64);
+    color: var(--color-text-primary);
+    font: inherit;
+    outline: none;
+    transition:
+        border-color var(--duration-fast) var(--ease-out-strong),
+        box-shadow var(--duration-fast) var(--ease-out-strong),
+        background var(--duration-fast) var(--ease-out-strong);
+}
+
+.form-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.form-input:focus-visible {
+    border-color: var(--color-focus);
+    box-shadow: 0 0 0 4px rgba(143, 77, 255, 0.14);
+    background: rgba(10, 7, 20, 0.82);
+}
+
+.riot-id-form__separator {
+    display: grid;
+    place-items: center;
+    min-height: 48px;
+    color: var(--color-highlight-text);
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.riot-id-form__submit {
+    min-height: 48px;
+    white-space: nowrap;
+}
+
+.form-helper,
+.form-status,
+.hero-secondary-action {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.form-status {
+    min-height: 20px;
+    color: var(--color-text-secondary);
+}
+
+.form-status[data-state="error"] {
+    color: #ffd7df;
+}
+
+.form-status[data-state="success"] {
+    color: var(--color-success);
+}
+
+.hero-secondary-action {
+    margin-top: 14px;
+}
+
+@media (max-width: 720px) {
+    .riot-id-form__fields {
+        grid-template-columns: minmax(0, 1fr) auto minmax(92px, 0.45fr);
+    }
+
+    .riot-id-form__submit {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 420px) {
+    .riot-id-form__fields {
+        grid-template-columns: 1fr;
+    }
+
+    .riot-id-form__separator {
+        display: none;
+    }
+}
+
 .page--home {
     padding-top: 20px;
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,12 +27,48 @@
             <span class="home-hero__eyebrow">Summoner's Rift intelligence</span>
             <h1 class="hero__title">See the shape of every match, not just the result.</h1>
             <p class="hero__text">
-                A single local surface for ranked player scouting, champion efficiency, and match-by-match trend reading.
+                Enter a Riot ID to open a public EUW1 performance dashboard with recent form, rank movement, and focused priorities.
             </p>
-            <div class="hero-actions">
-                <a class="button" href="players.html">Open players</a>
-                <a class="button button--secondary" href="champions.html">Browse champions</a>
-            </div>
+            <form class="riot-id-form" id="riotIdForm" novalidate>
+                <div class="riot-id-form__fields">
+                    <div class="form-field riot-id-form__name">
+                        <label class="form-label" for="riotGameName">Game name</label>
+                        <input
+                            class="form-input"
+                            id="riotGameName"
+                            name="gameName"
+                            type="text"
+                            maxlength="60"
+                            autocomplete="off"
+                            placeholder="Faker"
+                            required
+                        >
+                    </div>
+                    <span class="riot-id-form__separator" aria-hidden="true">#</span>
+                    <div class="form-field riot-id-form__tag">
+                        <label class="form-label" for="riotTagLine">Tag line</label>
+                        <input
+                            class="form-input"
+                            id="riotTagLine"
+                            name="tagLine"
+                            type="text"
+                            maxlength="20"
+                            autocomplete="off"
+                            placeholder="EUW"
+                            required
+                        >
+                    </div>
+                    <button class="button riot-id-form__submit" id="riotIdSubmit" type="submit">
+                        View player
+                    </button>
+                </div>
+                <p class="form-helper">EUW1 only for now. Profiles and dashboards are public; no account is required.</p>
+                <p class="form-status" id="riotIdStatus" aria-live="polite"></p>
+            </form>
+            <p class="hero-secondary-action">
+                Exploring the dataset instead?
+                <a href="players.html">Browse tracked players</a> or <a href="champions.html">champions</a>.
+            </p>
         </div>
 
         <aside class="home-hero__summary" id="homeHeroSummary">

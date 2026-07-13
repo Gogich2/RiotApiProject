@@ -89,6 +89,24 @@ class StaticFrontendRedesignPlanTest {
         assertThat(matchHtml).contains("Fallback view");
     }
 
+    @Test
+    void homePageUsesRiotIdFirstOnboardingWithCsrfAwareRequests() throws IOException {
+        String html = readStaticFile("index.html");
+        String homeJs = readStaticFile("js/home.js");
+        String apiJs = readStaticFile("js/api.js");
+
+        assertThat(html).contains("for=\"riotGameName\"");
+        assertThat(html).contains("name=\"gameName\"");
+        assertThat(html).contains("for=\"riotTagLine\"");
+        assertThat(html).contains("name=\"tagLine\"");
+        assertThat(html).contains("id=\"riotIdSubmit\"");
+        assertThat(homeJs).contains("player.html?puuid=");
+        assertThat(apiJs).contains("/auth/csrf");
+        assertThat(apiJs).contains("getCookie('XSRF-TOKEN')");
+        assertThat(apiJs).contains("headers['X-XSRF-TOKEN']");
+        assertThat(apiJs).contains("async resolveRiotId(gameName, tagLine)");
+    }
+
     private String readStaticFile(String relativePath) throws IOException {
         return Files.readString(STATIC_ROOT.resolve(relativePath));
     }
