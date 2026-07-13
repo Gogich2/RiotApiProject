@@ -1,0 +1,9 @@
+package org.main.builds.api;
+
+public enum BuildFallbackReason {
+    NONE,
+    MATCHUP_SAMPLE_TOO_SMALL,
+    REQUESTED_PATCH_UNAVAILABLE,
+    AGGREGATION_FAILED_USING_LAST_PUBLISHED,
+    DATA_UNAVAILABLE
+}

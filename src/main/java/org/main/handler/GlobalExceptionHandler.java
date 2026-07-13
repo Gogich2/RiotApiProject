@@ -16,8 +16,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -34,6 +36,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleBadRequest(IllegalArgumentException ex,
                                                              HttpServletRequest request,
                                                              Locale locale) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "error.bad_request",
+                "BAD_REQUEST",
+                ex,
+                request,
+                locale,
+                queryContext(request)
+        );
+    }
+
+    @ExceptionHandler({
+        MethodArgumentTypeMismatchException.class,
+        MissingServletRequestParameterException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleInvalidRequestParameter(
+            Exception ex,
+            HttpServletRequest request,
+            Locale locale
+    ) {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "error.bad_request",

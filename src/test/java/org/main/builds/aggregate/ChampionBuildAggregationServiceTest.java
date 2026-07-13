@@ -118,7 +118,7 @@ class ChampionBuildAggregationServiceTest {
         when(sourceRepository.selectSource(WINDOW, BuildQueue.SOLO_DUO)).
                 thenReturn(new BuildSourceSelection(WINDOW, BuildQueue.SOLO_DUO,
                         WATERMARK, List.of("EUW1_1")));
-        when(snapshotRepository.findLatestRun("16.13", BuildQueue.SOLO_DUO)).
+        when(snapshotRepository.findLatestRun(1, WINDOW, BuildQueue.SOLO_DUO)).
                 thenReturn(Optional.of(run("COMPLETED", 1, WINDOW, WATERMARK, 7)));
 
         AggregationOutcome outcome = service.refresh(BuildQueue.SOLO_DUO);
@@ -126,6 +126,7 @@ class ChampionBuildAggregationServiceTest {
         assertThat(outcome).isEqualTo(new AggregationOutcome(
                 AggregationOutcome.Status.NO_CHANGE, "16.13", 1, 7, RUN_ID));
         verify(snapshotRepository, never()).startRun(any(Integer.class), any(), any(), any());
+        verify(snapshotRepository, never()).findLatestRun("16.13", BuildQueue.SOLO_DUO);
         verify(itemCatalog, never()).refresh();
         verify(sourceRepository, never()).loadBatch(any());
     }
@@ -136,7 +137,7 @@ class ChampionBuildAggregationServiceTest {
         BuildObservation observation = mock(BuildObservation.class);
         AggregationResult result = result(1);
         prepareSelection(List.of("EUW1_1"));
-        when(snapshotRepository.findLatestRun("16.13", BuildQueue.SOLO_DUO)).
+        when(snapshotRepository.findLatestRun(1, WINDOW, BuildQueue.SOLO_DUO)).
                 thenReturn(Optional.of(run("COMPLETED", 2, WINDOW, WATERMARK, 1)));
         when(sourceRepository.loadBatch(List.of("EUW1_1"))).thenReturn(List.of(match));
         when(observationFactory.from(match)).thenReturn(List.of(observation));
@@ -242,7 +243,7 @@ class ChampionBuildAggregationServiceTest {
                 WINDOW, BuildQueue.SOLO_DUO, WATERMARK, mutableIds);
         when(sourceRepository.findLatestPatch(BuildQueue.SOLO_DUO)).thenReturn(Optional.of("16.13"));
         when(sourceRepository.selectSource(WINDOW, BuildQueue.SOLO_DUO)).thenReturn(frozen);
-        when(snapshotRepository.findLatestRun("16.13", BuildQueue.SOLO_DUO)).
+        when(snapshotRepository.findLatestRun(1, WINDOW, BuildQueue.SOLO_DUO)).
                 thenReturn(Optional.empty());
         when(snapshotRepository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK)).
                 thenReturn(RUN_ID);
@@ -285,7 +286,7 @@ class ChampionBuildAggregationServiceTest {
         when(sourceRepository.selectSource(WINDOW, BuildQueue.SOLO_DUO)).
                 thenReturn(new BuildSourceSelection(WINDOW, BuildQueue.SOLO_DUO,
                         WATERMARK, matchIds));
-        when(snapshotRepository.findLatestRun("16.13", BuildQueue.SOLO_DUO)).
+        when(snapshotRepository.findLatestRun(1, WINDOW, BuildQueue.SOLO_DUO)).
                 thenReturn(Optional.empty());
         when(snapshotRepository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK)).
                 thenReturn(RUN_ID);

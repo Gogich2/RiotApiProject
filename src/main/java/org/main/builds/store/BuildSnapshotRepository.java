@@ -24,9 +24,33 @@ public interface BuildSnapshotRepository {
 
     Optional<BuildSnapshot> findPublished(BuildLookup lookup);
 
+    Optional<BuildSnapshot> findPublished(
+            int aggregationVersion,
+            String anchorPatch,
+            BuildQueue queue,
+            int championId,
+            org.main.builds.model.BuildRole role,
+            Integer opponentChampionId
+    );
+
     List<BuildSnapshot> findHistoricalBaselines(BuildLookup lookup, int limit);
+
+    List<BuildSnapshot> findHistoricalBaselines(
+            int aggregationVersion,
+            String anchorPatch,
+            BuildQueue queue,
+            int championId,
+            org.main.builds.model.BuildRole role,
+            int limit
+    );
+
+    List<BuildSnapshot> findPublishedForChampion(
+            int aggregationVersion, BuildQueue queue, int championId);
 
     Optional<AggregationRun> findRun(UUID runId);
 
     Optional<AggregationRun> findLatestRun(String patch, BuildQueue queue);
+
+    Optional<AggregationRun> findLatestRun(
+            int aggregationVersion, PatchWindow window, BuildQueue queue);
 }

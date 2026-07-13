@@ -77,7 +77,8 @@ public final class DefaultChampionBuildAggregationService
                 return insufficient(patch);
             }
             Optional<AggregationRun> latestRun =
-                    snapshotRepository.findLatestRun(window.anchorPatch(), queue);
+                    snapshotRepository.findLatestRun(
+                            properties.aggregationVersion(), window, queue);
             if (latestRun.filter(run -> unchanged(run, window, queue, watermark)).isPresent()) {
                 AggregationRun run = latestRun.get();
                 return new AggregationOutcome(AggregationOutcome.Status.NO_CHANGE,

@@ -155,6 +155,32 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
     }
 
     @Override
+    public Optional<BuildSnapshot> findPublished(
+            int aggregationVersion,
+            String anchorPatch,
+            BuildQueue queue,
+            int championId,
+            BuildRole role,
+            Integer opponentChampionId
+    ) {
+        List<BuildSnapshot> rows = jdbc.query("""
+                select %s
+                from builds.champion_build_snapshot
+                where aggregation_version = ? and anchor_patch = ? and queue_id = ?
+                  and champion_id = ? and role = ?
+                  and opponent_champion_id is not distinct from ?
+                  and publication_state = 'PUBLISHED'
+                order by split_part(comparison_patch, '.', 1)::integer desc,
+                         split_part(comparison_patch, '.', 2)::integer desc,
+                         published_at desc, id desc
+                limit 1
+                """.formatted(SNAPSHOT_COLUMNS), this::mapSnapshot,
+                aggregationVersion, anchorPatch, queue.id(), championId,
+                role.name(), opponentChampionId);
+        return rows.stream().findFirst();
+    }
+
+    @Override
     public List<BuildSnapshot> findHistoricalBaselines(BuildLookup lookup, int limit) {
         if (limit <= 0) {
             return List.of();
@@ -174,6 +200,50 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
                 lookup.aggregationVersion(), lookup.queue().id(), lookup.championId(),
                 lookup.role().name(), patchPart(lookup.window().anchorPatch(), 0),
                 patchPart(lookup.window().anchorPatch(), 1), limit);
+    }
+
+    @Override
+    public List<BuildSnapshot> findHistoricalBaselines(
+            int aggregationVersion,
+            String anchorPatch,
+            BuildQueue queue,
+            int championId,
+            BuildRole role,
+            int limit
+    ) {
+        if (limit <= 0) {
+            return List.of();
+        }
+        return jdbc.query("""
+                select %s
+                from builds.champion_build_snapshot
+                where aggregation_version = ? and queue_id = ? and champion_id = ?
+                  and role = ? and opponent_champion_id is null
+                  and publication_state = 'PUBLISHED'
+                  and (split_part(anchor_patch, '.', 1)::integer,
+                       split_part(anchor_patch, '.', 2)::integer) < (?, ?)
+                order by split_part(anchor_patch, '.', 1)::integer desc,
+                         split_part(anchor_patch, '.', 2)::integer desc,
+                         published_at desc, id desc
+                limit ?
+                """.formatted(SNAPSHOT_COLUMNS), this::mapSnapshot,
+                aggregationVersion, queue.id(), championId, role.name(),
+                patchPart(anchorPatch, 0), patchPart(anchorPatch, 1), limit);
+    }
+
+    @Override
+    public List<BuildSnapshot> findPublishedForChampion(
+            int aggregationVersion, BuildQueue queue, int championId) {
+        return jdbc.query("""
+                select %s
+                from builds.champion_build_snapshot
+                where aggregation_version = ? and queue_id = ? and champion_id = ?
+                  and publication_state = 'PUBLISHED'
+                order by split_part(anchor_patch, '.', 1)::integer desc,
+                         split_part(anchor_patch, '.', 2)::integer desc,
+                         role, opponent_champion_id nulls first
+                """.formatted(SNAPSHOT_COLUMNS), this::mapSnapshot,
+                aggregationVersion, queue.id(), championId);
     }
 
     @Override
@@ -200,6 +270,23 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
                          started_at desc, id desc
                 limit 1
                 """, this::mapRun, patch, queue.id());
+        return rows.stream().findFirst();
+    }
+
+    @Override
+    public Optional<AggregationRun> findLatestRun(
+            int aggregationVersion, PatchWindow window, BuildQueue queue) {
+        List<AggregationRun> rows = jdbc.query("""
+                select id, aggregation_version, anchor_patch, comparison_patch, queue_id,
+                       input_watermark, state, source_match_count, validation_count,
+                       snapshot_count, failure_category, started_at, completed_at
+                from builds.aggregation_run
+                where aggregation_version = ? and anchor_patch = ?
+                  and comparison_patch = ? and queue_id = ?
+                order by started_at desc, id desc
+                limit 1
+                """, this::mapRun, aggregationVersion, window.anchorPatch(),
+                window.comparisonPatch(), queue.id());
         return rows.stream().findFirst();
     }
 
