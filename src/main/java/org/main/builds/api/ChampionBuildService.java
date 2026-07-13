@@ -41,16 +41,19 @@ public class ChampionBuildService {
 
     public ChampionBuildOptionsResponse options(
             int championId, Integer queueId, String patch, BuildRole role) {
-        requireChampion(championId);
         BuildQueue requestedQueue = queueId == null ? null : BuildQueue.fromId(queueId);
         String requestedPatch = patch == null ? null : PatchVersion.parse(patch).displayName();
+        requireChampion(championId);
         Map<BuildQueue, List<BuildSnapshot>> byQueue = new EnumMap<>(BuildQueue.class);
         for (BuildQueue queue : BuildQueue.values()) {
             byQueue.put(queue, snapshots.findPublishedForChampion(
                     properties.aggregationVersion(), queue, championId));
         }
+        Map<BuildQueue, Boolean> availability = new EnumMap<>(BuildQueue.class);
+        byQueue.forEach((queue, values) -> availability.put(
+                queue, available(values, requestedPatch, role)));
         BuildQueue selectedQueue = requestedQueue == null
-                ? defaultQueue(byQueue) : requestedQueue;
+                ? defaultQueue(availability) : requestedQueue;
         List<BuildSnapshot> selected = byQueue.get(selectedQueue);
         List<PatchOption> patches = selected.stream().
                 map(snapshot -> snapshot.window().anchorPatch()).
@@ -95,8 +98,8 @@ public class ChampionBuildService {
                 sorted(Comparator.comparing(OpponentOption::label)).
                 toList();
         List<QueueOption> queues = List.of(
-                queueOption(BuildQueue.SOLO_DUO, "Ranked Solo/Duo", byQueue),
-                queueOption(BuildQueue.FLEX, "Ranked Flex", byQueue));
+                queueOption(BuildQueue.SOLO_DUO, "Ranked Solo/Duo", availability),
+                queueOption(BuildQueue.FLEX, "Ranked Flex", availability));
         return new ChampionBuildOptionsResponse(championId, queues, patches, roles,
                 opponentOptions, new RequestedFilters(
                 selectedQueue.id(), selectedPatch, selectedRole, null));
@@ -109,14 +112,14 @@ public class ChampionBuildService {
             BuildRole role,
             Integer opponentId
     ) {
-        requireChampion(championId);
-        if (opponentId != null) {
-            requireChampion(opponentId);
-        }
         BuildQueue queue = BuildQueue.fromId(queueId);
         String anchorPatch = PatchVersion.parse(patch).displayName();
         if (role == null) {
             throw new IllegalArgumentException("Build role is required");
+        }
+        requireChampion(championId);
+        if (opponentId != null) {
+            requireChampion(opponentId);
         }
         RequestedFilters requested = new RequestedFilters(
                 queue.id(), anchorPatch, role, opponentId);
@@ -173,7 +176,7 @@ public class ChampionBuildService {
                 snapshot.confidence(),
                 snapshot.games(),
                 snapshot.wins(),
-                snapshot.games() == 0 ? 0.0 : (double) snapshot.wins() / snapshot.games(),
+                winRate(snapshot.wins(), snapshot.games()),
                 stale,
                 historical,
                 effectiveReason,
@@ -193,31 +196,44 @@ public class ChampionBuildService {
     }
 
     private DisplayBuildPayload enrich(BuildSnapshotPayload payload) {
+        List<Integer> itemIds = java.util.stream.Stream.of(
+                        payload.startingItems(), payload.boots(),
+                        payload.coreItems(), payload.situationalItems()).
+                flatMap(List::stream).
+                flatMap(choice -> choice.ids().stream()).
+                distinct().toList();
+        Map<Integer, DisplayAsset> itemAssets = assets.findItems(itemIds);
+        Map<Integer, DisplayAsset> runeAssets = assets.findRunes(ids(payload.runePages()));
+        Map<Integer, DisplayAsset> spellAssets = assets.findSpells(ids(payload.spellPairs()));
         return new DisplayBuildPayload(
-                enrich(payload.startingItems(), assets::findItems),
-                enrich(payload.boots(), assets::findItems),
-                enrich(payload.coreItems(), assets::findItems),
-                enrich(payload.situationalItems(), assets::findItems),
-                enrich(payload.runePages(), assets::findRunes),
-                enrich(payload.spellPairs(), assets::findSpells),
-                enrich(payload.skillOrders(), this::skillAssets),
+                enrich(payload.startingItems(), itemAssets),
+                enrich(payload.boots(), itemAssets),
+                enrich(payload.coreItems(), itemAssets),
+                enrich(payload.situationalItems(), itemAssets),
+                enrich(payload.runePages(), runeAssets),
+                enrich(payload.spellPairs(), spellAssets),
+                enrich(payload.skillOrders(), skillAssets(ids(payload.skillOrders()))),
                 payload.skillMaxPriority());
     }
 
     private List<DisplayBuildChoice> enrich(
             List<BuildChoice> choices,
-            Function<List<Integer>, Map<Integer, DisplayAsset>> loader
+            Map<Integer, DisplayAsset> found
     ) {
         List<DisplayBuildChoice> result = new ArrayList<>();
         for (BuildChoice choice : choices) {
-            Map<Integer, DisplayAsset> found = loader.apply(choice.ids());
             List<DisplayAsset> displayAssets = choice.ids().stream().
                     map(id -> found.getOrDefault(id,
                             new DisplayAsset(id, String.valueOf(id), null))).toList();
             result.add(new DisplayBuildChoice(displayAssets, choice.games(), choice.wins(),
-                    choice.pickRate(), choice.winRate()));
+                    percentRate(choice.pickRate()), percentRate(choice.winRate())));
         }
         return List.copyOf(result);
+    }
+
+    private List<Integer> ids(List<BuildChoice> choices) {
+        return choices.stream().flatMap(choice -> choice.ids().stream()).
+                distinct().toList();
     }
 
     private Map<Integer, DisplayAsset> skillAssets(List<Integer> ids) {
@@ -234,18 +250,27 @@ public class ChampionBuildService {
         }
     }
 
-    private BuildQueue defaultQueue(Map<BuildQueue, List<BuildSnapshot>> snapshotsByQueue) {
-        return snapshotsByQueue.get(BuildQueue.SOLO_DUO).isEmpty()
-                && !snapshotsByQueue.get(BuildQueue.FLEX).isEmpty()
+    private BuildQueue defaultQueue(Map<BuildQueue, Boolean> availability) {
+        return !availability.get(BuildQueue.SOLO_DUO)
+                && availability.get(BuildQueue.FLEX)
                 ? BuildQueue.FLEX : BuildQueue.SOLO_DUO;
+    }
+
+    private boolean available(
+            List<BuildSnapshot> candidates, String patch, BuildRole role) {
+        return candidates.stream().
+                filter(snapshot -> snapshot.opponentChampionId() == null).
+                anyMatch(snapshot -> (patch == null
+                        || patch.equals(snapshot.window().anchorPatch()))
+                        && (role == null || role == snapshot.role()));
     }
 
     private QueueOption queueOption(
             BuildQueue queue,
             String label,
-            Map<BuildQueue, List<BuildSnapshot>> snapshotsByQueue
+            Map<BuildQueue, Boolean> availability
     ) {
-        return new QueueOption(queue.id(), label, !snapshotsByQueue.get(queue).isEmpty());
+        return new QueueOption(queue.id(), label, availability.get(queue));
     }
 
     private OpponentOption opponent(
@@ -259,6 +284,14 @@ public class ChampionBuildService {
     private String evidence(BuildSnapshot snapshot) {
         return snapshot.games() + " games | " + snapshot.wins() + " wins | "
                 + snapshot.confidence().name().toLowerCase() + " confidence";
+    }
+
+    private double winRate(int wins, int games) {
+        return games == 0 ? 0.0 : percentRate((double) wins / games);
+    }
+
+    private double percentRate(double rate) {
+        return Math.round(rate * 10000.0) / 100.0;
     }
 
     private String explanation(BuildFallbackReason reason) {

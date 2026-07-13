@@ -1,6 +1,5 @@
 package org.main.builds.api;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -8,35 +7,39 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.main.account.security.AppSessionAuthenticationFilter;
+import org.main.account.service.SessionService;
 import org.main.builds.model.BuildConfidence;
 import org.main.builds.model.BuildRole;
 import org.main.builds.model.BuildScope;
+import org.main.config.SecurityConfig;
 import org.main.exception.NotFoundException;
-import org.springframework.context.support.StaticMessageSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+@WebMvcTest(ChampionBuildController.class)
+@Import({SecurityConfig.class, AppSessionAuthenticationFilter.class})
 class ChampionBuildControllerTest {
 
-    private final ChampionBuildService service = mock(ChampionBuildService.class);
-
+    @Autowired
     private MockMvc mvc;
 
-    @BeforeEach
-    void setUp() {
-        mvc = MockMvcBuilders.standaloneSetup(new ChampionBuildController(service)).
-                setControllerAdvice(new org.main.handler.GlobalExceptionHandler(messages())).
-                build();
-    }
+    @MockBean
+    private ChampionBuildService service;
+
+    @MockBean
+    private SessionService sessionService;
 
     @Test
-    void exposesPublicExactBuildMetadataWithoutRawRiotPayloads() throws Exception {
+    void allowsAnonymousExactBuildGetThroughTheRealSecurityChain() throws Exception {
         ChampionBuildResponse response = new ChampionBuildResponse(
                 true, new RequestedFilters(420, "16.13", BuildRole.BOTTOM, 55),
                 new ResolvedFilters(420, "16.13", "16.12", BuildRole.BOTTOM, 55),
-                BuildScope.EXACT_MATCHUP, BuildConfidence.LOW, 12, 7, 7.0 / 12.0,
+                BuildScope.EXACT_MATCHUP, BuildConfidence.LOW, 12, 7, 58.33,
                 false, false, BuildFallbackReason.NONE, "12 games",
                 "Exact matchup evidence", null, null,
                 new DisplayBuildPayload(List.of(), List.of(), List.of(), List.of(),
@@ -50,6 +53,7 @@ class ChampionBuildControllerTest {
                 andExpect(status().isOk()).
                 andExpect(jsonPath("$.resultScope").value("EXACT_MATCHUP")).
                 andExpect(jsonPath("$.wins").value(7)).
+                andExpect(jsonPath("$.winRate").value(58.33)).
                 andExpect(jsonPath("$.resolved.comparisonPatch").value("16.12")).
                 andExpect(jsonPath("$.rawJson").doesNotExist()).
                 andExpect(jsonPath("$.raw_json").doesNotExist());
@@ -94,11 +98,4 @@ class ChampionBuildControllerTest {
                 andExpect(status().isNotFound());
     }
 
-    private StaticMessageSource messages() {
-        StaticMessageSource messages = new StaticMessageSource();
-        messages.addMessage("error.bad_request", java.util.Locale.ENGLISH, "Bad request");
-        messages.addMessage("error.not_found", java.util.Locale.ENGLISH, "Not found");
-        messages.addMessage("error.internal", java.util.Locale.ENGLISH, "Internal error");
-        return messages;
-    }
 }
