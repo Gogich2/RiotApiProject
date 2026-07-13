@@ -1,0 +1,11 @@
+{
+  "styles": [
+    {"description":"primaryStyle","style":8000,"selections":[
+      {"perk":8005},{"perk":9111},{"perk":9104},{"perk":8014}
+    ]},
+    {"description":"subStyle","style":8300,"selections":[
+      {"perk":8304},{"perk":8347}
+    ]}
+  ],
+  "statPerks":{"offense":5005,"flex":5008,"defense":5002}
+}

@@ -1,0 +1,29 @@
+{
+  "info": {
+    "frames": [
+      {
+        "events": [
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":2003,"timestamp":1000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3340,"timestamp":2000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":1036,"timestamp":3000},
+          {"type":"ITEM_SOLD","participantId":1,"itemId":1036,"timestamp":4000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":1055,"timestamp":120000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":1001,"timestamp":120000},
+          {"type":"ITEM_UNDO","participantId":1,"beforeId":1001,"afterId":0,"timestamp":120000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3006,"timestamp":121000},
+          {"type":"ITEM_DESTROYED","participantId":1,"itemId":2003,"timestamp":130000}
+        ]
+      },
+      {
+        "events": [
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":6672,"timestamp":300000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":1038,"timestamp":300000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3031,"timestamp":300000},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3086,"timestamp":400000},
+          {"type":"ITEM_UNDO","participantId":1,"beforeId":3086,"afterId":0,"timestamp":400001},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3094,"timestamp":500000}
+        ]
+      }
+    ]
+  }
+}
