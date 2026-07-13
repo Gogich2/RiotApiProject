@@ -56,14 +56,24 @@ public class PlayerController {
     }
 
     @GetMapping("/{puuid}/champions")
-    public List<PlayerChampionStatsDto> champions(@PathVariable String puuid) {
-        return frontendStatsService.getPlayerChampions(puuid);
+    public List<PlayerChampionStatsDto> champions(
+            @PathVariable String puuid,
+            @RequestParam(value = "queueId", required = false) Integer queueId
+    ) {
+        return queueId == null
+                ? frontendStatsService.getPlayerChampions(puuid)
+                : frontendStatsService.getPlayerChampions(puuid, queueId);
     }
 
     @GetMapping("/{puuid}/matches")
-    public List<PlayerRecentMatchDto> matches(@PathVariable String puuid,
-                                              @RequestParam(value = "limit", defaultValue = "20") int limit) {
-        return frontendStatsService.getPlayerRecentMatches(puuid, limit);
+    public List<PlayerRecentMatchDto> matches(
+            @PathVariable String puuid,
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @RequestParam(value = "queueId", required = false) Integer queueId
+    ) {
+        return queueId == null
+                ? frontendStatsService.getPlayerRecentMatches(puuid, limit)
+                : frontendStatsService.getPlayerRecentMatches(puuid, limit, queueId);
     }
 
     @GetMapping("/{puuid}/insights")
@@ -72,7 +82,10 @@ public class PlayerController {
     }
 
     @GetMapping("/{puuid}/dashboard")
-    public PlayerDashboardDto dashboard(@PathVariable String puuid) {
-        return playerDashboardService.getDashboard(puuid);
+    public PlayerDashboardDto dashboard(
+            @PathVariable String puuid,
+            @RequestParam(value = "queueId", required = false) Integer queueId
+    ) {
+        return playerDashboardService.getDashboard(puuid, queueId);
     }
 }

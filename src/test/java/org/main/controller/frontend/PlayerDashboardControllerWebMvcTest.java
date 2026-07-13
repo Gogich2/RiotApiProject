@@ -1,6 +1,7 @@
 package org.main.controller.frontend;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -62,6 +63,14 @@ class PlayerDashboardControllerWebMvcTest {
     void dashboardReadRemainsPublic() throws Exception {
         mockMvc.perform(get("/api/players/puuid/dashboard")).
                 andExpect(status().isOk());
+    }
+
+    @Test
+    void dashboardKeepsRankedQueuesSeparate() throws Exception {
+        mockMvc.perform(get("/api/players/puuid/dashboard").queryParam("queueId", "440")).
+                andExpect(status().isOk());
+
+        verify(dashboardService).getDashboard("puuid", 440);
     }
 
     @Test

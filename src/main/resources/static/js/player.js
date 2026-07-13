@@ -2,6 +2,7 @@ let activePlayerTab = 'overview';
 let cachedPlayerInsights = [];
 let expandedMatchId = null;
 let currentPlayerDashboard = null;
+let currentPlayerQueueId = null;
 let refreshPollTimer = null;
 const loadedPlayerTabs = new Set();
 const MAX_RECOMMENDATION_CARDS = 8;
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupPlayerTabs(puuid);
     setupMatchDetailsInline(puuid);
     setupPlayerActions(puuid);
+    setupPlayerQueueSwitch(puuid);
 
     renderPlayerRanks([]);
     renderPlayerRankChart([]);
@@ -58,15 +60,16 @@ function setupPlayerTabs(puuid) {
 }
 
 async function loadPlayerTabData(tab, puuid) {
-    if (loadedPlayerTabs.has(tab)) {
+    const loadKey = `${tab}:${currentPlayerQueueId || 'default'}`;
+    if (loadedPlayerTabs.has(loadKey)) {
         return;
     }
-    loadedPlayerTabs.add(tab);
+    loadedPlayerTabs.add(loadKey);
 
     try {
         if (tab === 'overview') {
             const [matches, rankHistory] = await Promise.all([
-                api.getPlayerMatches(puuid, 20),
+                api.getPlayerMatches(puuid, 20, currentPlayerQueueId),
                 api.getPlayerRankHistory(puuid)
             ]);
             renderPlayerMatches(matches || []);
@@ -74,24 +77,27 @@ async function loadPlayerTabData(tab, puuid) {
             renderPlayerRankHistory(rankHistory || []);
         }
         if (tab === 'champions') {
-            renderPlayerChampions(await api.getPlayerChampions(puuid) || []);
+            renderPlayerChampions(await api.getPlayerChampions(puuid, currentPlayerQueueId) || []);
         }
         if (tab === 'recommendations') {
-            cachedPlayerInsights = await api.getPlayerInsights(puuid) || [];
             renderInsightsForActiveTab();
         }
     } catch (error) {
-        loadedPlayerTabs.delete(tab);
+        loadedPlayerTabs.delete(loadKey);
         console.error(`Could not load ${tab} details:`, error);
     }
 }
 
 function renderDashboard(dashboard) {
-    renderPlayerHero(dashboard.player);
-    renderPlayerStats(dashboard.player);
+    currentPlayerQueueId = Number(dashboard.analysisQueueId || 420);
+    const recentTwenty = (dashboard.recentForm || []).find(form => Number(form.window) === 20);
+    renderPlayerHero(dashboard.player, dashboard.analysisQueue, recentTwenty);
+    renderPlayerStats(recentTwenty, dashboard.analysisQueue);
     const queueLabel = document.getElementById('playerAnalysisQueue');
     if (queueLabel) queueLabel.textContent = dashboard.analysisQueue || 'Solo/Duo';
+    updatePlayerQueueSwitch();
     cachedPlayerInsights = dashboard.priorities || [];
+    renderInsightsForActiveTab();
     renderDashboardRanks(dashboard.ranks || []);
     renderRecentForm(dashboard.recentForm || []);
     renderChampionPoolHealth(dashboard.championPoolHealth);
@@ -104,6 +110,37 @@ function renderDashboard(dashboard) {
     }
     renderPlayerRanks(normalizeDashboardRanks(dashboard.ranks || []));
     renderRecommendationSummary(cachedPlayerInsights);
+}
+
+function setupPlayerQueueSwitch(puuid) {
+    document.querySelectorAll('[data-player-queue]').forEach(button => {
+        button.addEventListener('click', async () => {
+            const queueId = Number(button.dataset.playerQueue);
+            if (!queueId || queueId === currentPlayerQueueId) return;
+            setPlayerQueueSwitchDisabled(true);
+            try {
+                currentPlayerDashboard = await api.getPlayerDashboard(puuid, queueId);
+                renderDashboard(currentPlayerDashboard);
+                await loadPlayerTabData(activePlayerTab, puuid);
+            } catch (error) {
+                renderRefreshAnnouncement('That ranked queue could not be loaded. The current read stays visible.');
+            } finally {
+                setPlayerQueueSwitchDisabled(false);
+            }
+        });
+    });
+}
+
+function updatePlayerQueueSwitch() {
+    document.querySelectorAll('[data-player-queue]').forEach(button => {
+        button.setAttribute('aria-pressed', String(Number(button.dataset.playerQueue) === currentPlayerQueueId));
+    });
+}
+
+function setPlayerQueueSwitchDisabled(disabled) {
+    document.querySelectorAll('[data-player-queue]').forEach(button => {
+        button.disabled = disabled;
+    });
 }
 
 function normalizeDashboardRanks(ranks) {
@@ -434,7 +471,7 @@ async function pollRefreshStatus(puuid) {
             return;
         }
         if (status.state === 'COMPLETED') {
-            currentPlayerDashboard = await api.getPlayerDashboard(puuid);
+            currentPlayerDashboard = await api.getPlayerDashboard(puuid, currentPlayerQueueId);
             renderDashboard(currentPlayerDashboard);
         }
     } catch (error) {
@@ -489,7 +526,7 @@ function showPlayerError(message) {
     if (priorities) priorities.innerHTML = '<div class="error-box">Priorities could not be loaded.</div>';
 }
 
-function renderPlayerHero(player) {
+function renderPlayerHero(player, queueName, recentForm) {
     const hero = document.getElementById('playerHero');
 
     if (!hero) {
@@ -514,7 +551,8 @@ function renderPlayerHero(player) {
                 ${escapeHtml(getPlayerInitials(playerName))}
             </div>
         `;
-    const summary = getPlayerPerformanceSummary(player);
+    const games = recentForm?.games || 0;
+    const winRate = recentForm?.winRate || 0;
 
     hero.innerHTML = `
         <div class="player-hero">
@@ -531,11 +569,9 @@ function renderPlayerHero(player) {
                         Ranked performance, champion pool efficiency, match detail review, and recommendation output in one profile.
                     </p>
                     <div class="player-hero__badges">
-                        <span class="player-hero__badge">${formatNumber(player.matches)} matches</span>
-                        <span class="player-hero__badge">${formatPercent(player.winrate)} win rate</span>
-                        <span class="player-hero__badge">
-                            ${formatDecimal(player.averageKills)}/${formatDecimal(player.averageDeaths)}/${formatDecimal(player.averageAssists)} KDA
-                        </span>
+                        <span class="player-hero__badge">${escapeHtml(queueName || 'Solo/Duo')}</span>
+                        <span class="player-hero__badge">${formatNumber(games)} recent games</span>
+                        <span class="player-hero__badge">${formatPercent(winRate)} win rate</span>
                     </div>
                 </div>
             </div>
@@ -543,15 +579,15 @@ function renderPlayerHero(player) {
             <div class="player-hero__summary">
                 <article class="player-hero__summary-card">
                     <span>Current read</span>
-                    <strong>${escapeHtml(summary.label)}</strong>
-                    <p>${escapeHtml(summary.description)}</p>
+                    <strong>${games ? `${formatNumber(recentForm.wins)}W / ${formatNumber(recentForm.losses)}L` : 'Building a sample'}</strong>
+                    <p>${games ? `${formatDecimal(recentForm.averageKda)} average KDA in ${escapeHtml(queueName)}.` : `Play ranked ${escapeHtml(queueName)} to build this read.`}</p>
                 </article>
             </div>
         </div>
     `;
 }
 
-function renderPlayerStats(player) {
+function renderPlayerStats(recentForm, queueName) {
     const container = document.getElementById('playerStats');
 
     if (!container) {
@@ -560,22 +596,20 @@ function renderPlayerStats(player) {
 
     container.innerHTML = `
         <article class="stat-card">
-            <span class="stat-card__label">Matches</span>
-            <strong class="stat-card__value">${formatNumber(player.matches)}</strong>
+            <span class="stat-card__label">Queue</span>
+            <strong class="stat-card__value">${escapeHtml(queueName || 'Solo/Duo')}</strong>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Winrate</span>
-            <strong class="stat-card__value">${formatPercent(player.winrate)}</strong>
+            <strong class="stat-card__value">${formatPercent(recentForm?.winRate)}</strong>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Avg KDA</span>
-            <strong class="stat-card__value">
-                ${formatDecimal(player.averageKills)}/${formatDecimal(player.averageDeaths)}/${formatDecimal(player.averageAssists)}
-            </strong>
+            <strong class="stat-card__value">${formatDecimal(recentForm?.averageKda)}</strong>
         </article>
         <article class="stat-card">
-            <span class="stat-card__label">Avg Damage</span>
-            <strong class="stat-card__value">${formatNumber(player.averageDamageToChampions)}</strong>
+            <span class="stat-card__label">Recent games</span>
+            <strong class="stat-card__value">${formatNumber(recentForm?.games)}</strong>
         </article>
     `;
 }
@@ -964,38 +998,6 @@ function renderPlayerInsights(insights) {
             </div>
         </div>
     `;
-}
-
-function getPlayerPerformanceSummary(player) {
-    const matches = Number(player.matches || 0);
-    const winrate = Number(player.winrate || 0);
-    const averageDamage = Number(player.averageDamageToChampions || 0);
-
-    if (matches >= 25 && winrate >= 55) {
-        return {
-            label: 'Reliable positive sample',
-            description: `Strong result set with ${formatNumber(matches)} matches and ${formatPercent(winrate)} win rate.`
-        };
-    }
-
-    if (averageDamage >= 20000) {
-        return {
-            label: 'High pressure profile',
-            description: `Damage output trends high at ${formatNumber(averageDamage)} average champion damage.`
-        };
-    }
-
-    if (matches < 10) {
-        return {
-            label: 'Early sample',
-            description: 'Useful for directional reads, but the data set is still small.'
-        };
-    }
-
-    return {
-        label: 'Developing trend',
-        description: `Current sample sits at ${formatPercent(winrate)} win rate across ${formatNumber(matches)} matches.`
-    };
 }
 
 function renderRecommendationGroup(group) {

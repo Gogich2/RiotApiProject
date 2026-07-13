@@ -18,6 +18,8 @@ class StaticPlayerDashboardTest {
         assertThat(html).contains("id=\"playerDashboardRanks\"");
         assertThat(html).contains("id=\"playerFreshness\"");
         assertThat(html).contains("id=\"playerAnalysisQueue\"");
+        assertThat(html).contains("data-player-queue=\"420\"");
+        assertThat(html).contains("data-player-queue=\"440\"");
         assertThat(html).contains("id=\"recentForm5\"");
         assertThat(html).contains("id=\"recentForm10\"");
         assertThat(html).contains("id=\"recentForm20\"");
@@ -34,6 +36,7 @@ class StaticPlayerDashboardTest {
         String js = read("js/player.js");
 
         assertThat(js).contains("api.getPlayerDashboard(puuid)");
+        assertThat(js).contains("api.getPlayerDashboard(puuid, queueId)");
         assertThat(js).contains("api.getPlayerRefreshStatus(puuid)");
         assertThat(js).contains("QUEUED");
         assertThat(js).contains("RUNNING");

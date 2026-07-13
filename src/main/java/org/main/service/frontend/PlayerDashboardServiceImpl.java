@@ -60,24 +60,20 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
 
     @Override
     public PlayerDashboardDto getDashboard(String puuid) {
+        return getDashboard(puuid, null);
+    }
+
+    @Override
+    public PlayerDashboardDto getDashboard(String puuid, Integer requestedQueueId) {
         List<LeagueEntryEntity> rankEntities = leagueEntryRepository.findByPuuidOrderByQueueTypeAsc(puuid);
-        AnalysisQueue analysisQueue = selectAnalysisQueue(rankEntities);
+        AnalysisQueue analysisQueue = selectAnalysisQueue(rankEntities, requestedQueueId);
         List<PlayerRecentMatchDto> matches = frontendStatsService.
                 getPlayerRecentMatches(puuid, 20, analysisQueue.queueId());
         List<PlayerChampionStatsDto> championPool = frontendStatsService.
                 getPlayerChampions(puuid, analysisQueue.queueId()).
                 stream().limit(10).toList();
-        List<PlayerInsightDto> priorities = frontendStatsService.getPlayerInsights(puuid).
-                stream().
-                sorted(Comparator.comparing(
-                                PlayerInsightDto::score,
-                                Comparator.nullsLast(Comparator.reverseOrder())
-                        ).thenComparing(
-                                PlayerInsightDto::createdAt,
-                                Comparator.nullsLast(Comparator.reverseOrder())
-                        )).
-                limit(3).
-                toList();
+        ChampionPoolHealthDto poolHealth = championPoolHealth(matches);
+        List<PlayerInsightDto> priorities = queuePriorities(puuid, analysisQueue, matches, poolHealth);
         PlayerRefreshStatusDto refresh = refreshJobRepository.
                 findFirstByPuuidOrderByRequestedAtDesc(puuid).
                 map(PlayerRefreshStatusDto::from).
@@ -86,22 +82,79 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
         return new PlayerDashboardDto(
                 frontendStatsService.getPlayerSummary(puuid),
                 analysisQueue.label(),
+                analysisQueue.queueId(),
                 FORM_WINDOWS.stream().map(window -> recentForm(matches, window)).toList(),
                 rankEntities.stream().map(this::rank).toList(),
                 championPool,
-                championPoolHealth(matches),
+                poolHealth,
                 priorities,
                 freshness(puuid, matches, rankEntities),
                 refresh
         );
     }
 
-    private AnalysisQueue selectAnalysisQueue(List<LeagueEntryEntity> ranks) {
+    private AnalysisQueue selectAnalysisQueue(List<LeagueEntryEntity> ranks, Integer requestedQueueId) {
+        if (requestedQueueId != null) {
+            return requestedQueueId == 440
+                    ? new AnalysisQueue(440, "Flex")
+                    : new AnalysisQueue(420, "Solo/Duo");
+        }
         boolean hasSoloDuo = ranks.stream().anyMatch(rank -> "RANKED_SOLO_5x5".equals(rank.getQueueType()));
         boolean hasFlex = ranks.stream().anyMatch(rank -> "RANKED_FLEX_SR".equals(rank.getQueueType()));
         return !hasSoloDuo && hasFlex
                 ? new AnalysisQueue(440, "Flex")
                 : new AnalysisQueue(420, "Solo/Duo");
+    }
+
+    private List<PlayerInsightDto> queuePriorities(
+            String puuid,
+            AnalysisQueue queue,
+            List<PlayerRecentMatchDto> matches,
+            ChampionPoolHealthDto poolHealth
+    ) {
+        RecentFormDto recent = recentForm(matches, 5);
+        double averageDeaths = matches.stream().limit(10).
+                mapToInt(match -> number(match.deaths())).average().orElse(0.0);
+        String queueName = queue.label();
+        OffsetDateTime createdAt = OffsetDateTime.now(clock);
+        PlayerInsightDto form = matches.isEmpty()
+                ? priority(-1L, puuid, "SAMPLE", "Build a ranked sample",
+                        "Play five " + queueName + " games before drawing conclusions.", 0.0, createdAt)
+                : priority(-1L, puuid, "FORM",
+                        recent.winRate() < 50.0 ? "Stabilize recent form" : "Protect your current form",
+                        queueName + " is at " + recent.winRate() + "% over the last five games.",
+                        recent.winRate(), createdAt);
+        PlayerInsightDto survival = priority(
+                -2L,
+                puuid,
+                "SURVIVAL",
+                averageDeaths > 6.0 ? "Cut avoidable deaths" : "Review close fights",
+                queueName + " averages " + round(averageDeaths) + " deaths across the current sample.",
+                Math.max(0.0, 10.0 - averageDeaths),
+                createdAt
+        );
+        PlayerInsightDto pool = priority(
+                -3L,
+                puuid,
+                "CHAMPION_POOL",
+                poolHealth.status().equals("OVEREXTENDED") ? "Narrow the champion pool" : "Keep the pool intentional",
+                queueName + ": " + poolHealth.message(),
+                Math.max(0.0, 10.0 - poolHealth.uniqueChampions()),
+                createdAt
+        );
+        return List.of(form, survival, pool);
+    }
+
+    private PlayerInsightDto priority(
+            Long id,
+            String puuid,
+            String type,
+            String title,
+            String description,
+            Double score,
+            OffsetDateTime createdAt
+    ) {
+        return new PlayerInsightDto(id, puuid, type, title, description, score, createdAt);
     }
 
     private RecentFormDto recentForm(List<PlayerRecentMatchDto> allMatches, int window) {

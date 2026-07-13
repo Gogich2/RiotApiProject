@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.main.dto.frontend.PlayerDashboardDto;
-import org.main.dto.frontend.PlayerInsightDto;
 import org.main.dto.frontend.PlayerRecentMatchDto;
 import org.main.dto.frontend.PlayerSummaryDto;
 import org.main.persistence.entity.LeagueEntryEntity;
@@ -66,7 +65,6 @@ class PlayerDashboardServiceTest {
         when(frontendStatsService.getPlayerSummary("puuid")).thenReturn(summary());
         when(frontendStatsService.getPlayerRecentMatches("puuid", 20, 420)).thenReturn(matches());
         when(frontendStatsService.getPlayerChampions("puuid", 420)).thenReturn(List.of());
-        when(frontendStatsService.getPlayerInsights("puuid")).thenReturn(insights());
         LeagueEntryEntity rank = new LeagueEntryEntity();
         rank.setQueueType("RANKED_SOLO_5x5");
         rank.setTier("GOLD");
@@ -85,6 +83,7 @@ class PlayerDashboardServiceTest {
         PlayerDashboardDto dashboard = dashboardService.getDashboard("puuid");
 
         assertThat(dashboard.analysisQueue()).isEqualTo("Solo/Duo");
+        assertThat(dashboard.analysisQueueId()).isEqualTo(420);
         assertThat(dashboard.recentForm()).extracting(form -> form.window()).containsExactly(5, 10, 20);
         assertThat(dashboard.recentForm().get(0).wins()).isEqualTo(3);
         assertThat(dashboard.recentForm().get(0).losses()).isEqualTo(2);
@@ -92,7 +91,8 @@ class PlayerDashboardServiceTest {
         assertThat(dashboard.recentForm().get(0).averageKda()).isEqualTo(5.0);
         assertThat(dashboard.championPoolHealth().status()).isEqualTo("OVEREXTENDED");
         assertThat(dashboard.championPoolHealth().uniqueChampions()).isEqualTo(6);
-        assertThat(dashboard.priorities()).extracting(PlayerInsightDto::id).containsExactly(3L, 2L, 1L);
+        assertThat(dashboard.priorities()).hasSize(3).
+                allSatisfy(priority -> assertThat(priority.description()).contains("Solo/Duo"));
         assertThat(dashboard.freshness().lastUpdatedAt()).isEqualTo(
                 OffsetDateTime.parse("2026-07-13T05:55:00Z")
         );
@@ -105,7 +105,6 @@ class PlayerDashboardServiceTest {
         when(frontendStatsService.getPlayerSummary("puuid")).thenReturn(summary());
         when(frontendStatsService.getPlayerRecentMatches("puuid", 20, 440)).thenReturn(List.of());
         when(frontendStatsService.getPlayerChampions("puuid", 440)).thenReturn(List.of());
-        when(frontendStatsService.getPlayerInsights("puuid")).thenReturn(List.of());
         LeagueEntryEntity flex = new LeagueEntryEntity();
         flex.setQueueType("RANKED_FLEX_SR");
         when(leagueEntryRepository.findByPuuidOrderByQueueTypeAsc("puuid")).thenReturn(List.of(flex));
@@ -113,9 +112,10 @@ class PlayerDashboardServiceTest {
         when(refreshJobRepository.findFirstByPuuidOrderByRequestedAtDesc("puuid")).
                 thenReturn(Optional.empty());
 
-        PlayerDashboardDto dashboard = dashboardService.getDashboard("puuid");
+        PlayerDashboardDto dashboard = dashboardService.getDashboard("puuid", 440);
 
         assertThat(dashboard.analysisQueue()).isEqualTo("Flex");
+        assertThat(dashboard.analysisQueueId()).isEqualTo(440);
     }
 
     private List<PlayerRecentMatchDto> matches() {
@@ -139,27 +139,6 @@ class PlayerDashboardServiceTest {
             ));
         }
         return matches;
-    }
-
-    private List<PlayerInsightDto> insights() {
-        return List.of(
-                insight(1L, 4.0, "2026-07-13T05:00:00Z"),
-                insight(2L, 5.0, "2026-07-13T04:00:00Z"),
-                insight(3L, 5.0, "2026-07-13T05:00:00Z"),
-                insight(4L, 2.0, "2026-07-13T05:30:00Z")
-        );
-    }
-
-    private PlayerInsightDto insight(Long id, Double score, String createdAt) {
-        return new PlayerInsightDto(
-                id,
-                "puuid",
-                "FOCUS",
-                "Priority",
-                "Description",
-                score,
-                OffsetDateTime.parse(createdAt)
-        );
     }
 
     private PlayerSummaryDto summary() {

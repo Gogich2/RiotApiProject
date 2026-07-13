@@ -26,8 +26,8 @@ const api = {
         return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/summary`));
     },
 
-    async getPlayerDashboard(puuid) {
-        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/dashboard`));
+    async getPlayerDashboard(puuid, queueId = null) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/dashboard`, { queueId }));
     },
 
     async resolveRiotId(gameName, tagLine) {
@@ -42,12 +42,12 @@ const api = {
         return fetchJson(buildApiUrl('/players/leaderboard'));
     },
 
-    async getPlayerMatches(puuid, limit = 20) {
-        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/matches`, { limit }));
+    async getPlayerMatches(puuid, limit = 20, queueId = null) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/matches`, { limit, queueId }));
     },
 
-    async getPlayerChampions(puuid) {
-        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/champions`));
+    async getPlayerChampions(puuid, queueId = null) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/champions`, { queueId }));
     },
 
     async getPlayerInsights(puuid) {
