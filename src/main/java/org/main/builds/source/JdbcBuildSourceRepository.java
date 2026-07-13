@@ -94,7 +94,7 @@ public final class JdbcBuildSourceRepository implements BuildSourceRepository {
 
         Map<ParticipantKey, ParticipantBuilder> participants = new LinkedHashMap<>();
         jdbcTemplate.query("""
-                SELECT match_id, participant_id, team_id, champion_id,
+                SELECT match_id, participant_id, team_id, champion_id, champ_level,
                        team_position, individual_position, win,
                        summoner1_id, summoner2_id, perks_json::text AS perks
                 FROM core.participants
@@ -103,7 +103,8 @@ public final class JdbcBuildSourceRepository implements BuildSourceRepository {
                     ParticipantKey key = key(resultSet);
                     participants.put(key, new ParticipantBuilder(
                             resultSet.getInt("participant_id"), nullableInteger(resultSet, "team_id"),
-                            nullableInteger(resultSet, "champion_id"), resultSet.getString("team_position"),
+                            nullableInteger(resultSet, "champion_id"), nullableInteger(resultSet, "champ_level"),
+                            resultSet.getString("team_position"),
                             resultSet.getString("individual_position"), nullableBoolean(resultSet, "win"),
                             nullableInteger(resultSet, "summoner1_id"),
                             nullableInteger(resultSet, "summoner2_id"),
@@ -121,13 +122,14 @@ public final class JdbcBuildSourceRepository implements BuildSourceRepository {
                     }
                 }, arguments);
         jdbcTemplate.query("""
-                SELECT match_id, participant_id, skill_slot
+                SELECT match_id, participant_id, skill_order, skill_slot
                 FROM core.participant_skill_order
                 WHERE match_id IN (""" + placeholders + ") ORDER BY match_id, participant_id, skill_order",
                 resultSet -> {
                     ParticipantBuilder participant = participants.get(key(resultSet));
                     if (participant != null) {
-                        participant.skills.add(nullableInteger(resultSet, "skill_slot"));
+                        participant.addSkill(resultSet.getInt("skill_order"),
+                                nullableInteger(resultSet, "skill_slot"));
                     }
                 }, arguments);
 
@@ -193,6 +195,8 @@ public final class JdbcBuildSourceRepository implements BuildSourceRepository {
 
         private final Integer championId;
 
+        private final Integer championLevel;
+
         private final String teamPosition;
 
         private final String individualPosition;
@@ -209,12 +213,15 @@ public final class JdbcBuildSourceRepository implements BuildSourceRepository {
 
         private final List<Integer> skills = new ArrayList<>();
 
-        private ParticipantBuilder(int participantId, Integer teamId, Integer championId,
+        private boolean invalidSkillOrder;
+
+        private ParticipantBuilder(int participantId, Integer teamId, Integer championId, Integer championLevel,
                                    String teamPosition, String individualPosition, Boolean win,
                                    Integer summoner1Id, Integer summoner2Id, JsonNode perks) {
             this.participantId = participantId;
             this.teamId = teamId;
             this.championId = championId;
+            this.championLevel = championLevel;
             this.teamPosition = teamPosition;
             this.individualPosition = individualPosition;
             this.win = win;
@@ -223,13 +230,21 @@ public final class JdbcBuildSourceRepository implements BuildSourceRepository {
             this.perks = perks;
         }
 
+        private void addSkill(int skillOrder, Integer skillSlot) {
+            if (skillOrder != skills.size() + 1 || skillSlot == null) {
+                invalidSkillOrder = true;
+            }
+            skills.add(skillSlot);
+        }
+
         private BuildSourceMatch.Participant build() {
             List<Integer> spells = summoner1Id == null || summoner2Id == null
                     ? List.of() : List.of(summoner1Id, summoner2Id);
-            List<Integer> validSkills = skills.stream().anyMatch(java.util.Objects::isNull)
+            List<Integer> validSkills = invalidSkillOrder || skills.stream().anyMatch(java.util.Objects::isNull)
                     ? List.of() : skills;
             return new BuildSourceMatch.Participant(participantId, teamId, championId,
-                    teamPosition, individualPosition, win, finalItems, perks, spells, validSkills);
+                    championLevel, teamPosition, individualPosition, win,
+                    finalItems, perks, spells, validSkills);
         }
     }
 }

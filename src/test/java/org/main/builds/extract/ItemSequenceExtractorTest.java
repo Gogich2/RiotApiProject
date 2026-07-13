@@ -32,15 +32,19 @@ class ItemSequenceExtractorTest {
 
             @Override
             public boolean isCompletedCoreItem(int id) {
-                return Set.of(6672, 3031, 3094).contains(id);
+                return Set.of(3153, 6672, 3031, 3094).contains(id);
+            }
+
+            @Override
+            public void refresh() {
             }
         };
 
         ItemPath path = new ItemSequenceExtractor(Duration.ofMinutes(2)).extract(
-                timeline, 1, Set.of(3006, 6672, 3031, 3094, 1038), catalog);
+                timeline, 1, Set.of(3006, 3153, 6672, 3031, 3094, 1038), catalog);
 
         assertThat(path.startingItems()).containsExactly(2003, 1055);
         assertThat(path.boots()).isEqualTo(3006);
-        assertThat(path.coreItems()).containsExactly(6672, 3031, 3094);
+        assertThat(path.coreItems()).containsExactly(3153, 6672, 3031);
     }
 }

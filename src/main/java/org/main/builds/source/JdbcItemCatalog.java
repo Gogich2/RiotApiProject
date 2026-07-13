@@ -12,10 +12,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public final class JdbcItemCatalog implements ItemCatalog {
 
-    private final Map<Integer, ItemDefinition> items;
+    private final JdbcTemplate jdbcTemplate;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private volatile Map<Integer, ItemDefinition> items = Map.of();
 
     public JdbcItemCatalog(JdbcTemplate jdbcTemplate) {
-        ObjectMapper mapper = new ObjectMapper();
+        this.jdbcTemplate = jdbcTemplate;
+        refresh();
+    }
+
+    @Override
+    public synchronized void refresh() {
         String latestVersion = jdbcTemplate.queryForList(
                         "SELECT DISTINCT version FROM static.items", String.class).stream().
                 max(JdbcItemCatalog::compareVersions).
@@ -28,9 +37,9 @@ public final class JdbcItemCatalog implements ItemCatalog {
                     WHERE version = ?
                     """, resultSet -> {
                         int itemId = resultSet.getInt("item_id");
-                        JsonNode tags = read(mapper, resultSet.getString("tags"));
-                        JsonNode maps = read(mapper, resultSet.getString("maps"));
-                        JsonNode raw = read(mapper, resultSet.getString("raw_json"));
+                        JsonNode tags = read(objectMapper, resultSet.getString("tags"));
+                        JsonNode maps = read(objectMapper, resultSet.getString("maps"));
+                        JsonNode raw = read(objectMapper, resultSet.getString("raw_json"));
                         loaded.put(itemId, new ItemDefinition(tags, maps, raw));
                     }, latestVersion);
         }
@@ -40,7 +49,7 @@ public final class JdbcItemCatalog implements ItemCatalog {
     @Override
     public boolean isStartingItem(int itemId) {
         ItemDefinition item = items.get(itemId);
-        return item != null && item.allowed();
+        return item != null && item.allowed() && item.isCompleted();
     }
 
     @Override

@@ -61,6 +61,7 @@ class JdbcBuildSourceRepositoryIT {
         assertThat(batch).extracting(BuildSourceMatch::matchId).containsExactly("EUW1_a", "EUW1_b");
         assertThat(batch.getFirst().timeline().path("info").path("frames")).hasSize(1);
         assertThat(batch.getFirst().participants()).hasSize(2);
+        assertThat(batch.getFirst().participants().getFirst().championLevel()).isEqualTo(3);
     }
 
     @Test
@@ -69,7 +70,22 @@ class JdbcBuildSourceRepositoryIT {
 
         assertThat(catalog.isCompletedCoreItem(6672)).isTrue();
         assertThat(catalog.isCompletedCoreItem(9999)).isFalse();
+        assertThat(catalog.isStartingItem(1001)).isFalse();
+        assertThat(catalog.isStartingItem(1038)).isFalse();
         assertThat(catalog.isCompletedBoot(3006)).isTrue();
         assertThat(catalog.isCompletedBoot(1001)).isFalse();
+
+        jdbc.update("""
+                INSERT INTO static.items VALUES
+                (6672,'16.13.1','["Damage"]','{"11":true}',
+                 '{"gold":{"purchasable":true},"into":["7000"]}'),
+                (7777,'16.13.1','["Damage"]','{"11":true}',
+                 '{"gold":{"purchasable":true},"into":[]}')
+                """);
+
+        assertThat(catalog.isCompletedCoreItem(7777)).isFalse();
+        catalog.refresh();
+        assertThat(catalog.isCompletedCoreItem(6672)).isFalse();
+        assertThat(catalog.isCompletedCoreItem(7777)).isTrue();
     }
 }

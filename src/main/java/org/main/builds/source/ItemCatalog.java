@@ -7,4 +7,6 @@ public interface ItemCatalog {
     boolean isCompletedBoot(int itemId);
 
     boolean isCompletedCoreItem(int itemId);
+
+    void refresh();
 }

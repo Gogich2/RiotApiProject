@@ -16,11 +16,14 @@
       },
       {
         "events": [
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3153,"timestamp":250000},
+          {"type":"ITEM_SOLD","participantId":1,"itemId":3153,"timestamp":260000},
           {"type":"ITEM_PURCHASED","participantId":1,"itemId":6672,"timestamp":300000},
           {"type":"ITEM_PURCHASED","participantId":1,"itemId":1038,"timestamp":300000},
           {"type":"ITEM_PURCHASED","participantId":1,"itemId":3031,"timestamp":300000},
           {"type":"ITEM_PURCHASED","participantId":1,"itemId":3086,"timestamp":400000},
           {"type":"ITEM_UNDO","participantId":1,"beforeId":3086,"afterId":0,"timestamp":400001},
+          {"type":"ITEM_PURCHASED","participantId":1,"itemId":3153,"timestamp":450000},
           {"type":"ITEM_PURCHASED","participantId":1,"itemId":3094,"timestamp":500000}
         ]
       }

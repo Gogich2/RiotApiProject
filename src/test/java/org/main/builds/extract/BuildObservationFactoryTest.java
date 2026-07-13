@@ -31,7 +31,7 @@ class BuildObservationFactoryTest {
     void normalizesRolesPairsExactlyOneOpponentAndKeepsCompleteInputs() {
         BuildSourceMatch match = match(List.of(
                 participant(1, 100, 11, "", "MIDDLE", true),
-                participant(2, 200, 22, "MIDDLE", null, false)
+                withChampionLevel(participant(2, 200, 22, "MIDDLE", null, false), 7)
         ));
 
         List<BuildObservation> observations = factory().from(match);
@@ -62,7 +62,49 @@ class BuildObservationFactoryTest {
     }
 
     @Test
-    void excludesMissingStateInvalidRoleAndInvalidRequiredComponents() {
+    void pairsOpponentIdentityEvenWhenOpponentBuildComponentsAreMalformed() {
+        BuildSourceMatch match = match(List.of(
+                participant(1, 100, 11, "TOP", null, true),
+                withPerks(participant(2, 200, 22, "TOP", null, false), mapper.nullNode())
+        ));
+
+        assertThat(factory().from(match)).singleElement().satisfies(observation ->
+                assertThat(observation.opponentChampionId()).isEqualTo(22));
+    }
+
+    @Test
+    void retainsOtherwiseValidObservationWhenEligibleItemPathIsEmpty() {
+        ItemCatalog emptyCatalog = new ItemCatalog() {
+            @Override
+            public boolean isStartingItem(int id) {
+                return false;
+            }
+
+            @Override
+            public boolean isCompletedBoot(int id) {
+                return false;
+            }
+
+            @Override
+            public boolean isCompletedCoreItem(int id) {
+                return false;
+            }
+
+            @Override
+            public void refresh() {
+            }
+        };
+
+        assertThat(factory(emptyCatalog).from(match(List.of(
+                participant(1, 100, 11, "TOP", null, false))))).singleElement().satisfies(observation -> {
+                    assertThat(observation.items().startingItems()).isEmpty();
+                    assertThat(observation.items().boots()).isNull();
+                    assertThat(observation.items().coreItems()).isEmpty();
+                });
+    }
+
+    @Test
+    void excludesMissingStateInvalidRoleRunesSpellsAndSkills() {
         BuildSourceMatch match = match(List.of(
                 participant(1, 100, null, "TOP", null, true),
                 participant(2, 100, 12, "NONE", null, true),
@@ -70,10 +112,14 @@ class BuildObservationFactoryTest {
                 withSkills(participant(4, 100, 14, "TOP", null, true), List.of(1, 9)),
                 withFinalItems(participant(5, 100, 15, "TOP", null, true), Set.of(1038)),
                 withSpells(participant(6, 100, 16, "TOP", null, true), List.of(4)),
-                withPerks(participant(7, 100, 17, "TOP", null, true), mapper.nullNode())
+                withPerks(participant(7, 100, 17, "TOP", null, true), mapper.nullNode()),
+                withSkills(participant(8, 100, 18, "TOP", null, true), List.of(1, 2, 3)),
+                withPerks(participant(9, 100, 19, "TOP", null, true), truncatedPrimaryPerks()),
+                withPerks(participant(10, 100, 20, "TOP", null, true), truncatedSecondaryPerks()),
+                withPerks(participant(11, 100, 21, "TOP", null, true), missingShardPerks())
         ));
 
-        assertThat(factory().from(match)).isEmpty();
+        assertThat(factory().from(match)).extracting(BuildObservation::championId).containsExactly(15);
     }
 
     private BuildObservationFactory factory() {
@@ -92,7 +138,15 @@ class BuildObservationFactoryTest {
             public boolean isCompletedCoreItem(int id) {
                 return id == 6672;
             }
+
+            @Override
+            public void refresh() {
+            }
         };
+        return factory(catalog);
+    }
+
+    private BuildObservationFactory factory(ItemCatalog catalog) {
         return new BuildObservationFactory(
                 new ItemSequenceExtractor(Duration.ofMinutes(2)),
                 new RunePageExtractor(), new SkillPathExtractor(), catalog);
@@ -106,37 +160,67 @@ class BuildObservationFactoryTest {
     private BuildSourceMatch.Participant participant(int id, int team, Integer champion,
                                                       String teamPosition, String individualPosition,
                                                       Boolean win) {
-        return new BuildSourceMatch.Participant(id, team, champion, teamPosition, individualPosition,
+        return new BuildSourceMatch.Participant(id, team, champion, 6, teamPosition, individualPosition,
                 win, Set.of(3006, 6672), perks, List.of(4, 14), List.of(1, 2, 3, 1, 4, 1));
     }
 
     private BuildSourceMatch.Participant withSkills(BuildSourceMatch.Participant participant,
                                                      List<Integer> skills) {
         return new BuildSourceMatch.Participant(participant.participantId(), participant.teamId(),
-                participant.championId(), participant.teamPosition(), participant.individualPosition(),
+                participant.championId(), participant.championLevel(), participant.teamPosition(),
+                participant.individualPosition(),
                 participant.win(), participant.finalItemIds(), participant.perks(), participant.spells(), skills);
     }
 
     private BuildSourceMatch.Participant withFinalItems(BuildSourceMatch.Participant participant,
                                                          Set<Integer> items) {
         return new BuildSourceMatch.Participant(participant.participantId(), participant.teamId(),
-                participant.championId(), participant.teamPosition(), participant.individualPosition(),
+                participant.championId(), participant.championLevel(), participant.teamPosition(),
+                participant.individualPosition(),
                 participant.win(), items, participant.perks(), participant.spells(), participant.skills());
     }
 
     private BuildSourceMatch.Participant withSpells(BuildSourceMatch.Participant participant,
                                                      List<Integer> spells) {
         return new BuildSourceMatch.Participant(participant.participantId(), participant.teamId(),
-                participant.championId(), participant.teamPosition(), participant.individualPosition(),
+                participant.championId(), participant.championLevel(), participant.teamPosition(),
+                participant.individualPosition(),
                 participant.win(), participant.finalItemIds(), participant.perks(), spells, participant.skills());
     }
 
     private BuildSourceMatch.Participant withPerks(BuildSourceMatch.Participant participant,
                                                     JsonNode participantPerks) {
         return new BuildSourceMatch.Participant(participant.participantId(), participant.teamId(),
-                participant.championId(), participant.teamPosition(), participant.individualPosition(),
+                participant.championId(), participant.championLevel(), participant.teamPosition(),
+                participant.individualPosition(),
                 participant.win(), participant.finalItemIds(), participantPerks,
                 participant.spells(), participant.skills());
+    }
+
+    private BuildSourceMatch.Participant withChampionLevel(BuildSourceMatch.Participant participant,
+                                                            int championLevel) {
+        return new BuildSourceMatch.Participant(participant.participantId(), participant.teamId(),
+                participant.championId(), championLevel, participant.teamPosition(),
+                participant.individualPosition(), participant.win(), participant.finalItemIds(),
+                participant.perks(), participant.spells(), participant.skills());
+    }
+
+    private JsonNode truncatedPrimaryPerks() {
+        JsonNode copy = perks.deepCopy();
+        ((ArrayNode) copy.path("styles").get(0).path("selections")).remove(3);
+        return copy;
+    }
+
+    private JsonNode truncatedSecondaryPerks() {
+        JsonNode copy = perks.deepCopy();
+        ((ArrayNode) copy.path("styles").get(1).path("selections")).remove(1);
+        return copy;
+    }
+
+    private JsonNode missingShardPerks() {
+        JsonNode copy = perks.deepCopy();
+        ((ObjectNode) copy.path("statPerks")).remove("defense");
+        return copy;
     }
 
     private JsonNode timelineFor(List<BuildSourceMatch.Participant> participants) {

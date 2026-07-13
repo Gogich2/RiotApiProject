@@ -31,6 +31,10 @@ public final class BuildObservationFactory {
     }
 
     public List<BuildObservation> from(BuildSourceMatch match) {
+        List<OpponentIdentity> identities = match.participants().stream().
+                map(this::identity).
+                flatMap(java.util.Optional::stream).
+                toList();
         List<ValidParticipant> valid = new ArrayList<>();
         for (BuildSourceMatch.Participant participant : match.participants()) {
             try {
@@ -42,7 +46,7 @@ public final class BuildObservationFactory {
 
         List<BuildObservation> observations = new ArrayList<>();
         for (ValidParticipant participant : valid) {
-            List<ValidParticipant> opponents = valid.stream().
+            List<OpponentIdentity> opponents = identities.stream().
                     filter(candidate -> !candidate.teamId().equals(participant.teamId())).
                     filter(candidate -> candidate.role() == participant.role()).
                     toList();
@@ -69,14 +73,26 @@ public final class BuildObservationFactory {
         }
         ItemPath items = itemExtractor.extract(match.timeline(), participant.participantId(),
                 participant.finalItemIds(), itemCatalog);
-        if (items.startingItems().isEmpty()
-                || items.boots() == null && items.coreItems().isEmpty()) {
-            throw new IllegalArgumentException("Item path is incomplete");
-        }
         RunePage runes = runeExtractor.extract(participant.perks());
-        SkillPath skills = skillExtractor.extract(participant.skills());
+        SkillPath skills = skillExtractor.extract(participant.skills(), participant.championLevel());
         return new ValidParticipant(participant.teamId(), participant.championId(), role,
                 participant.win(), items, runes, participant.spells(), skills);
+    }
+
+    private java.util.Optional<OpponentIdentity> identity(BuildSourceMatch.Participant participant) {
+        if (participant.teamId() == null || participant.championId() == null) {
+            return java.util.Optional.empty();
+        }
+        try {
+            return java.util.Optional.of(new OpponentIdentity(participant.teamId(),
+                    participant.championId(), BuildRole.fromParticipant(
+                            participant.teamPosition(), participant.individualPosition())));
+        } catch (IllegalArgumentException exception) {
+            return java.util.Optional.empty();
+        }
+    }
+
+    private record OpponentIdentity(Integer teamId, int championId, BuildRole role) {
     }
 
     private record ValidParticipant(

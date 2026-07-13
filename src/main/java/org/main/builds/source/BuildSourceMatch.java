@@ -21,6 +21,7 @@ public record BuildSourceMatch(
             int participantId,
             Integer teamId,
             Integer championId,
+            Integer championLevel,
             String teamPosition,
             String individualPosition,
             Boolean win,

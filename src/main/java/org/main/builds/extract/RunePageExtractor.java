@@ -17,7 +17,7 @@ public final class RunePageExtractor {
         );
         List<Integer> primarySelections = selections(primary);
         List<Integer> secondarySelections = selections(secondary);
-        if (primarySelections.isEmpty() || secondarySelections.isEmpty()) {
+        if (primarySelections.size() != 4 || secondarySelections.size() != 2 || shards.size() != 3) {
             throw new IllegalArgumentException("Rune selections are incomplete");
         }
         return new RunePage(positive(primary.path("style")), primarySelections,

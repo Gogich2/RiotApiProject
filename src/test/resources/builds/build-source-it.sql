@@ -19,6 +19,7 @@ CREATE TABLE core.participants (
   participant_id integer NOT NULL,
   team_id integer,
   champion_id integer,
+  champ_level integer,
   team_position varchar(32),
   individual_position varchar(32),
   win boolean,
@@ -66,9 +67,9 @@ INSERT INTO core.matches VALUES
  ('EUW1_old','europe','EUW1',700000,'16.11.9',420,'2026-07-03T00:00:00Z');
 
 INSERT INTO core.participants VALUES
- ('EUW1_a',1,100,11,'TOP',NULL,true,4,14,
+ ('EUW1_a',1,100,11,3,'TOP',NULL,true,4,14,
   '{"styles":[{"description":"primaryStyle","style":8000,"selections":[{"perk":8005},{"perk":9111},{"perk":9104},{"perk":8014}]},{"description":"subStyle","style":8300,"selections":[{"perk":8304},{"perk":8347}]}],"statPerks":{"offense":5005,"flex":5008,"defense":5002}}'),
- ('EUW1_a',2,200,22,'TOP',NULL,false,4,12,
+ ('EUW1_a',2,200,22,4,'TOP',NULL,false,4,12,
   '{"styles":[{"description":"primaryStyle","style":8000,"selections":[{"perk":8005},{"perk":9111},{"perk":9104},{"perk":8014}]},{"description":"subStyle","style":8300,"selections":[{"perk":8304},{"perk":8347}]}],"statPerks":{"offense":5005,"flex":5008,"defense":5002}}');
 INSERT INTO core.participant_final_items VALUES
  ('EUW1_a',1,0,1055),('EUW1_a',1,1,3006),('EUW1_a',1,2,6672),
@@ -84,4 +85,5 @@ INSERT INTO static.items VALUES
  (6672,'16.12.1','["Damage"]','{"11":true}','{"gold":{"purchasable":true},"into":[]}'),
  (9999,'16.11.1','["Damage"]','{"11":true}','{"gold":{"purchasable":true},"into":[]}'),
  (1001,'16.12.1','["Boots"]','{"11":true}','{"gold":{"purchasable":true},"into":["3006"]}'),
+ (1038,'16.12.1','["Damage"]','{"11":true}','{"gold":{"purchasable":true},"into":["3031"]}'),
  (3006,'16.12.1','["Boots"]','{"11":true}','{"gold":{"purchasable":true},"into":[]}');
