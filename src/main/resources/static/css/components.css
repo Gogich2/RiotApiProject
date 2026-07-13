@@ -629,6 +629,10 @@
     border: 0;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 .page--account {
     display: grid;
     gap: 22px;
