@@ -2,7 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Champion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riot Stats | Champion</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -14,16 +15,20 @@
         <a class="site-nav__link" href="players.html">Players</a>
     </nav>
 
+    <div class="account-entry" data-account-entry>
+        <a class="account-entry__link" href="account.html">Sign in</a>
+    </div>
+
     <div class="search">
         <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
         <div class="search__results" id="globalSearchResults"></div>
     </div>
 </header>
 
-<main class="page">
-    <section class="champion-hero" id="championHero"></section>
+<main class="page page--detail">
+    <section class="champion-hero champion-hero--detail" id="championHero"></section>
 
-    <section class="stats-grid" id="championStats"></section>
+    <section class="stats-grid stats-grid--detail" id="championStats"></section>
 
     <section class="section">
         <h2 class="section__title">Abilities</h2>
@@ -50,6 +55,7 @@
 </main>
 
 <script src="js/api.js"></script>
+<script src="js/account.js"></script>
 <script src="js/search.js"></script>
 <script src="js/champion.js"></script>
 </body>

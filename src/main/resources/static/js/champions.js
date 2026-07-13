@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         champions = await api.getChampions();
         renderRoleIcons();
         renderVisibleChampions(champions, filterInput, selectedRole);
+        renderChampionListMeta(champions.length, selectedRole, '');
     } catch (error) {
         document.getElementById('championsGrid').innerHTML = `
             <div class="error-box">Could not load champions.</div>
@@ -97,6 +98,7 @@ function renderVisibleChampions(champions, filterInput, selectedRole) {
     const sorted = [...filtered].sort((left, right) => compareChampions(left, right, selectedRole));
 
     renderChampions(sorted);
+    renderChampionListMeta(sorted.length, selectedRole, query);
 }
 
 function compareChampions(left, right, selectedRole) {
@@ -143,6 +145,21 @@ function setActiveRoleButton(container, selectedRole) {
         const isActive = (button.dataset.roleSort || 'default') === selectedRole;
         button.classList.toggle('role-sort-button--active', isActive);
     });
+}
+
+function renderChampionListMeta(count, selectedRole, query) {
+    const meta = document.getElementById('championListMeta');
+
+    if (!meta) {
+        return;
+    }
+
+    const roleLabel = !selectedRole || selectedRole === 'default'
+        ? 'all roles'
+        : `${formatRoleLabel(selectedRole)} priority`;
+    const queryLabel = query ? ` for "${query}"` : '';
+
+    meta.textContent = `${formatNumber(count)} champions visible across ${roleLabel}${queryLabel}.`;
 }
 
 function renderRoleIcons() {

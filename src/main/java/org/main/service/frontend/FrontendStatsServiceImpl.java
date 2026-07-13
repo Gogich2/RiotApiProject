@@ -565,7 +565,24 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     @Override
     public List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit) {
+        return getPlayerRecentMatches(puuid, limit, null);
+    }
+
+    @Override
+    public List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit, int queueId) {
+        return getPlayerRecentMatches(puuid, limit, Integer.valueOf(queueId));
+    }
+
+    private List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit, Integer queueId) {
         int safeLimit = limit <= 0 ? 20 : Math.min(limit, 50);
+        String queueFilter = queueId == null ? "" : "AND m.queue_id = ?";
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(DATA_DRAGON_BASE_URL);
+        parameters.add(puuid);
+        if (queueId != null) {
+            parameters.add(queueId);
+        }
+        parameters.add(safeLimit);
 
         List<PlayerRecentMatchRow> rows = jdbcTemplate.query("""
                         WITH latest_champions AS (
@@ -603,9 +620,10 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                             ON lc.champion_id = p.champion_id
                            AND lc.rn = 1
                         WHERE p.puuid = ?
+                          %s
                         ORDER BY m.game_creation_ms DESC NULLS LAST
                         LIMIT ?
-                        """,
+                        """.formatted(queueFilter),
                 (rs, rowNum) -> new PlayerRecentMatchRow(
                         rs.getString("match_id"),
                         getInteger(rs, "participant_id"),
@@ -621,9 +639,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         getLong(rs, "game_creation_ms"),
                         getLong(rs, "game_duration_ms")
                 ),
-                DATA_DRAGON_BASE_URL,
-                puuid,
-                safeLimit
+                parameters.toArray()
         );
 
         if (rows.isEmpty()) {
@@ -876,6 +892,23 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     @Override
     public List<PlayerChampionStatsDto> getPlayerChampions(String puuid) {
+        return getPlayerChampions(puuid, null);
+    }
+
+    @Override
+    public List<PlayerChampionStatsDto> getPlayerChampions(String puuid, int queueId) {
+        return getPlayerChampions(puuid, Integer.valueOf(queueId));
+    }
+
+    private List<PlayerChampionStatsDto> getPlayerChampions(String puuid, Integer queueId) {
+        String queueJoin = queueId == null ? "" : "JOIN core.match_details_view m ON m.match_id = p.match_id";
+        String queueFilter = queueId == null ? "" : "AND m.queue_id = ?";
+        List<Object> parameters = new ArrayList<>();
+        parameters.add(DATA_DRAGON_BASE_URL);
+        parameters.add(puuid);
+        if (queueId != null) {
+            parameters.add(queueId);
+        }
         return jdbcTemplate.query("""
                     SELECT
                         p.champion_id,
@@ -892,14 +925,16 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         ROUND(AVG(p.deaths)::numeric, 2)::double precision AS avg_deaths,
                         ROUND(AVG(p.assists)::numeric, 2)::double precision AS avg_assists
                     FROM core.participants p
+                    %s
                     LEFT JOIN static.champions c
                         ON c.champion_id = p.champion_id
                     WHERE p.puuid = ?
                       AND p.champion_id IS NOT NULL
+                      %s
                     GROUP BY p.champion_id
                     ORDER BY games DESC, winrate DESC, avg_kills DESC
                     LIMIT 8
-                    """,
+                    """.formatted(queueJoin, queueFilter),
                 (rs, rowNum) -> new PlayerChampionStatsDto(
                         getInteger(rs, "champion_id"),
                         rs.getString("champion_name"),
@@ -911,8 +946,7 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
                         getDouble(rs, "avg_deaths"),
                         getDouble(rs, "avg_assists")
                 ),
-                DATA_DRAGON_BASE_URL,
-                puuid
+                parameters.toArray()
         );
     }
 

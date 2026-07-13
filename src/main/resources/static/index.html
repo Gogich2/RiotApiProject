@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Riot Stats</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riot Stats | Dashboard</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -14,29 +15,97 @@
         <a class="site-nav__link" href="players.html">Players</a>
     </nav>
 
+    <div class="account-entry" data-account-entry>
+        <a class="account-entry__link" href="account.html">Sign in</a>
+    </div>
+
     <div class="search">
         <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
         <div class="search__results" id="globalSearchResults"></div>
     </div>
 </header>
 
-<main class="page">
-    <section class="hero home-hero">
-        <div>
-            <span class="home-hero__eyebrow">League of Legends analytics</span>
-            <h1 class="hero__title">Player stats, champion trends and match insights</h1>
+<main class="page page--home">
+    <section class="home-hero">
+        <div class="home-hero__content">
+            <span class="home-hero__eyebrow">Summoner's Rift intelligence</span>
+            <h1 class="hero__title">See the shape of every match, not just the result.</h1>
             <p class="hero__text">
-                Explore analyzed Riot API matches, track player performance, compare champion results
-                and use generated recommendations to find gameplay patterns.
+                Enter a Riot ID to open a public EUW1 performance dashboard with recent form, rank movement, and focused priorities.
+            </p>
+            <form class="riot-id-form" id="riotIdForm" novalidate>
+                <div class="riot-id-form__fields">
+                    <div class="form-field riot-id-form__name">
+                        <label class="form-label" for="riotGameName">Game name</label>
+                        <input
+                            class="form-input"
+                            id="riotGameName"
+                            name="gameName"
+                            type="text"
+                            maxlength="60"
+                            autocomplete="off"
+                            placeholder="Faker"
+                            required
+                        >
+                    </div>
+                    <span class="riot-id-form__separator" aria-hidden="true">#</span>
+                    <div class="form-field riot-id-form__tag">
+                        <label class="form-label" for="riotTagLine">Tag line</label>
+                        <input
+                            class="form-input"
+                            id="riotTagLine"
+                            name="tagLine"
+                            type="text"
+                            maxlength="20"
+                            autocomplete="off"
+                            placeholder="EUW"
+                            required
+                        >
+                    </div>
+                    <button class="button riot-id-form__submit" id="riotIdSubmit" type="submit">
+                        View player
+                    </button>
+                </div>
+                <p class="form-helper">EUW1 only for now. Profiles and dashboards are public; no account is required.</p>
+                <p class="form-status" id="riotIdStatus" aria-live="polite"></p>
+            </form>
+            <p class="hero-secondary-action">
+                Exploring the dataset instead?
+                <a href="players.html">Browse tracked players</a> or <a href="champions.html">champions</a>.
             </p>
         </div>
+
+        <aside class="home-hero__summary" id="homeHeroSummary">
+            <article class="hero-summary-card">
+                <span class="hero-summary-card__label">Current mode</span>
+                <strong class="hero-summary-card__value">Local match intelligence</strong>
+                <p class="hero-summary-card__text">Ranked sample, player dossiers, and champion efficiency in one surface.</p>
+            </article>
+            <article class="hero-summary-card">
+                <span class="hero-summary-card__label">Coverage</span>
+                <strong class="hero-summary-card__value" id="homeCoverageValue">Loading dataset...</strong>
+                <p class="hero-summary-card__text">Live player and match totals reflected from the local dataset.</p>
+            </article>
+            <article class="hero-summary-card" id="leaderboardSpotlight">
+                <span class="hero-summary-card__label">Leaderboard</span>
+                <strong class="hero-summary-card__value">Loading player signals...</strong>
+                <p class="hero-summary-card__text">Top performers and most active accounts will appear here.</p>
+            </article>
+        </aside>
     </section>
+
+    <section class="meta-snapshot" id="metaSnapshot" aria-label="Meta snapshot"></section>
 
     <section class="stats-grid" id="overviewStats"></section>
 
-    <section class="section home-tables">
-        <article>
-            <h2 class="section__title">Most popular champions</h2>
+    <section class="home-grid">
+        <article class="dashboard-panel">
+            <div class="section-header">
+                <div>
+                    <span class="section__eyebrow">Volume</span>
+                    <h2 class="section__title">Most played champions</h2>
+                </div>
+            </div>
             <div class="table-wrapper">
                 <table class="table">
                     <thead>
@@ -52,8 +121,13 @@
             </div>
         </article>
 
-        <article>
-            <h2 class="section__title">Best winrate champions</h2>
+        <article class="dashboard-panel">
+            <div class="section-header">
+                <div>
+                    <span class="section__eyebrow">Efficiency</span>
+                    <h2 class="section__title">Best win rate champions</h2>
+                </div>
+            </div>
             <div class="table-wrapper">
                 <table class="table">
                     <thead>
@@ -69,9 +143,32 @@
             </div>
         </article>
     </section>
+
+    <section class="home-lower-grid">
+        <article class="dashboard-panel">
+            <div class="section-header">
+                <div>
+                    <span class="section__eyebrow">Priority players</span>
+                    <h2 class="section__title">Top win rate accounts</h2>
+                </div>
+            </div>
+            <div class="stack-list" id="homeTopPlayers"></div>
+        </article>
+
+        <article class="dashboard-panel">
+            <div class="section-header">
+                <div>
+                    <span class="section__eyebrow">Activity</span>
+                    <h2 class="section__title">Most active accounts</h2>
+                </div>
+            </div>
+            <div class="stack-list" id="homeMostActivePlayers"></div>
+        </article>
+    </section>
 </main>
 
 <script src="js/api.js"></script>
+<script src="js/account.js"></script>
 <script src="js/search.js"></script>
 <script src="js/home.js"></script>
 </body>

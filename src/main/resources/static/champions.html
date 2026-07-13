@@ -2,7 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Champions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riot Stats | Champions</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -14,24 +15,32 @@
         <a class="site-nav__link" href="players.html">Players</a>
     </nav>
 
+    <div class="account-entry" data-account-entry>
+        <a class="account-entry__link" href="account.html">Sign in</a>
+    </div>
+
     <div class="search">
         <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
         <div class="search__results" id="globalSearchResults"></div>
     </div>
 </header>
 
-<main class="page">
-    <section class="hero">
+<main class="page page--listing">
+    <section class="hero page-hero page-hero--compact">
+        <span class="page-hero__eyebrow">Meta watch</span>
         <h1 class="hero__title">All champions</h1>
         <p class="hero__text">
-            Browse every champion in the local database and compare play volume, wins, and winrate.
+            Sort the local champion pool by role, scan usage and win rate, and move directly into full matchup dossiers.
         </p>
     </section>
 
-    <section class="section">
+    <section class="section dashboard-panel">
         <div class="section-header">
             <div class="champion-section-heading">
-                <h2 class="section__title">Champion list</h2>
+                <div>
+                    <span class="section__eyebrow">Directory</span>
+                    <h2 class="section__title">Champion list</h2>
+                </div>
                 <div class="champion-role-buttons" id="championRoleButtons" aria-label="Role sorting">
                     <button class="role-sort-button role-sort-button--active" type="button" data-role-sort="default">
                         All
@@ -59,13 +68,17 @@
                 </div>
             </div>
         </div>
-        <input class="filter-input champion-filter" id="championFilterInput" type="text"
-               placeholder="Filter champions by name...">
+        <div class="champion-toolbar">
+            <p class="section-copy champion-toolbar__meta" id="championListMeta">Loading champion pool...</p>
+            <input class="filter-input champion-filter" id="championFilterInput" type="text"
+                   placeholder="Filter champions by name...">
+        </div>
         <div class="champion-grid" id="championsGrid"></div>
     </section>
 </main>
 
 <script src="js/api.js"></script>
+<script src="js/account.js"></script>
 <script src="js/search.js"></script>
 <script src="js/champions.js"></script>
 </body>

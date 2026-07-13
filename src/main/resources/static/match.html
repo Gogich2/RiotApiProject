@@ -2,7 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Match Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riot Stats | Match Details</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -14,21 +15,27 @@
         <a class="site-nav__link" href="players.html">Players</a>
     </nav>
 
+    <div class="account-entry" data-account-entry>
+        <a class="account-entry__link" href="account.html">Sign in</a>
+    </div>
+
     <div class="search">
         <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
         <div class="search__results" id="globalSearchResults"></div>
     </div>
 </header>
 
-<main class="page">
-    <section class="section">
-        <h1 class="section__title">Match details fallback</h1>
-        <p class="hero__text">Player pages now open match details inline. This page is kept as a fallback.</p>
+<main class="page page--detail">
+    <section class="hero page-hero page-hero--compact">
+        <span class="page-hero__eyebrow">Fallback view</span>
+        <h1 class="hero__title">Match details</h1>
+        <p class="hero__text">Player pages open match details inline. This page remains available as a direct fallback.</p>
     </section>
     <div class="match-page-content" id="matchPageContent"></div>
 </main>
 
 <script src="js/api.js"></script>
+<script src="js/account.js"></script>
 <script src="js/search.js"></script>
 <script src="js/match-details.js"></script>
 <script src="js/match.js"></script>

@@ -26,15 +26,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function renderChampionHero(champion) {
     const championName = formatChampionDisplayName(champion.championName);
+    const summary = champion.summary || {};
+    const badges = [
+        champion.primaryRole ? formatRoleLabel(champion.primaryRole) : null,
+        summary.games ? `${formatNumber(summary.games)} games` : null,
+        summary.winrate ? `${formatPercent(summary.winrate)} win rate` : null
+    ].filter(Boolean);
 
     document.getElementById('championHero').innerHTML = `
-        <div class="champion-hero__background" style="background-image: url('${champion.splashUrl || ''}')"></div>
+        <div class="champion-hero__background" style="background-image: url('${escapeHtml(champion.splashUrl || '')}')"></div>
+        <div class="champion-hero__overlay"></div>
         <div class="champion-hero__content">
-            <img class="champion-hero__icon" src="${champion.imageUrl || ''}" alt="${championName}">
-            <div>
-                <h1 class="champion-hero__title">${championName}</h1>
-                <p class="champion-hero__subtitle">${champion.title || ''}</p>
-                <p class="champion-hero__lore">${champion.lore || ''}</p>
+            <div class="champion-hero__identity">
+                <img class="champion-hero__icon" src="${escapeHtml(champion.imageUrl || '')}" alt="${escapeHtml(championName)}">
+                <div>
+                    <span class="champion-hero__eyebrow">Champion dossier</span>
+                    <h1 class="champion-hero__title">${escapeHtml(championName)}</h1>
+                    <p class="champion-hero__subtitle">${escapeHtml(champion.title || '')}</p>
+                    <p class="champion-hero__lore">${escapeHtml(champion.lore || '')}</p>
+                    <div class="champion-hero__badges">
+                        ${badges.map(badge => `<span class="champion-hero__badge">${escapeHtml(badge)}</span>`).join('')}
+                    </div>
+                </div>
+            </div>
+
+            <div class="champion-hero__summary">
+                <article class="champion-hero__summary-card">
+                    <span>Average KDA</span>
+                    <strong>${formatDecimal(summary.averageKills)}/${formatDecimal(summary.averageDeaths)}/${formatDecimal(summary.averageAssists)}</strong>
+                </article>
+                <article class="champion-hero__summary-card">
+                    <span>Damage profile</span>
+                    <strong>${formatNumber(summary.averageDamageToChampions)}</strong>
+                </article>
             </div>
         </div>
     `;
@@ -49,18 +73,22 @@ function renderChampionStats(summary) {
         <article class="stat-card">
             <span class="stat-card__label">Games</span>
             <strong class="stat-card__value">${formatNumber(summary.games)}</strong>
+            <span class="stat-card__meta">Champion sample size in the local dataset.</span>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Winrate</span>
             <strong class="stat-card__value">${formatPercent(summary.winrate)}</strong>
+            <span class="stat-card__meta">Observed win efficiency across tracked games.</span>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Avg KDA</span>
-            <strong class="stat-card__value">${summary.averageKills}/${summary.averageDeaths}/${summary.averageAssists}</strong>
+            <strong class="stat-card__value">${formatDecimal(summary.averageKills)}/${formatDecimal(summary.averageDeaths)}/${formatDecimal(summary.averageAssists)}</strong>
+            <span class="stat-card__meta">Kills, deaths, and assists per appearance.</span>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Avg Damage</span>
             <strong class="stat-card__value">${formatNumber(summary.averageDamageToChampions)}</strong>
+            <span class="stat-card__meta">Average champion damage dealt in tracked matches.</span>
         </article>
     `;
 }
@@ -152,6 +180,35 @@ function getItemDisplayName(item) {
     }
 
     return `Item ${item.itemId}`;
+}
+
+function formatRoleLabel(role) {
+    const labels = {
+        TOP: 'Top',
+        JUNGLE: 'Jungle',
+        MIDDLE: 'Mid',
+        BOTTOM: 'Bottom',
+        UTILITY: 'Support'
+    };
+
+    return labels[role] || role || '';
+}
+
+function formatDecimal(value) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return '0.00';
+    }
+
+    return Number(value).toFixed(2);
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
 }
 
 function formatChampionDisplayName(name) {

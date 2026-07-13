@@ -1,6 +1,10 @@
 let activePlayerTab = 'overview';
 let cachedPlayerInsights = [];
 let expandedMatchId = null;
+let currentPlayerDashboard = null;
+let currentPlayerQueueId = null;
+let refreshPollTimer = null;
+const loadedPlayerTabs = new Set();
 const MAX_RECOMMENDATION_CARDS = 8;
 const MAX_RECOMMENDATION_CARDS_PER_CATEGORY = 3;
 
@@ -12,16 +16,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    const refreshRanksButton = document.getElementById('refreshRanksButton');
-
-    if (refreshRanksButton) {
-        refreshRanksButton.addEventListener('click', async () => {
-            await refreshPlayerRanks(puuid);
-        });
-    }
-
-    setupPlayerTabs();
+    setupPlayerTabs(puuid);
     setupMatchDetailsInline(puuid);
+    setupPlayerActions(puuid);
+    setupPlayerQueueSwitch(puuid);
 
     renderPlayerRanks([]);
     renderPlayerRankChart([]);
@@ -29,75 +27,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPlayerInsights([]);
     renderPlayerChampions([]);
 
-    const loadMain = async () => {
-        try {
-            const [summary, matches] = await Promise.all([
-                api.getPlayerSummary(puuid),
-                api.getPlayerMatches(puuid, 20)
-            ]);
-
-            renderPlayerHero(summary);
-            renderPlayerStats(summary);
-            renderPlayerMatches(matches || []);
-        } catch (error) {
-            console.error('Could not load player:', error);
-            showPlayerError('Could not load player.');
-        }
-    };
-
-    const loadChampions = async () => {
-        try {
-            const champions = await api.getPlayerChampions(puuid);
-            renderPlayerChampions(champions || []);
-        } catch (error) {
-            console.error('Could not load player champions:', error);
-            renderPlayerChampions([]);
-        }
-    };
-
-    const loadRanks = async () => {
-        try {
-            const ranks = await api.getPlayerRanks(puuid);
-            renderPlayerRanks(ranks || []);
-        } catch (error) {
-            console.error('Could not load player ranks:', error);
-            renderPlayerRanks([]);
-        }
-    };
-
-    const loadRankHistory = async () => {
-        try {
-            const rankHistory = await api.getPlayerRankHistory(puuid);
-            renderPlayerRankChart(rankHistory || []);
-            renderPlayerRankHistory(rankHistory || []);
-        } catch (error) {
-            console.error('Could not load rank history:', error);
-            renderPlayerRankChart([]);
-            renderPlayerRankHistory([]);
-        }
-    };
-
-    const loadInsights = async () => {
-        try {
-            cachedPlayerInsights = await api.getPlayerInsights(puuid) || [];
-            renderInsightsForActiveTab();
-        } catch (error) {
-            console.error('Could not load insights:', error);
-            cachedPlayerInsights = [];
-            renderInsightsForActiveTab();
-        }
-    };
-
-    await Promise.allSettled([
-        loadMain(),
-        loadChampions(),
-        loadRanks(),
-        loadRankHistory(),
-        loadInsights()
-    ]);
+    try {
+        currentPlayerDashboard = await api.getPlayerDashboard(puuid);
+        renderDashboard(currentPlayerDashboard);
+        await initializeSaveProfileAction(puuid);
+        await loadPlayerTabData('overview', puuid);
+    } catch (error) {
+        console.error('Could not load player dashboard:', error);
+        showPlayerError('Could not load this player dashboard.');
+    }
 });
 
-function setupPlayerTabs() {
+function setupPlayerTabs(puuid) {
     const buttons = document.querySelectorAll('[data-player-tab-button]');
 
     buttons.forEach(button => {
@@ -111,10 +52,186 @@ function setupPlayerTabs() {
             activePlayerTab = tab;
             updatePlayerTabs();
             renderInsightsForActiveTab();
+            loadPlayerTabData(tab, puuid);
         });
     });
 
     updatePlayerTabs();
+}
+
+async function loadPlayerTabData(tab, puuid) {
+    const loadKey = `${tab}:${currentPlayerQueueId || 'default'}`;
+    if (loadedPlayerTabs.has(loadKey)) {
+        return;
+    }
+    loadedPlayerTabs.add(loadKey);
+
+    try {
+        if (tab === 'overview') {
+            const [matches, rankHistory] = await Promise.all([
+                api.getPlayerMatches(puuid, 20, currentPlayerQueueId),
+                api.getPlayerRankHistory(puuid)
+            ]);
+            renderPlayerMatches(matches || []);
+            renderPlayerRankChart(rankHistory || []);
+            renderPlayerRankHistory(rankHistory || []);
+        }
+        if (tab === 'champions') {
+            renderPlayerChampions(await api.getPlayerChampions(puuid, currentPlayerQueueId) || []);
+        }
+        if (tab === 'recommendations') {
+            renderInsightsForActiveTab();
+        }
+    } catch (error) {
+        loadedPlayerTabs.delete(loadKey);
+        console.error(`Could not load ${tab} details:`, error);
+    }
+}
+
+function renderDashboard(dashboard) {
+    currentPlayerQueueId = Number(dashboard.analysisQueueId || 420);
+    const recentTwenty = (dashboard.recentForm || []).find(form => Number(form.window) === 20);
+    renderPlayerHero(dashboard.player, dashboard.analysisQueue, recentTwenty);
+    renderPlayerStats(recentTwenty, dashboard.analysisQueue);
+    const queueLabel = document.getElementById('playerAnalysisQueue');
+    if (queueLabel) queueLabel.textContent = dashboard.analysisQueue || 'Solo/Duo';
+    updatePlayerQueueSwitch();
+    cachedPlayerInsights = dashboard.priorities || [];
+    renderInsightsForActiveTab();
+    renderDashboardRanks(dashboard.ranks || []);
+    renderRecentForm(dashboard.recentForm || []);
+    renderChampionPoolHealth(dashboard.championPoolHealth);
+    renderDashboardChampionPool(dashboard.championPool || []);
+    renderDashboardPriorities(cachedPlayerInsights);
+    renderPlayerFreshness(dashboard.freshness);
+    renderPlayerRefreshStatus(dashboard.refresh);
+    if (isRefreshActive(dashboard.refresh)) {
+        scheduleRefreshPoll(dashboard.player.puuid);
+    }
+    renderPlayerRanks(normalizeDashboardRanks(dashboard.ranks || []));
+    renderRecommendationSummary(cachedPlayerInsights);
+}
+
+function setupPlayerQueueSwitch(puuid) {
+    document.querySelectorAll('[data-player-queue]').forEach(button => {
+        button.addEventListener('click', async () => {
+            const queueId = Number(button.dataset.playerQueue);
+            if (!queueId || queueId === currentPlayerQueueId) return;
+            setPlayerQueueSwitchDisabled(true);
+            try {
+                currentPlayerDashboard = await api.getPlayerDashboard(puuid, queueId);
+                renderDashboard(currentPlayerDashboard);
+                await loadPlayerTabData(activePlayerTab, puuid);
+            } catch (error) {
+                renderRefreshAnnouncement('That ranked queue could not be loaded. The current read stays visible.');
+            } finally {
+                setPlayerQueueSwitchDisabled(false);
+            }
+        });
+    });
+}
+
+function updatePlayerQueueSwitch() {
+    document.querySelectorAll('[data-player-queue]').forEach(button => {
+        button.setAttribute('aria-pressed', String(Number(button.dataset.playerQueue) === currentPlayerQueueId));
+    });
+}
+
+function setPlayerQueueSwitchDisabled(disabled) {
+    document.querySelectorAll('[data-player-queue]').forEach(button => {
+        button.disabled = disabled;
+    });
+}
+
+function normalizeDashboardRanks(ranks) {
+    return ranks.map(rank => ({ ...rank, rankValue: rank.rank }));
+}
+
+function renderDashboardRanks(ranks) {
+    const container = document.getElementById('playerDashboardRanks');
+    if (!container) return;
+    const normalized = normalizeDashboardRanks(ranks);
+    container.innerHTML = `
+        ${renderRankCard('Solo/Duo', findRank(normalized, 'RANKED_SOLO_5x5'))}
+        ${renderRankCard('Flex', findRank(normalized, 'RANKED_FLEX_SR'))}
+    `;
+}
+
+function renderRecentForm(forms) {
+    [5, 10, 20].forEach(windowSize => {
+        const container = document.getElementById(`recentForm${windowSize}`);
+        const form = forms.find(item => Number(item.window) === windowSize);
+        if (!container) return;
+        container.innerHTML = form ? `
+            <span>Last ${windowSize}</span>
+            <strong>${formatPercent(form.winRate)}</strong>
+            <small>${formatNumber(form.wins)}W / ${formatNumber(form.losses)}L</small>
+            <small>${formatDecimal(form.averageKda)} average KDA</small>
+        ` : `<span>Last ${windowSize}</span><strong>No games</strong>`;
+    });
+}
+
+function renderChampionPoolHealth(health) {
+    const container = document.getElementById('championPoolHealth');
+    if (!container) return;
+    container.dataset.health = String(health?.status || 'UNKNOWN').toLowerCase();
+    container.innerHTML = `
+        <span class="section__eyebrow">Champion pool</span>
+        <strong>${escapeHtml(formatHealthStatus(health?.status))}</strong>
+        <p>${escapeHtml(health?.message || 'Play more matches to build a champion-pool read.')}</p>
+        <small>${formatNumber(health?.uniqueChampions)} champions across ${formatNumber(health?.gamesAnalyzed)} games</small>
+    `;
+}
+
+function renderDashboardChampionPool(champions) {
+    const container = document.getElementById('dashboardChampionPool');
+    if (!container) return;
+    if (champions.length === 0) {
+        container.innerHTML = '<div class="empty-box">No champion data yet.</div>';
+        return;
+    }
+    container.innerHTML = champions.slice(0, 4).map(champion => `
+        <a class="dashboard-champion" href="champion.html?id=${encodeURIComponent(champion.championId)}">
+            ${champion.imageUrl ? `<img src="${escapeHtml(champion.imageUrl)}" alt="" width="48" height="48">` : ''}
+            <span><strong>${escapeHtml(champion.championName)}</strong><small>${formatNumber(champion.games)} games</small></span>
+            <b>${formatPercent(champion.winrate)}</b>
+        </a>
+    `).join('');
+}
+
+function renderDashboardPriorities(priorities) {
+    const container = document.getElementById('playerPriorities');
+    if (!container) return;
+    if (priorities.length === 0) {
+        container.innerHTML = '<div class="empty-box">No priorities generated yet. Refresh after more ranked games.</div>';
+        return;
+    }
+    container.innerHTML = priorities.slice(0, 3).map((priority, index) => `
+        <article class="priority-card">
+            <span>0${index + 1}</span>
+            <strong>${escapeHtml(priority.title || 'Focus area')}</strong>
+            <p>${escapeHtml(priority.description || 'Review this area in your next games.')}</p>
+        </article>
+    `).join('');
+}
+
+function renderPlayerFreshness(freshness) {
+    const container = document.getElementById('playerFreshness');
+    if (!container) return;
+    container.dataset.stale = String(Boolean(freshness?.stale));
+    container.innerHTML = `
+        <span>${freshness?.stale ? 'Stale data' : 'Current data'}</span>
+        <strong>${escapeHtml(formatDateTime(freshness?.lastUpdatedAt))}</strong>
+        <small>${formatNumber(freshness?.sampleSize)} matches analyzed</small>
+    `;
+}
+
+function formatHealthStatus(status) {
+    return {
+        FOCUSED: 'Focused pool',
+        BALANCED: 'Balanced pool',
+        OVEREXTENDED: 'Pool is spread thin'
+    }[status] || 'Building a read';
 }
 
 function updatePlayerTabs() {
@@ -275,29 +392,117 @@ function renderDetailedRecommendations(insights) {
     renderPlayerInsights(insights || []);
 }
 
-async function refreshPlayerRanks(puuid) {
-    const button = document.getElementById('refreshRanksButton');
+function setupPlayerActions(puuid) {
+    document.getElementById('refreshPlayerButton')?.addEventListener('click', () => startPlayerRefresh(puuid));
+}
 
-    if (button) {
+async function initializeSaveProfileAction(puuid) {
+    const button = document.getElementById('saveProfileButton');
+    if (!button) return;
+
+    const currentUser = await api.getCurrentUser().catch(() => ({ authenticated: false }));
+    if (!currentUser.authenticated) {
+        button.addEventListener('click', () => {
+            const returnTo = encodeURIComponent(`player.html?puuid=${puuid}`);
+            window.location.assign(`account.html?returnTo=${returnTo}`);
+        });
+        return;
+    }
+
+    const profiles = await api.getSavedProfiles().catch(() => []);
+    let saved = profiles.find(profile => profile.puuid === puuid) || null;
+    if (saved) {
+        await api.markSavedProfileViewed(saved.id).catch(() => null);
+    }
+    updateSaveButton(button, saved);
+    button.addEventListener('click', async () => {
         button.disabled = true;
-        button.textContent = 'Refreshing...';
-    }
-
-    try {
-        const ranks = await api.refreshPlayerRanks(puuid);
-        renderPlayerRanks(ranks || []);
-
-        const rankHistory = await api.getPlayerRankHistory(puuid);
-        renderPlayerRankChart(rankHistory || []);
-        renderPlayerRankHistory(rankHistory || []);
-    } catch (error) {
-        console.error('Could not refresh player ranks:', error);
-    } finally {
-        if (button) {
+        try {
+            if (saved) {
+                await api.deleteSavedProfile(saved.id);
+                saved = null;
+            } else {
+                saved = await api.saveProfile(puuid);
+            }
+            updateSaveButton(button, saved);
+        } catch (error) {
+            renderRefreshAnnouncement('This bookmark could not be updated. The public profile is still available.');
+        } finally {
             button.disabled = false;
-            button.textContent = 'Refresh rank';
         }
+    });
+}
+
+function updateSaveButton(button, saved) {
+    button.dataset.saved = String(Boolean(saved));
+    button.textContent = saved ? 'Saved profile' : 'Save profile';
+}
+
+async function startPlayerRefresh(puuid) {
+    const button = document.getElementById('refreshPlayerButton');
+    button.disabled = true;
+    renderRefreshAnnouncement('Queueing a player update...');
+    try {
+        const status = await api.refreshPlayer(puuid);
+        renderPlayerRefreshStatus(status);
+        if (isRefreshActive(status)) scheduleRefreshPoll(puuid);
+    } catch (error) {
+        if (error.status === 429) {
+            renderRefreshAnnouncement('This profile was refreshed recently. Cached data remains available.');
+        } else {
+            renderRefreshAnnouncement('The refresh could not start. Cached data remains available.');
+        }
+    } finally {
+        button.disabled = false;
     }
+}
+
+function scheduleRefreshPoll(puuid) {
+    clearTimeout(refreshPollTimer);
+    refreshPollTimer = window.setTimeout(() => pollRefreshStatus(puuid), 2000);
+}
+
+async function pollRefreshStatus(puuid) {
+    try {
+        const status = await api.getPlayerRefreshStatus(puuid);
+        renderPlayerRefreshStatus(status);
+        if (isRefreshActive(status)) {
+            scheduleRefreshPoll(puuid);
+            return;
+        }
+        if (status.state === 'COMPLETED') {
+            currentPlayerDashboard = await api.getPlayerDashboard(puuid, currentPlayerQueueId);
+            renderDashboard(currentPlayerDashboard);
+        }
+    } catch (error) {
+        renderRefreshAnnouncement('Refresh status is temporarily unavailable. Cached data remains visible.');
+    }
+}
+
+function isRefreshActive(status) {
+    return status?.state === 'QUEUED' || status?.state === 'RUNNING';
+}
+
+function renderPlayerRefreshStatus(status) {
+    if (!status) {
+        renderRefreshAnnouncement('Ready to refresh when you want newer data.');
+        return;
+    }
+    const messages = {
+        QUEUED: 'Refresh queued. Cached data stays visible while it waits.',
+        RUNNING: 'Refreshing matches and ranks. Cached data stays visible.',
+        COMPLETED: 'Player data is up to date.',
+        RATE_LIMITED: 'Riot is rate limiting updates. Cached data remains available.',
+        FAILED: 'Refresh failed. Cached data remains available.'
+    };
+    renderRefreshAnnouncement(messages[status.state] || status.message || 'Refresh status updated.', status.state);
+}
+
+function renderRefreshAnnouncement(message, state = '') {
+    const container = document.getElementById('playerRefreshStatus');
+    if (!container) return;
+    container.dataset.state = String(state).toLowerCase();
+    container.textContent = message;
 }
 
 function showPlayerError(message) {
@@ -308,9 +513,20 @@ function showPlayerError(message) {
     }
 
     hero.innerHTML = `<div class="error-box">${escapeHtml(message)}</div>`;
+    renderRefreshAnnouncement('Player data is unavailable right now. Try the lookup again shortly.');
+    const freshness = document.getElementById('playerFreshness');
+    if (freshness) freshness.textContent = 'Freshness unavailable';
+    [5, 10, 20].forEach(windowSize => {
+        const form = document.getElementById(`recentForm${windowSize}`);
+        if (form) form.innerHTML = `<span>Last ${windowSize}</span><strong>No data</strong>`;
+    });
+    const health = document.getElementById('championPoolHealth');
+    if (health) health.innerHTML = '<span class="section__eyebrow">Champion pool</span><p>No data available.</p>';
+    const priorities = document.getElementById('playerPriorities');
+    if (priorities) priorities.innerHTML = '<div class="error-box">Priorities could not be loaded.</div>';
 }
 
-function renderPlayerHero(player) {
+function renderPlayerHero(player, queueName, recentForm) {
     const hero = document.getElementById('playerHero');
 
     if (!hero) {
@@ -335,22 +551,43 @@ function renderPlayerHero(player) {
                 ${escapeHtml(getPlayerInitials(playerName))}
             </div>
         `;
+    const games = recentForm?.games || 0;
+    const winRate = recentForm?.winRate || 0;
 
     hero.innerHTML = `
         <div class="player-hero">
-            ${iconMarkup}
+            <div class="player-hero__identity">
+                ${iconMarkup}
 
-            <div class="player-hero__content">
-                <h1 class="hero__title">${escapeHtml(playerName)}${escapeHtml(tagLine)}</h1>
-                <p class="hero__text">
-                    Player profile based on analyzed Riot API matches, ranked data and generated recommendations.
-                </p>
+                <div class="player-hero__content">
+                    <span class="player-hero__eyebrow">Player dossier</span>
+                    <div class="player-hero__heading">
+                        <h1 class="hero__title">${escapeHtml(playerName)}</h1>
+                        ${tagLine ? `<span class="player-hero__tag">${escapeHtml(tagLine)}</span>` : ''}
+                    </div>
+                    <p class="hero__text">
+                        Ranked performance, champion pool efficiency, match detail review, and recommendation output in one profile.
+                    </p>
+                    <div class="player-hero__badges">
+                        <span class="player-hero__badge">${escapeHtml(queueName || 'Solo/Duo')}</span>
+                        <span class="player-hero__badge">${formatNumber(games)} recent games</span>
+                        <span class="player-hero__badge">${formatPercent(winRate)} win rate</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="player-hero__summary">
+                <article class="player-hero__summary-card">
+                    <span>Current read</span>
+                    <strong>${games ? `${formatNumber(recentForm.wins)}W / ${formatNumber(recentForm.losses)}L` : 'Building a sample'}</strong>
+                    <p>${games ? `${formatDecimal(recentForm.averageKda)} average KDA in ${escapeHtml(queueName)}.` : `Play ranked ${escapeHtml(queueName)} to build this read.`}</p>
+                </article>
             </div>
         </div>
     `;
 }
 
-function renderPlayerStats(player) {
+function renderPlayerStats(recentForm, queueName) {
     const container = document.getElementById('playerStats');
 
     if (!container) {
@@ -359,22 +596,20 @@ function renderPlayerStats(player) {
 
     container.innerHTML = `
         <article class="stat-card">
-            <span class="stat-card__label">Matches</span>
-            <strong class="stat-card__value">${formatNumber(player.matches)}</strong>
+            <span class="stat-card__label">Queue</span>
+            <strong class="stat-card__value">${escapeHtml(queueName || 'Solo/Duo')}</strong>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Winrate</span>
-            <strong class="stat-card__value">${formatPercent(player.winrate)}</strong>
+            <strong class="stat-card__value">${formatPercent(recentForm?.winRate)}</strong>
         </article>
         <article class="stat-card">
             <span class="stat-card__label">Avg KDA</span>
-            <strong class="stat-card__value">
-                ${formatDecimal(player.averageKills)}/${formatDecimal(player.averageDeaths)}/${formatDecimal(player.averageAssists)}
-            </strong>
+            <strong class="stat-card__value">${formatDecimal(recentForm?.averageKda)}</strong>
         </article>
         <article class="stat-card">
-            <span class="stat-card__label">Avg Damage</span>
-            <strong class="stat-card__value">${formatNumber(player.averageDamageToChampions)}</strong>
+            <span class="stat-card__label">Recent games</span>
+            <strong class="stat-card__value">${formatNumber(recentForm?.games)}</strong>
         </article>
     `;
 }

@@ -1,5 +1,6 @@
 package org.main.cucumber.steps;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -17,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -65,7 +67,7 @@ public class CrawlSteps {
                 thenReturn(List.of());
 
         when(matchRepository.existsById(anyString())).thenReturn(false);
-        when(riotApiClient.getMatchByIdEurope(anyString())).thenReturn(null);
+        when(riotApiClient.getMatchByIdEurope(anyString())).thenReturn(mock(JsonNode.class));
 
         crawlerService.crawlPuuidEUW(PUUID, limit);
     }

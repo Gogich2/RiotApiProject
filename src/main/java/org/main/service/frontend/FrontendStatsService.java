@@ -32,9 +32,13 @@ public interface FrontendStatsService {
 
     List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit);
 
+    List<PlayerRecentMatchDto> getPlayerRecentMatches(String puuid, int limit, int queueId);
+
     List<PlayerInsightDto> getPlayerInsights(String puuid);
 
     List<PlayerChampionStatsDto> getPlayerChampions(String puuid);
+
+    List<PlayerChampionStatsDto> getPlayerChampions(String puuid, int queueId);
 
     PlayerLeaderboardResponseDto getPlayerLeaderboards();
 

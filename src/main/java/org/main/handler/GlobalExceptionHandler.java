@@ -15,6 +15,7 @@ import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -40,7 +41,7 @@ public class GlobalExceptionHandler {
                 ex,
                 request,
                 locale,
-                Map.of("query", request.getQueryString())
+                queryContext(request)
         );
     }
 
@@ -55,7 +56,7 @@ public class GlobalExceptionHandler {
                 ex,
                 request,
                 locale,
-                Map.of("query", request.getQueryString())
+                queryContext(request)
         );
     }
 
@@ -70,7 +71,7 @@ public class GlobalExceptionHandler {
                 ex,
                 request,
                 locale,
-                Map.of("query", request.getQueryString())
+                queryContext(request)
         );
     }
 
@@ -85,7 +86,24 @@ public class GlobalExceptionHandler {
                 ex,
                 request,
                 locale,
-                Map.of("query", request.getQueryString())
+                queryContext(request)
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request,
+            Locale locale
+    ) {
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                "error.bad_request",
+                "VALIDATION_ERROR",
+                ex,
+                request,
+                locale,
+                queryContext(request)
         );
     }
 
@@ -100,8 +118,13 @@ public class GlobalExceptionHandler {
                 ex,
                 request,
                 locale,
-                Map.of("query", request.getQueryString())
+                queryContext(request)
         );
+    }
+
+    private Map<String, Object> queryContext(HttpServletRequest request) {
+        String query = request.getQueryString();
+        return query == null ? Map.of() : Map.of("query", query);
     }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status,

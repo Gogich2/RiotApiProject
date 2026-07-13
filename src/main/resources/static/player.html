@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riot Stats | Player</title>
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
@@ -14,16 +15,73 @@
         <a class="site-nav__link" href="players.html" aria-current="page">Players</a>
     </nav>
 
+    <div class="account-entry" data-account-entry>
+        <a class="account-entry__link" href="account.html">Sign in</a>
+    </div>
+
     <div class="search">
         <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
         <div class="search__results" id="globalSearchResults"></div>
     </div>
 </header>
 
-<main class="page">
-    <section class="hero" id="playerHero"></section>
+<main class="page page--detail">
+    <section class="hero hero--detail" id="playerHero"></section>
 
-    <section class="stats-grid" id="playerStats"></section>
+    <section class="stats-grid stats-grid--detail" id="playerStats"></section>
+
+    <section class="player-dashboard" aria-label="Player performance dashboard">
+        <div class="player-dashboard__topline">
+            <div>
+                <span class="section__eyebrow">Current ranked read · <b id="playerAnalysisQueue">Loading queue</b></span>
+                <h2 class="section__title">Form, pool, priorities</h2>
+            </div>
+            <div class="player-freshness" id="playerFreshness">Loading freshness...</div>
+        </div>
+
+        <div class="player-queue-switch" aria-label="Ranked queue">
+            <button type="button" data-player-queue="420" aria-pressed="false">Solo/Duo</button>
+            <button type="button" data-player-queue="440" aria-pressed="false">Flex</button>
+        </div>
+
+        <div class="dashboard-rank-strip" id="playerDashboardRanks"></div>
+
+        <div class="recent-form-grid" aria-label="Recent form windows">
+            <article class="recent-form-card" id="recentForm5">
+                <span>Last 5</span><strong>Loading...</strong>
+            </article>
+            <article class="recent-form-card" id="recentForm10">
+                <span>Last 10</span><strong>Loading...</strong>
+            </article>
+            <article class="recent-form-card" id="recentForm20">
+                <span>Last 20</span><strong>Loading...</strong>
+            </article>
+        </div>
+
+        <div class="player-dashboard__analysis">
+            <article class="champion-pool-health" id="championPoolHealth">
+                <span class="section__eyebrow">Champion pool</span>
+                <p>Loading champion-pool health...</p>
+            </article>
+            <div class="dashboard-champion-pool" id="dashboardChampionPool"></div>
+        </div>
+
+        <section class="priority-panel" aria-labelledby="priorityHeading">
+            <div class="section-header">
+                <div>
+                    <span class="section__eyebrow">Do next</span>
+                    <h2 class="section__title" id="priorityHeading">Three priorities</h2>
+                </div>
+            </div>
+            <div class="priority-grid" id="playerPriorities"></div>
+        </section>
+
+        <div class="player-dashboard__actions">
+            <button class="button" id="refreshPlayerButton" type="button">Refresh player data</button>
+            <button class="button button--secondary" id="saveProfileButton" type="button">Save profile</button>
+            <p class="refresh-status" id="playerRefreshStatus" aria-live="polite"></p>
+        </div>
+    </section>
 
     <div class="player-tabs" id="playerTabs">
         <button class="player-tabs__button player-tabs__button--active" type="button" data-player-tab-button="overview">
@@ -47,9 +105,6 @@
             <section class="section">
                 <div class="section-header">
                     <h2 class="section__title">Ranked performance</h2>
-                    <button class="button button--secondary" id="refreshRanksButton" type="button">
-                        Refresh rank
-                    </button>
                 </div>
 
                 <div class="rank-grid" id="playerRanks"></div>
@@ -80,6 +135,7 @@
 </main>
 
 <script src="js/api.js"></script>
+<script src="js/account.js"></script>
 <script src="js/search.js"></script>
 <script src="js/match-details.js"></script>
 <script src="js/player.js"></script>

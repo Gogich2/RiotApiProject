@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riot Stats | Account</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<header class="site-header">
+    <a class="site-header__logo" href="index.html">Riot Stats</a>
+    <nav class="site-nav" aria-label="Primary">
+        <a class="site-nav__link" href="index.html">Home</a>
+        <a class="site-nav__link" href="champions.html">Champions</a>
+        <a class="site-nav__link" href="players.html">Players</a>
+    </nav>
+    <div class="account-entry" data-account-entry>
+        <a class="account-entry__link" href="account.html" aria-current="page">Sign in</a>
+    </div>
+    <div class="search">
+        <input class="search__input" id="globalSearchInput" type="text" placeholder="Search player or champion...">
+        <div class="search__results" id="globalSearchResults"></div>
+    </div>
+</header>
+
+<main class="page page--account">
+    <section class="account-intro">
+        <div>
+            <span class="page-hero__eyebrow">Optional account</span>
+            <h1 class="hero__title">Keep the players you follow close.</h1>
+        </div>
+        <p class="hero__text">
+            Public profiles, dashboards, champions, and matches stay open. Sign in only to save private bookmarks and labels.
+        </p>
+    </section>
+
+    <section class="account-auth-grid" id="accountAuthPanels">
+        <article class="account-panel">
+            <div class="account-panel__heading">
+                <span class="section__eyebrow">Welcome back</span>
+                <h2>Sign in</h2>
+            </div>
+            <form class="account-form" id="loginForm">
+                <div class="form-field">
+                    <label class="form-label" for="loginEmail">Email</label>
+                    <input class="form-input" id="loginEmail" name="email" type="email" autocomplete="email" required>
+                </div>
+                <div class="form-field">
+                    <label class="form-label" for="loginPassword">Password</label>
+                    <input
+                        class="form-input"
+                        id="loginPassword"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+                <button class="button" type="submit">Sign in</button>
+                <p class="form-status" data-form-status aria-live="polite"></p>
+            </form>
+            <div class="account-divider"><span>or</span></div>
+            <a class="button button--secondary account-discord" href="/oauth2/authorization/discord">
+                Continue with Discord
+            </a>
+            <button class="text-button" id="showResetRequest" type="button">Forgot your password?</button>
+        </article>
+
+        <article class="account-panel">
+            <div class="account-panel__heading">
+                <span class="section__eyebrow">New here</span>
+                <h2>Create an account</h2>
+            </div>
+            <form class="account-form" id="registerForm">
+                <div class="form-field">
+                    <label class="form-label" for="registerDisplayName">Display name</label>
+                    <input
+                        class="form-input"
+                        id="registerDisplayName"
+                        name="displayName"
+                        type="text"
+                        maxlength="60"
+                        autocomplete="nickname"
+                        required
+                    >
+                </div>
+                <div class="form-field">
+                    <label class="form-label" for="registerEmail">Email</label>
+                    <input class="form-input" id="registerEmail" name="email" type="email" autocomplete="email" required>
+                </div>
+                <div class="form-field">
+                    <label class="form-label" for="registerPassword">Password</label>
+                    <input
+                        class="form-input"
+                        id="registerPassword"
+                        name="password"
+                        type="password"
+                        minlength="12"
+                        maxlength="128"
+                        autocomplete="new-password"
+                        required
+                    >
+                    <span class="form-helper">Use at least 12 characters.</span>
+                </div>
+                <button class="button" type="submit">Create account</button>
+                <p class="form-status" data-form-status aria-live="polite"></p>
+            </form>
+        </article>
+    </section>
+
+    <section class="account-panel account-panel--utility" id="resetRequestPanel" hidden>
+        <div class="account-panel__heading">
+            <span class="section__eyebrow">Recovery</span>
+            <h2>Reset your password</h2>
+        </div>
+        <form class="account-form account-form--inline" id="resetRequestForm">
+            <div class="form-field">
+                <label class="form-label" for="resetEmail">Account email</label>
+                <input class="form-input" id="resetEmail" name="email" type="email" autocomplete="email" required>
+            </div>
+            <button class="button button--secondary" type="submit">Send reset link</button>
+            <p class="form-status" data-form-status aria-live="polite"></p>
+        </form>
+    </section>
+
+    <section class="account-panel account-panel--utility" id="tokenActionPanel" hidden>
+        <div class="account-panel__heading">
+            <span class="section__eyebrow">Secure link</span>
+            <h2 id="tokenActionTitle">Complete account action</h2>
+        </div>
+        <form class="account-form account-form--inline" id="resetConfirmForm" hidden>
+            <div class="form-field">
+                <label class="form-label" for="newPassword">New password</label>
+                <input
+                    class="form-input"
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    minlength="12"
+                    maxlength="128"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+            <button class="button" type="submit">Save new password</button>
+        </form>
+        <p class="form-status" id="tokenActionStatus" aria-live="polite"></p>
+    </section>
+
+    <section class="account-saved" id="savedProfilesSection" hidden>
+        <div class="section-header">
+            <div>
+                <span class="section__eyebrow">Private bookmarks</span>
+                <h2 class="section__title">Saved profiles</h2>
+            </div>
+            <a class="button button--secondary" href="players.html">Find players</a>
+        </div>
+        <p class="section-copy">Labels and defaults are visible only to you. Saving never claims profile ownership.</p>
+        <div class="saved-profile-list" id="savedProfilesList" aria-live="polite"></div>
+        <template id="savedProfileTemplate">
+            <article class="saved-profile-card">
+                <input class="form-input" name="personalLabel" maxlength="80" aria-label="Private label">
+            </article>
+        </template>
+    </section>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/account.js"></script>
+<script src="js/search.js"></script>
+</body>
+</html>

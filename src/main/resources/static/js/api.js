@@ -1,5 +1,6 @@
 const API_BASE_STORAGE_KEY = 'riot-stats-api-base-url';
 const NGROK_HOST_MARKERS = ['ngrok-free.app', 'ngrok-free.dev', 'ngrok.app', 'ngrok.dev'];
+let csrfToken = '';
 
 const api = {
     async getOverview() {
@@ -26,16 +27,28 @@ const api = {
         return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/summary`));
     },
 
+    async getPlayerDashboard(puuid, queueId = null) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/dashboard`, { queueId }));
+    },
+
+    async resolveRiotId(gameName, tagLine) {
+        await ensureCsrfToken();
+        return fetchJson(buildApiUrl('/players/resolve'), {
+            method: 'POST',
+            body: JSON.stringify({ gameName, tagLine })
+        });
+    },
+
     async getPlayerLeaderboards() {
         return fetchJson(buildApiUrl('/players/leaderboard'));
     },
 
-    async getPlayerMatches(puuid, limit = 20) {
-        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/matches`, { limit }));
+    async getPlayerMatches(puuid, limit = 20, queueId = null) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/matches`, { limit, queueId }));
     },
 
-    async getPlayerChampions(puuid) {
-        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/champions`));
+    async getPlayerChampions(puuid, queueId = null) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/champions`, { queueId }));
     },
 
     async getPlayerInsights(puuid) {
@@ -47,8 +60,75 @@ const api = {
     },
 
     async refreshPlayerRanks(puuid) {
+        await ensureCsrfToken();
         return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/refresh-ranks`), {
             method: 'POST'
+        });
+    },
+
+    async refreshPlayer(puuid) {
+        await ensureCsrfToken();
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/refresh`), {
+            method: 'POST'
+        });
+    },
+
+    async getPlayerRefreshStatus(puuid) {
+        return fetchJson(buildApiUrl(`/players/${encodeURIComponent(puuid)}/refresh-status`));
+    },
+
+    async getCurrentUser() {
+        return fetchJson(buildApiUrl('/auth/me'));
+    },
+
+    async register(email, password, displayName) {
+        return postJson('/auth/register', { email, password, displayName });
+    },
+
+    async verifyEmail(token) {
+        return postJson('/auth/verify-email', { token });
+    },
+
+    async login(email, password) {
+        return postJson('/auth/login', { email, password });
+    },
+
+    async logout() {
+        return postJson('/auth/logout');
+    },
+
+    async requestPasswordReset(email) {
+        return postJson('/auth/password-reset/request', { email });
+    },
+
+    async confirmPasswordReset(token, newPassword) {
+        return postJson('/auth/password-reset/confirm', { token, newPassword });
+    },
+
+    async getSavedProfiles() {
+        return fetchJson(buildApiUrl('/account/saved-profiles'));
+    },
+
+    async saveProfile(puuid, personalLabel = null) {
+        return postJson('/account/saved-profiles', { puuid, personalLabel });
+    },
+
+    async updateSavedProfile(id, personalLabel, isDefault) {
+        await ensureCsrfToken();
+        return fetchJson(buildApiUrl(`/account/saved-profiles/${encodeURIComponent(id)}`), {
+            method: 'PATCH',
+            body: JSON.stringify({ personalLabel, isDefault })
+        });
+    },
+
+    async markSavedProfileViewed(id) {
+        return postJson(`/account/saved-profiles/${encodeURIComponent(id)}/view`);
+    },
+
+    async deleteSavedProfile(id) {
+        await ensureCsrfToken();
+        return fetchJson(buildApiUrl(`/account/saved-profiles/${encodeURIComponent(id)}`), {
+            method: 'DELETE'
         });
     },
 
@@ -62,16 +142,44 @@ const api = {
 };
 
 async function fetchJson(url, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
+
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        await ensureCsrfToken();
+    }
+
     const response = await fetch(url, {
         ...options,
-        headers: buildRequestHeaders(url, options.headers)
+        headers: buildRequestHeaders(url, options)
     });
 
     if (!response.ok) {
-        throw new Error(`Request failed: ${response.status}`);
+        const payload = await response.json().catch(() => null);
+        throw new ApiRequestError(response.status, payload?.message || `Request failed: ${response.status}`, payload);
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+
+    if (response.status === 204 || !contentType.includes('application/json')) {
+        return null;
     }
 
     return response.json();
+}
+
+async function postJson(path, body = null) {
+    await ensureCsrfToken();
+    return fetchJson(buildApiUrl(path), {
+        method: 'POST',
+        body: body === null ? null : JSON.stringify(body)
+    });
+}
+
+async function ensureCsrfToken() {
+    if (!csrfToken) {
+        const response = await fetchJson(buildApiUrl('/auth/csrf'));
+        csrfToken = response.token;
+    }
 }
 
 function getQueryParam(name) {
@@ -113,17 +221,32 @@ function buildApiUrl(path, queryParams = null) {
     return appendQueryParams(`${trimTrailingSlash(baseUrl)}${normalizedPath}`, queryParams);
 }
 
-function buildRequestHeaders(url, customHeaders = {}) {
+function buildRequestHeaders(url, options = {}) {
+    const method = (options.method || 'GET').toUpperCase();
     const headers = {
         Accept: 'application/json',
-        ...customHeaders
+        ...(options.headers || {})
     };
+
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+        headers['Content-Type'] = 'application/json';
+    }
 
     if (isNgrokUrl(url)) {
         headers['ngrok-skip-browser-warning'] = 'true';
     }
 
     return headers;
+}
+
+class ApiRequestError extends Error {
+    constructor(status, message, payload = null) {
+        super(message);
+        this.name = 'ApiRequestError';
+        this.status = status;
+        this.payload = payload;
+    }
 }
 
 function getConfiguredApiBaseUrl() {

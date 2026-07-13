@@ -5,7 +5,10 @@ import org.main.persistence.entity.LeagueEntryEntity;
 import org.main.persistence.entity.LeagueEntrySnapshotEntity;
 import org.main.persistence.repository.LeagueEntryRepository;
 import org.main.persistence.repository.LeagueEntrySnapshotRepository;
-import org.main.service.RankEnrichmentService;
+import org.main.refresh.dto.PlayerRefreshStatusDto;
+import org.main.refresh.entity.RefreshSource;
+import org.main.refresh.service.PlayerRefreshCoordinator;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,14 +21,14 @@ public final class PlayerRankController {
 
     private final LeagueEntrySnapshotRepository leagueEntrySnapshotRepository;
 
-    private final RankEnrichmentService rankEnrichmentService;
+    private final PlayerRefreshCoordinator refreshCoordinator;
 
     public PlayerRankController(LeagueEntryRepository leagueEntryRepository,
                                 LeagueEntrySnapshotRepository leagueEntrySnapshotRepository,
-                                RankEnrichmentService rankEnrichmentService) {
+                                PlayerRefreshCoordinator refreshCoordinator) {
         this.leagueEntryRepository = leagueEntryRepository;
         this.leagueEntrySnapshotRepository = leagueEntrySnapshotRepository;
-        this.rankEnrichmentService = rankEnrichmentService;
+        this.refreshCoordinator = refreshCoordinator;
     }
 
     @GetMapping("/api/players/{puuid}/ranks")
@@ -34,9 +37,8 @@ public final class PlayerRankController {
     }
 
     @PostMapping("/api/players/{puuid}/refresh-ranks")
-    public List<LeagueEntryEntity> refreshRanks(@PathVariable String puuid) {
-        rankEnrichmentService.enrichRanksForPuuidEuw(puuid);
-        return leagueEntryRepository.findByPuuidOrderByQueueTypeAsc(puuid);
+    public ResponseEntity<PlayerRefreshStatusDto> refreshRanks(@PathVariable String puuid) {
+        return ResponseEntity.accepted().body(refreshCoordinator.enqueue(puuid, RefreshSource.MANUAL));
     }
 
     @GetMapping("/api/players/{puuid}/rank-history")
