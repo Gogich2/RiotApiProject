@@ -5,6 +5,7 @@ import org.main.refresh.dto.PlayerRefreshStatusDto;
 
 public record PlayerDashboardDto(
         PlayerSummaryDto player,
+        String analysisQueue,
         List<RecentFormDto> recentForm,
         List<PlayerRankSummaryDto> ranks,
         List<PlayerChampionStatsDto> championPool,

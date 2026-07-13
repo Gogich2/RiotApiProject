@@ -1,6 +1,7 @@
 package org.main.account.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,17 +44,18 @@ class DiscordAuthenticationSuccessHandlerTest {
     }
 
     @Test
-    void issuesApplicationCookieClearsOauthStateAndRedirects() throws Exception {
+    void rotatesApplicationCookieClearsOauthStateAndRedirects() throws Exception {
         AppPrincipal appPrincipal = new AppPrincipal(USER_ID, "player@example.com", "Player");
         DiscordOAuth2UserService.DiscordOAuth2User oauthUser = mock(
                 DiscordOAuth2UserService.DiscordOAuth2User.class
         );
         when(oauthUser.appPrincipal()).thenReturn(appPrincipal);
-        when(sessionService.issue(USER_ID)).thenReturn(new SessionIssue(
+        when(sessionService.rotate("existing-session-token", USER_ID)).thenReturn(new SessionIssue(
                 "raw-session-token",
                 OffsetDateTime.parse("2026-08-12T04:00:00Z")
         ));
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setCookies(new Cookie("RIOT_STATS_SESSION", "existing-session-token"));
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("oauth-state", "transient");
         request.setSession(session);
@@ -60,7 +63,8 @@ class DiscordAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, new TestingAuthenticationToken(oauthUser, null));
 
-        verify(sessionService).issue(USER_ID);
+        verify(sessionService).rotate("existing-session-token", USER_ID);
+        verify(sessionService, never()).issue(USER_ID);
         assertThat(response.getRedirectedUrl()).isEqualTo("/account.html?oauth=success");
         assertThat(response.getHeader("Set-Cookie")).contains(
                 "RIOT_STATS_SESSION=raw-session-token",

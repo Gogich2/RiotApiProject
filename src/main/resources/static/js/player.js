@@ -89,6 +89,8 @@ async function loadPlayerTabData(tab, puuid) {
 function renderDashboard(dashboard) {
     renderPlayerHero(dashboard.player);
     renderPlayerStats(dashboard.player);
+    const queueLabel = document.getElementById('playerAnalysisQueue');
+    if (queueLabel) queueLabel.textContent = dashboard.analysisQueue || 'Solo/Duo';
     cachedPlayerInsights = dashboard.priorities || [];
     renderDashboardRanks(dashboard.ranks || []);
     renderRecentForm(dashboard.recentForm || []);
@@ -372,6 +374,9 @@ async function initializeSaveProfileAction(puuid) {
 
     const profiles = await api.getSavedProfiles().catch(() => []);
     let saved = profiles.find(profile => profile.puuid === puuid) || null;
+    if (saved) {
+        await api.markSavedProfileViewed(saved.id).catch(() => null);
+    }
     updateSaveButton(button, saved);
     button.addEventListener('click', async () => {
         button.disabled = true;

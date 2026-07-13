@@ -60,9 +60,12 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
 
     @Override
     public PlayerDashboardDto getDashboard(String puuid) {
-        List<PlayerRecentMatchDto> matches = frontendStatsService.getPlayerRecentMatches(puuid, 20);
         List<LeagueEntryEntity> rankEntities = leagueEntryRepository.findByPuuidOrderByQueueTypeAsc(puuid);
-        List<PlayerChampionStatsDto> championPool = frontendStatsService.getPlayerChampions(puuid).
+        AnalysisQueue analysisQueue = selectAnalysisQueue(rankEntities);
+        List<PlayerRecentMatchDto> matches = frontendStatsService.
+                getPlayerRecentMatches(puuid, 20, analysisQueue.queueId());
+        List<PlayerChampionStatsDto> championPool = frontendStatsService.
+                getPlayerChampions(puuid, analysisQueue.queueId()).
                 stream().limit(10).toList();
         List<PlayerInsightDto> priorities = frontendStatsService.getPlayerInsights(puuid).
                 stream().
@@ -82,6 +85,7 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
 
         return new PlayerDashboardDto(
                 frontendStatsService.getPlayerSummary(puuid),
+                analysisQueue.label(),
                 FORM_WINDOWS.stream().map(window -> recentForm(matches, window)).toList(),
                 rankEntities.stream().map(this::rank).toList(),
                 championPool,
@@ -90,6 +94,14 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
                 freshness(puuid, matches, rankEntities),
                 refresh
         );
+    }
+
+    private AnalysisQueue selectAnalysisQueue(List<LeagueEntryEntity> ranks) {
+        boolean hasSoloDuo = ranks.stream().anyMatch(rank -> "RANKED_SOLO_5x5".equals(rank.getQueueType()));
+        boolean hasFlex = ranks.stream().anyMatch(rank -> "RANKED_FLEX_SR".equals(rank.getQueueType()));
+        return !hasSoloDuo && hasFlex
+                ? new AnalysisQueue(440, "Flex")
+                : new AnalysisQueue(420, "Solo/Duo");
     }
 
     private RecentFormDto recentForm(List<PlayerRecentMatchDto> allMatches, int window) {
@@ -166,5 +178,8 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
 
     private double round(double value) {
         return Math.round(value * 100.0) / 100.0;
+    }
+
+    private record AnalysisQueue(int queueId, String label) {
     }
 }

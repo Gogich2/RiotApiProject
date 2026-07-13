@@ -73,6 +73,15 @@ public class SavedProfileController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/view")
+    public ResponseEntity<Void> markViewed(
+            @AuthenticationPrincipal AppPrincipal principal,
+            @PathVariable UUID id
+    ) {
+        savedProfileService.markViewed(principal.userId(), id);
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(SavedProfileService.DuplicateSavedProfileException.class)
     public ResponseEntity<AuthErrorResponse> duplicate(
             SavedProfileService.DuplicateSavedProfileException exception

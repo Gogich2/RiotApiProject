@@ -120,6 +120,10 @@ const api = {
         });
     },
 
+    async markSavedProfileViewed(id) {
+        return postJson(`/account/saved-profiles/${encodeURIComponent(id)}/view`);
+    },
+
     async deleteSavedProfile(id) {
         await ensureCsrfToken();
         return fetchJson(buildApiUrl(`/account/saved-profiles/${encodeURIComponent(id)}`), {

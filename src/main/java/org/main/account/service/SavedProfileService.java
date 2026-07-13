@@ -1,6 +1,7 @@
 package org.main.account.service;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SavedProfileService {
+
+    private static final Duration VIEW_WRITE_INTERVAL = Duration.ofMinutes(15);
 
     private final SavedProfileRepository savedProfileRepository;
 
@@ -87,6 +90,17 @@ public class SavedProfileService {
     @Transactional
     public void delete(UUID currentUserId, UUID savedProfileId) {
         savedProfileRepository.delete(findForUser(currentUserId, savedProfileId));
+    }
+
+    @Transactional
+    public void markViewed(UUID currentUserId, UUID savedProfileId) {
+        SavedProfileEntity saved = findForUser(currentUserId, savedProfileId);
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        if (saved.getLastViewedAt() == null
+                || !saved.getLastViewedAt().plus(VIEW_WRITE_INTERVAL).isAfter(now)) {
+            saved.setLastViewedAt(now);
+            savedProfileRepository.save(saved);
+        }
     }
 
     private SavedProfileEntity findForUser(UUID currentUserId, UUID savedProfileId) {

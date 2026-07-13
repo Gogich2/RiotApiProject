@@ -82,14 +82,13 @@ class PlayerRefreshCoordinatorTest {
                 thenReturn(Optional.empty());
         when(jobRepository.findFirstByPuuidAndSourceOrderByRequestedAtDesc("puuid", RefreshSource.MANUAL)).
                 thenReturn(Optional.empty());
-        when(jobRepository.saveAndFlush(any(PlayerRefreshJobEntity.class))).
-                thenAnswer(invocation -> invocation.getArgument(0));
+        when(jobRepository.insertQueued(any(), any(), any(), any())).thenReturn(1);
 
         PlayerRefreshStatusDto status = coordinator.enqueue("puuid", RefreshSource.MANUAL);
 
         assertThat(status.state()).isEqualTo(RefreshState.QUEUED);
         assertThat(status.requestedAt()).isEqualTo(OffsetDateTime.ofInstant(INSTANT, ZoneOffset.UTC));
-        verify(jobRepository).saveAndFlush(any(PlayerRefreshJobEntity.class));
+        verify(jobRepository).insertQueued(any(), any(), any(), any());
         verify(taskExecutor).execute(any(Runnable.class));
     }
 
@@ -103,7 +102,7 @@ class PlayerRefreshCoordinatorTest {
 
         assertThat(status.id()).isEqualTo(JOB_ID);
         assertThat(status.state()).isEqualTo(RefreshState.RUNNING);
-        verify(jobRepository, never()).saveAndFlush(any());
+        verify(jobRepository, never()).insertQueued(any(), any(), any(), any());
     }
 
     @Test

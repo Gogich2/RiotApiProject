@@ -1,6 +1,7 @@
 package org.main.account.security;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -16,6 +17,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.WebUtils;
 
 @Component
 public class DiscordAuthenticationSuccessHandler
@@ -53,7 +55,10 @@ public class DiscordAuthenticationSuccessHandler
             return;
         }
         AppPrincipal principal = oauthUser.appPrincipal();
-        SessionIssue session = sessionService.issue(principal.userId());
+        Cookie currentCookie = WebUtils.getCookie(request, cookieName);
+        SessionIssue session = currentCookie == null
+                ? sessionService.issue(principal.userId())
+                : sessionService.rotate(currentCookie.getValue(), principal.userId());
         ResponseCookie cookie = ResponseCookie.from(cookieName, session.rawToken()).
                 httpOnly(true).
                 secure(secureCookie).

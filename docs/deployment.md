@@ -8,8 +8,9 @@ private saved-profile bookmarks and personal labels.
 
 State-changing requests require a CSRF token from `GET /api/auth/csrf`. Routes
 under `/api/account/**` additionally require the opaque application session
-cookie. Keep the frontend and backend on the same origin when possible so the
-session and CSRF cookies work without cross-site exceptions.
+cookie. Production deployments with accounts or state-changing actions must
+serve the frontend and backend on the same origin so session and CSRF cookies
+remain first-party.
 
 Copy `.env.example` to `.env` for local development. Never commit `.env`.
 
@@ -124,6 +125,11 @@ In this mode the frontend uses relative API URLs such as `/api/search`, so no ex
 
 This repository also contains a static copy of the frontend under `docs/` for GitHub Pages experiments.
 
+This legacy split-origin mode is **public read-only**. It can call public GET
+endpoints, but it does not support Riot ID submission, refresh requests, login,
+or saved-profile changes. Those features intentionally require same-origin CSRF
+and session cookies. Use the built-in static frontend for the complete product.
+
 ### 1. Run the backend locally
 
 Start Spring Boot on port `8080` as usual.
@@ -187,9 +193,9 @@ Open the GitHub Pages site and verify these endpoints through the UI:
 - `/api/champions/{championId}`
 - `/api/champions/{championId}/items`
 
-Suggested manual checks:
+Suggested read-only checks:
 
-1. Search for a player or champion from the home page.
+1. Use the header search to find an already stored player or champion.
 2. Open a player page and verify summary, matches, champions, ranks, rank history, and insights.
 3. Open a champion page and verify hero, abilities, and item statistics.
 

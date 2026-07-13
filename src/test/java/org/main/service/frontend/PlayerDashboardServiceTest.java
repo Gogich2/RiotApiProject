@@ -64,8 +64,8 @@ class PlayerDashboardServiceTest {
     @Test
     void calculatesRecentWindowsChampionHealthPrioritiesAndFreshness() {
         when(frontendStatsService.getPlayerSummary("puuid")).thenReturn(summary());
-        when(frontendStatsService.getPlayerRecentMatches("puuid", 20)).thenReturn(matches());
-        when(frontendStatsService.getPlayerChampions("puuid")).thenReturn(List.of());
+        when(frontendStatsService.getPlayerRecentMatches("puuid", 20, 420)).thenReturn(matches());
+        when(frontendStatsService.getPlayerChampions("puuid", 420)).thenReturn(List.of());
         when(frontendStatsService.getPlayerInsights("puuid")).thenReturn(insights());
         LeagueEntryEntity rank = new LeagueEntryEntity();
         rank.setQueueType("RANKED_SOLO_5x5");
@@ -84,6 +84,7 @@ class PlayerDashboardServiceTest {
 
         PlayerDashboardDto dashboard = dashboardService.getDashboard("puuid");
 
+        assertThat(dashboard.analysisQueue()).isEqualTo("Solo/Duo");
         assertThat(dashboard.recentForm()).extracting(form -> form.window()).containsExactly(5, 10, 20);
         assertThat(dashboard.recentForm().get(0).wins()).isEqualTo(3);
         assertThat(dashboard.recentForm().get(0).losses()).isEqualTo(2);
@@ -97,6 +98,24 @@ class PlayerDashboardServiceTest {
         );
         assertThat(dashboard.freshness().sampleSize()).isEqualTo(20);
         assertThat(dashboard.refresh().state()).isEqualTo(RefreshState.QUEUED);
+    }
+
+    @Test
+    void usesFlexDataWithoutMixingItWithSoloDuo() {
+        when(frontendStatsService.getPlayerSummary("puuid")).thenReturn(summary());
+        when(frontendStatsService.getPlayerRecentMatches("puuid", 20, 440)).thenReturn(List.of());
+        when(frontendStatsService.getPlayerChampions("puuid", 440)).thenReturn(List.of());
+        when(frontendStatsService.getPlayerInsights("puuid")).thenReturn(List.of());
+        LeagueEntryEntity flex = new LeagueEntryEntity();
+        flex.setQueueType("RANKED_FLEX_SR");
+        when(leagueEntryRepository.findByPuuidOrderByQueueTypeAsc("puuid")).thenReturn(List.of(flex));
+        when(playerRepository.findById("puuid")).thenReturn(Optional.empty());
+        when(refreshJobRepository.findFirstByPuuidOrderByRequestedAtDesc("puuid")).
+                thenReturn(Optional.empty());
+
+        PlayerDashboardDto dashboard = dashboardService.getDashboard("puuid");
+
+        assertThat(dashboard.analysisQueue()).isEqualTo("Flex");
     }
 
     private List<PlayerRecentMatchDto> matches() {

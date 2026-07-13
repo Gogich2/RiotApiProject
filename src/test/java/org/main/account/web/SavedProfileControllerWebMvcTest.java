@@ -109,6 +109,16 @@ class SavedProfileControllerWebMvcTest {
         verify(savedProfileService).delete(USER_ID, SAVED_ID);
     }
 
+    @Test
+    void authenticatedViewUpdatesRecentActivity() throws Exception {
+        mockMvc.perform(post("/api/account/saved-profiles/{id}/view", SAVED_ID).
+                        with(authentication(appAuthentication())).
+                        with(csrf())).
+                andExpect(status().isNoContent());
+
+        verify(savedProfileService).markViewed(USER_ID, SAVED_ID);
+    }
+
     private UsernamePasswordAuthenticationToken appAuthentication() {
         AppPrincipal principal = new AppPrincipal(USER_ID, "player@example.com", "Player");
         return UsernamePasswordAuthenticationToken.authenticated(principal, null, List.of());

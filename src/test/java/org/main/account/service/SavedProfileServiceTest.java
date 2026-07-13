@@ -140,6 +140,18 @@ class SavedProfileServiceTest {
         verify(savedProfileRepository).delete(saved);
     }
 
+    @Test
+    void marksSavedProfileAsRecentlyViewed() {
+        SavedProfileEntity saved = savedProfile(USER_ID, SAVED_ID, "known-puuid", false);
+        saved.setLastViewedAt(OffsetDateTime.ofInstant(INSTANT.minusSeconds(86_400), ZoneOffset.UTC));
+        when(savedProfileRepository.findByIdAndUserId(SAVED_ID, USER_ID)).thenReturn(Optional.of(saved));
+
+        savedProfileService.markViewed(USER_ID, SAVED_ID);
+
+        assertThat(saved.getLastViewedAt()).isEqualTo(OffsetDateTime.ofInstant(INSTANT, ZoneOffset.UTC));
+        verify(savedProfileRepository).save(saved);
+    }
+
     private SavedProfileEntity savedProfile(UUID userId, UUID id, String puuid, boolean isDefault) {
         SavedProfileEntity saved = new SavedProfileEntity();
         saved.setId(id);

@@ -14,7 +14,6 @@ import org.main.refresh.entity.RefreshState;
 import org.main.refresh.repository.PlayerRefreshJobRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -70,12 +69,16 @@ public class PlayerRefreshCoordinator {
         job.setSource(source);
         job.setState(RefreshState.QUEUED);
         job.setRequestedAt(now);
-        try {
-            jobRepository.saveAndFlush(job);
-        } catch (DataIntegrityViolationException exception) {
-            return jobRepository.findFirstByPuuidAndStateInOrderByRequestedAtDesc(puuid, ACTIVE_STATES).
+        int inserted = jobRepository.insertQueued(
+                job.getId(),
+                job.getPuuid(),
+                job.getSource().name(),
+                job.getRequestedAt()
+        );
+        if (inserted == 0) {
+            return jobRepository.findFirstByPuuidOrderByRequestedAtDesc(puuid).
                     map(PlayerRefreshStatusDto::from).
-                    orElseThrow(() -> exception);
+                    orElseThrow(() -> new IllegalStateException("Active refresh job was not found"));
         }
         scheduleAfterCommit(job.getId());
         return PlayerRefreshStatusDto.from(job);
