@@ -1,5 +1,21 @@
 # RiotApiProject
 
+## Player improvement loop
+
+The built-in website is public-first. Anyone can search a Riot ID, open player,
+champion, and match pages, view the performance dashboard, and request a
+rate-limit-aware data refresh. An account is optional and only adds private
+saved-profile bookmarks and labels.
+
+The player dashboard summarizes rank, recent form across 5/10/20 matches,
+champion-pool health, three improvement priorities, data freshness, and refresh
+state. Failed or rate-limited refreshes keep the last successful dashboard
+visible.
+
+Local setup starts from [`.env.example`](.env.example). Account providers are
+disabled by default. See [`docs/deployment.md`](docs/deployment.md) for Discord,
+SMTP, refresh scheduling, and production checks.
+
 ## Опис проєкту
 **RiotApiProject** , це бакалаврський проєкт, який знаходиться в процесі розробки.  
 Його основна мета , отримання, обробка та збереження даних з **Riot API** для подальшого аналізу та використання в інформаційній системі.
