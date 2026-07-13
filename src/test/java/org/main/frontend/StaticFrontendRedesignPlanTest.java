@@ -102,8 +102,10 @@ class StaticFrontendRedesignPlanTest {
         assertThat(html).contains("id=\"riotIdSubmit\"");
         assertThat(homeJs).contains("player.html?puuid=");
         assertThat(apiJs).contains("/auth/csrf");
-        assertThat(apiJs).contains("getCookie('XSRF-TOKEN')");
-        assertThat(apiJs).contains("headers['X-XSRF-TOKEN']");
+        assertThat(apiJs).contains("let csrfToken = '';");
+        assertThat(apiJs).contains("csrfToken = response.token;");
+        assertThat(apiJs).contains("headers['X-XSRF-TOKEN'] = csrfToken;");
+        assertThat(apiJs).doesNotContain("decodeURIComponent(getCookie('XSRF-TOKEN'))");
         assertThat(apiJs).contains("async resolveRiotId(gameName, tagLine)");
     }
 

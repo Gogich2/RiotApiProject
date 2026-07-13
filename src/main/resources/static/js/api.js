@@ -1,5 +1,6 @@
 const API_BASE_STORAGE_KEY = 'riot-stats-api-base-url';
 const NGROK_HOST_MARKERS = ['ngrok-free.app', 'ngrok-free.dev', 'ngrok.app', 'ngrok.dev'];
+let csrfToken = '';
 
 const api = {
     async getOverview() {
@@ -175,15 +176,10 @@ async function postJson(path, body = null) {
 }
 
 async function ensureCsrfToken() {
-    if (!getCookie('XSRF-TOKEN')) {
-        await fetchJson(buildApiUrl('/auth/csrf'));
+    if (!csrfToken) {
+        const response = await fetchJson(buildApiUrl('/auth/csrf'));
+        csrfToken = response.token;
     }
-}
-
-function getCookie(name) {
-    return document.cookie.split('; ')
-        .find(row => row.startsWith(`${name}=`))
-        ?.split('=')[1] || '';
 }
 
 function getQueryParam(name) {
@@ -233,7 +229,7 @@ function buildRequestHeaders(url, options = {}) {
     };
 
     if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-        headers['X-XSRF-TOKEN'] = decodeURIComponent(getCookie('XSRF-TOKEN'));
+        headers['X-XSRF-TOKEN'] = csrfToken;
         headers['Content-Type'] = 'application/json';
     }
 
