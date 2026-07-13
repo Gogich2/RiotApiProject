@@ -2,6 +2,7 @@ package org.main.builds.aggregate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -19,13 +20,18 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.main.builds.BuildConfiguration;
 import org.main.builds.BuildProperties;
 import org.main.builds.extract.BuildObservationFactory;
 import org.main.builds.model.AggregatedCohort;
 import org.main.builds.model.AggregationResult;
 import org.main.builds.model.BuildObservation;
 import org.main.builds.model.BuildQueue;
+import org.main.builds.model.BuildRole;
+import org.main.builds.model.ItemPath;
 import org.main.builds.model.PatchWindow;
+import org.main.builds.model.RunePage;
+import org.main.builds.model.SkillPath;
 import org.main.builds.source.BuildSourceMatch;
 import org.main.builds.source.BuildSourceRepository;
 import org.main.builds.source.BuildSourceSelection;
@@ -33,6 +39,7 @@ import org.main.builds.source.ItemCatalog;
 import org.main.builds.store.AggregationRun;
 import org.main.builds.store.BuildPublisher;
 import org.main.builds.store.BuildSnapshotRepository;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -78,25 +85,31 @@ class ChampionBuildAggregationServiceTest {
     void publishesAnAnchorOnlyAggregationWithoutSkippingTheComparisonPatch() {
         BuildSourceMatch firstMatch = mock(BuildSourceMatch.class);
         BuildSourceMatch secondMatch = mock(BuildSourceMatch.class);
-        BuildObservation firstObservation = mock(BuildObservation.class);
-        BuildObservation secondObservation = mock(BuildObservation.class);
-        AggregationResult result = result(2);
+        BuildObservation firstObservation = anchorObservation("EUW1_1", true);
+        BuildObservation secondObservation = anchorObservation("EUW1_2", false);
+        BuildAggregator realAggregator = new BuildAggregator(
+                new BuildConfiguration().buildRules(properties()));
+        service = new DefaultChampionBuildAggregationService(sourceRepository, itemCatalog,
+                observationFactory, realAggregator, snapshotRepository, publisher, properties());
         prepareSelection(List.of("EUW1_1", "EUW1_2"));
         when(sourceRepository.loadBatch(List.of("EUW1_1", "EUW1_2"))).
                 thenReturn(List.of(firstMatch, secondMatch));
         when(observationFactory.from(firstMatch)).thenReturn(List.of(firstObservation));
         when(observationFactory.from(secondMatch)).thenReturn(List.of(secondObservation));
-        when(aggregator.aggregate(WINDOW, BuildQueue.SOLO_DUO,
-                List.of(firstObservation, secondObservation))).thenReturn(result);
 
         AggregationOutcome outcome = service.refresh(BuildQueue.SOLO_DUO);
 
         assertThat(outcome).isEqualTo(new AggregationOutcome(
-                AggregationOutcome.Status.PUBLISHED, "16.13", 2, 2, RUN_ID));
+                AggregationOutcome.Status.PUBLISHED, "16.13", 2, 1, RUN_ID));
         verify(sourceRepository, never()).findPreviousMajorLastPatch(any(), any(Integer.class));
         verify(itemCatalog).refresh();
-        verify(publisher).publish(RUN_ID, result, 1, 1, WINDOW,
-                BuildQueue.SOLO_DUO, WATERMARK);
+        ArgumentCaptor<AggregationResult> resultCaptor =
+                ArgumentCaptor.forClass(AggregationResult.class);
+        verify(publisher).publish(eq(RUN_ID), resultCaptor.capture(), eq(1), eq(1), eq(WINDOW),
+                eq(BuildQueue.SOLO_DUO), eq(WATERMARK));
+        assertThat(resultCaptor.getValue().cohorts()).
+                isNotEmpty().
+                allSatisfy(cohort -> assertThat(cohort.comparisonGames()).isZero());
     }
 
     @Test
@@ -290,6 +303,17 @@ class ChampionBuildAggregationServiceTest {
             cohorts.add(mock(AggregatedCohort.class));
         }
         return new AggregationResult(cohorts, java.util.Set.of(), snapshots);
+    }
+
+    private BuildObservation anchorObservation(String matchId, boolean win) {
+        RunePage runes = new RunePage(
+                8000, List.of(8005, 9111, 9104, 8014),
+                8300, List.of(8304, 8347), List.of(5005, 5008, 5002));
+        return new BuildObservation(matchId, WINDOW.anchorPatch(), BuildQueue.SOLO_DUO,
+                266, BuildRole.TOP, null, win,
+                new ItemPath(List.of(1055), 3006, List.of(3078)), runes,
+                List.of(4, 14), new SkillPath(List.of(
+                        1, 2, 3, 1, 1, 4, 1, 2, 1, 2, 4, 2, 2, 3, 3, 4, 3, 3)));
     }
 
     private BuildProperties properties() {

@@ -26,6 +26,9 @@ public class BuildConfiguration {
 
     @Bean
     public BuildRules buildRules(BuildProperties properties) {
+        if (properties.batchSize() <= 0) {
+            throw new IllegalArgumentException("Build batch size must be positive");
+        }
         double anchorWeight = properties.anchorPatchWeight();
         double comparisonWeight = properties.comparisonPatchWeight();
         if (!Double.isFinite(anchorWeight) || !Double.isFinite(comparisonWeight)

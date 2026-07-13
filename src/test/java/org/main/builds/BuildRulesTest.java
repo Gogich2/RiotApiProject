@@ -232,6 +232,16 @@ class BuildRulesTest {
                 hasMessageContaining("thresholds");
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void rejectsNonPositiveAggregationBatchSizes(int batchSize) {
+        BuildProperties invalid = properties(batchSize);
+
+        assertThatThrownBy(() -> new BuildConfiguration().buildRules(invalid)).
+                isInstanceOf(IllegalArgumentException.class).
+                hasMessageContaining("batch size");
+    }
+
     private static BuildProperties properties() {
         return properties(10, 25, 50, 0.7, 0.3);
     }
@@ -267,6 +277,23 @@ class BuildRulesTest {
                 2,
                 Duration.ofMinutes(2),
                 250,
+                Duration.ofHours(1),
+                false
+        );
+    }
+
+    private static BuildProperties properties(int batchSize) {
+        return new BuildProperties(
+                1,
+                1,
+                10,
+                25,
+                50,
+                0.7,
+                0.3,
+                2,
+                Duration.ofMinutes(2),
+                batchSize,
                 Duration.ofHours(1),
                 false
         );
