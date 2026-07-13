@@ -52,16 +52,21 @@ class ChampionBuildMigrationIT {
 
         assertThat(tables).containsExactly("aggregation_run", "champion_build_snapshot");
         assertThat(indexes.get("uq_champion_build_snapshot_run_cohort")).contains(
-                "UNIQUE", "run_id", "aggregation_version", "opponent_champion_id",
-                        "NULLS NOT DISTINCT");
+                "CREATE UNIQUE INDEX",
+                "(run_id, aggregation_version, anchor_patch, comparison_patch, queue_id, "
+                        + "champion_id, role, opponent_champion_id) NULLS NOT DISTINCT");
         assertThat(indexes.get("uq_champion_build_snapshot_published_cohort")).contains(
-                "UNIQUE", "aggregation_version", "opponent_champion_id",
-                        "NULLS NOT DISTINCT", "publication_state", "PUBLISHED");
+                "CREATE UNIQUE INDEX",
+                "(aggregation_version, anchor_patch, comparison_patch, queue_id, champion_id, "
+                        + "role, opponent_champion_id) NULLS NOT DISTINCT",
+                "publication_state", "PUBLISHED");
         assertThat(indexes.get("uq_aggregation_run_running_window")).contains(
-                "UNIQUE", "aggregation_version", "anchor_patch", "comparison_patch",
-                        "queue_id", "state", "RUNNING");
+                "CREATE UNIQUE INDEX",
+                "(aggregation_version, anchor_patch, comparison_patch, queue_id)",
+                "state", "RUNNING");
         assertThat(indexes.get("ix_champion_build_snapshot_published_lookup")).contains(
-                "queue_id", "anchor_patch", "champion_id", "role",
-                        "opponent_champion_id", "publication_state", "PUBLISHED");
+                "(queue_id, anchor_patch, champion_id, role, opponent_champion_id, "
+                        + "aggregation_version, comparison_patch)",
+                "publication_state", "PUBLISHED");
     }
 }
