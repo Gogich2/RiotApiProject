@@ -2,7 +2,9 @@ package org.main.builds;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.main.builds.model.BuildCandidate;
@@ -16,6 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -207,6 +210,19 @@ class BuildRulesTest {
                 hasMessageContaining("weights");
     }
 
+    @ParameterizedTest
+    @MethodSource("invalidPatchWeights")
+    void rejectsNonFiniteAndNegativeWeightsBeforeCheckingTheirSum(
+            double anchorWeight,
+            double comparisonWeight
+    ) {
+        BuildProperties invalid = properties(10, 25, 50, anchorWeight, comparisonWeight);
+
+        assertThatThrownBy(() -> new BuildConfiguration().buildRules(invalid)).
+                isInstanceOf(IllegalArgumentException.class).
+                hasMessageContaining("finite and non-negative");
+    }
+
     @Test
     void rejectsConfidenceThresholdsThatAreNotAscending() {
         BuildProperties invalid = properties(10, 10, 50, 0.7, 0.3);
@@ -218,6 +234,19 @@ class BuildRulesTest {
 
     private static BuildProperties properties() {
         return properties(10, 25, 50, 0.7, 0.3);
+    }
+
+    private static Stream<Arguments> invalidPatchWeights() {
+        return Stream.of(
+                Arguments.of(Double.NaN, 0.3),
+                Arguments.of(Double.POSITIVE_INFINITY, 0.3),
+                Arguments.of(Double.NEGATIVE_INFINITY, 0.3),
+                Arguments.of(0.7, Double.NaN),
+                Arguments.of(0.7, Double.POSITIVE_INFINITY),
+                Arguments.of(0.7, Double.NEGATIVE_INFINITY),
+                Arguments.of(-0.1, 1.1),
+                Arguments.of(1.1, -0.1)
+        );
     }
 
     private static BuildProperties properties(
