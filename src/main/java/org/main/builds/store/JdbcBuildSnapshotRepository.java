@@ -64,7 +64,8 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
             int payloadSchemaVersion,
             PatchWindow window,
             BuildQueue queue,
-            OffsetDateTime watermark
+            OffsetDateTime watermark,
+            int validationCount
     ) {
         int sourceMatchCount = cohorts.stream().
                 filter(cohort -> cohort.scope() == BuildScope.CHAMPION_ROLE).
@@ -87,7 +88,7 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
                 update builds.aggregation_run
                 set source_match_count = ?, validation_count = ?, snapshot_count = ?
                 where id = ? and state = 'RUNNING'
-                """, sourceMatchCount, cohorts.size(), cohorts.size(), runId);
+                """, sourceMatchCount, validationCount, cohorts.size(), runId);
         requireOne(updated, "Running aggregation run was not found");
     }
 
@@ -173,6 +174,18 @@ public final class JdbcBuildSnapshotRepository implements BuildSnapshotRepositor
                 lookup.aggregationVersion(), lookup.queue().id(), lookup.championId(),
                 lookup.role().name(), patchPart(lookup.window().anchorPatch(), 0),
                 patchPart(lookup.window().anchorPatch(), 1), limit);
+    }
+
+    @Override
+    public Optional<AggregationRun> findRun(UUID runId) {
+        List<AggregationRun> rows = jdbc.query("""
+                select id, aggregation_version, anchor_patch, comparison_patch, queue_id,
+                       input_watermark, state, source_match_count, validation_count,
+                       snapshot_count, failure_category, started_at, completed_at
+                from builds.aggregation_run
+                where id = ?
+                """, this::mapRun, runId);
+        return rows.stream().findFirst();
     }
 
     @Override

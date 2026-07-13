@@ -207,9 +207,97 @@ class BuildPublisherIT {
                 """, replacement).values()).containsOnly(0);
     }
 
-    private UUID publish(AggregationResult result) {
+    @Test
+    void publishesTheExactRunWhenTwoAggregationVersionsAreRunning() {
+        UUID versionOne = repository.startRun(
+                1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+        UUID versionTwo = repository.startRun(
+                2, WINDOW, BuildQueue.SOLO_DUO, WATERMARK.plusHours(1));
+
+        publisher.publish(versionOne, result(12, payload()), 1, 1,
+                WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+
+        assertThat(repository.findRun(versionOne)).get().extracting(AggregationRun::state).
+                isEqualTo("COMPLETED");
+        assertThat(repository.findRun(versionTwo)).get().extracting(AggregationRun::state).
+                isEqualTo("RUNNING");
+    }
+
+    @Test
+    void persistsTheValidationCountReturnedByTheValidator() {
+        context.getBean(PassedCountValidator.class).forcedCount = 37;
+        UUID runId = repository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+
+        publisher.publish(runId, result(12, payload()), 1, 1,
+                WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+
+        assertThat(repository.findRun(runId)).get().extracting(AggregationRun::validationCount).
+                isEqualTo(37);
+    }
+
+    @Test
+    void findsAnExactOpponentSnapshotWithANonNullLookupKey() {
+        AggregationResult result = resultWithExact(payload());
         UUID runId = repository.startRun(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
         publisher.publish(runId, result, 1, 1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK);
+
+        assertThat(repository.findPublished(new BuildLookup(
+                1, WINDOW, BuildQueue.SOLO_DUO, 22, BuildRole.MIDDLE, 55))).
+                get().satisfies(snapshot -> {
+                    assertThat(snapshot.runId()).isEqualTo(runId);
+                    assertThat(snapshot.scope()).isEqualTo(BuildScope.EXACT_MATCHUP);
+                    assertThat(snapshot.opponentChampionId()).isEqualTo(55);
+                });
+    }
+
+    @Test
+    void historicalBaselinesUseNumericPatchOrderingAndLimit() {
+        publish(1, new PatchWindow("16.9", "16.8"), BuildQueue.SOLO_DUO,
+                WATERMARK, result(12, payload()));
+        publish(1, new PatchWindow("16.10", "16.9"), BuildQueue.SOLO_DUO,
+                WATERMARK.plusHours(1), result(12, payload()));
+        publish(1, new PatchWindow("16.11", "16.10"), BuildQueue.SOLO_DUO,
+                WATERMARK.plusHours(2), result(12, payload()));
+
+        List<BuildSnapshot> historical = repository.findHistoricalBaselines(
+                new BuildLookup(1, new PatchWindow("16.12", "16.11"),
+                        BuildQueue.SOLO_DUO, 22, BuildRole.MIDDLE, null), 2);
+
+        assertThat(historical).extracting(snapshot -> snapshot.window().anchorPatch()).
+                containsExactly("16.11", "16.10");
+    }
+
+    @Test
+    void replacementArchivesOnlyTheSameVersionWindowAndQueue() {
+        UUID replaced = publish(1, WINDOW, BuildQueue.SOLO_DUO,
+                WATERMARK, result(12, payload()));
+        UUID otherVersion = publish(2, WINDOW, BuildQueue.SOLO_DUO,
+                WATERMARK.plusHours(1), result(12, payload()));
+        UUID otherWindow = publish(1, new PatchWindow("16.12", "16.11"),
+                BuildQueue.SOLO_DUO, WATERMARK.plusHours(2), result(12, payload()));
+        UUID otherQueue = publish(1, WINDOW, BuildQueue.FLEX,
+                WATERMARK.plusHours(3), result(12, payload()));
+        UUID replacement = publish(1, WINDOW, BuildQueue.SOLO_DUO,
+                WATERMARK.plusHours(4), result(15, payload()));
+
+        assertThat(publicationStates(replaced, otherVersion, otherWindow,
+                otherQueue, replacement)).containsExactly(
+                "ARCHIVED", "PUBLISHED", "PUBLISHED", "PUBLISHED", "PUBLISHED");
+    }
+
+    private UUID publish(AggregationResult result) {
+        return publish(1, WINDOW, BuildQueue.SOLO_DUO, WATERMARK, result);
+    }
+
+    private UUID publish(
+            int version,
+            PatchWindow window,
+            BuildQueue queue,
+            OffsetDateTime watermark,
+            AggregationResult result
+    ) {
+        UUID runId = repository.startRun(version, window, queue, watermark);
+        publisher.publish(runId, result, version, 1, window, queue, watermark);
         return runId;
     }
 
@@ -224,6 +312,25 @@ class BuildPublisherIT {
                 BuildConfidence.LOW, payload);
         return new AggregationResult(List.of(cohort),
                 Set.of(new BaselineKey(22, BuildRole.MIDDLE)), games);
+    }
+
+    private AggregationResult resultWithExact(BuildSnapshotPayload payload) {
+        AggregatedCohort baseline = result(12, payload).cohorts().getFirst();
+        AggregatedCohort exact = new AggregatedCohort(22, BuildRole.MIDDLE, 55,
+                BuildScope.EXACT_MATCHUP, 10, 5, 10, 0,
+                BuildConfidence.LOW, payload);
+        return new AggregationResult(List.of(baseline, exact),
+                Set.of(new BaselineKey(22, BuildRole.MIDDLE)), 12);
+    }
+
+    private List<String> publicationStates(UUID... runIds) {
+        return java.util.Arrays.stream(runIds).
+                map(runId -> jdbc.queryForObject("""
+                        select publication_state
+                        from builds.champion_build_snapshot
+                        where run_id = ? and opponent_champion_id is null
+                        """, String.class, runId)).
+                toList();
     }
 
     private BuildSnapshotPayload payload() {
@@ -302,8 +409,8 @@ class BuildPublisherIT {
         }
 
         @Bean
-        BuildSnapshotValidator validator() {
-            return new BuildSnapshotValidator(10);
+        PassedCountValidator validator() {
+            return new PassedCountValidator();
         }
 
         @Bean
@@ -321,5 +428,29 @@ class BuildPublisherIT {
     static final class FailurePoint {
 
         private String value;
+    }
+
+    static final class PassedCountValidator extends BuildSnapshotValidator {
+
+        private Integer forcedCount;
+
+        private PassedCountValidator() {
+            super(10);
+        }
+
+        @Override
+        public int validate(
+                AggregationRun run,
+                UUID runId,
+                AggregationResult result,
+                int aggregationVersion,
+                PatchWindow window,
+                BuildQueue queue,
+                OffsetDateTime watermark
+        ) {
+            int passed = super.validate(run, runId, result, aggregationVersion,
+                    window, queue, watermark);
+            return forcedCount == null ? passed : forcedCount;
+        }
     }
 }

@@ -15,7 +15,7 @@ import org.main.builds.model.BuildScope;
 import org.main.builds.model.BuildSnapshotPayload;
 import org.main.builds.model.PatchWindow;
 
-public final class BuildSnapshotValidator {
+public class BuildSnapshotValidator {
 
     private final int matchupMinGames;
 

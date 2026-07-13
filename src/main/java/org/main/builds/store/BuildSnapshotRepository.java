@@ -16,7 +16,7 @@ public interface BuildSnapshotRepository {
     void insertSnapshots(UUID runId, List<AggregatedCohort> cohorts,
                          int aggregationVersion, int payloadSchemaVersion,
                          PatchWindow window, BuildQueue queue,
-                         OffsetDateTime watermark);
+                         OffsetDateTime watermark, int validationCount);
 
     void publishRun(UUID runId);
 
@@ -25,6 +25,8 @@ public interface BuildSnapshotRepository {
     Optional<BuildSnapshot> findPublished(BuildLookup lookup);
 
     List<BuildSnapshot> findHistoricalBaselines(BuildLookup lookup, int limit);
+
+    Optional<AggregationRun> findRun(UUID runId);
 
     Optional<AggregationRun> findLatestRun(String patch, BuildQueue queue);
 }

@@ -28,11 +28,12 @@ public class BuildPublisher {
             BuildQueue queue,
             OffsetDateTime watermark
     ) {
-        AggregationRun run = repository.findLatestRun(window.anchorPatch(), queue).
-                orElseThrow(() -> new IllegalArgumentException("No matching aggregation run"));
-        validator.validate(run, runId, result, aggregationVersion, window, queue, watermark);
+        AggregationRun run = repository.findRun(runId).
+                orElseThrow(() -> new IllegalArgumentException("Aggregation run was not found"));
+        int validationCount = validator.validate(
+                run, runId, result, aggregationVersion, window, queue, watermark);
         repository.insertSnapshots(runId, result.cohorts(), aggregationVersion,
-                payloadSchemaVersion, window, queue, watermark);
+                payloadSchemaVersion, window, queue, watermark, validationCount);
         repository.publishRun(runId);
     }
 }
