@@ -4,7 +4,10 @@ import java.util.Collection;
 
 public record PatchWindow(String anchorPatch, String comparisonPatch) {
 
-    public static PatchWindow from(PatchVersion anchor, Collection<PatchVersion> storedPatches) {
+    public static PatchWindow forAnchor(
+            PatchVersion anchor,
+            Collection<PatchVersion> storedPatches
+    ) {
         PatchVersion comparison;
         if (anchor.minor() > 1) {
             comparison = new PatchVersion(anchor.major(), anchor.minor() - 1);
@@ -17,5 +20,9 @@ public record PatchWindow(String anchorPatch, String comparisonPatch) {
                     ));
         }
         return new PatchWindow(anchor.displayName(), comparison.displayName());
+    }
+
+    public static PatchWindow from(PatchVersion anchor, Collection<PatchVersion> storedPatches) {
+        return forAnchor(anchor, storedPatches);
     }
 }
