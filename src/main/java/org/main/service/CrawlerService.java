@@ -1,5 +1,6 @@
 package org.main.service;
 
+import java.util.Optional;
 import org.main.dto.CrawlResultDto;
 
 /**
@@ -23,6 +24,8 @@ public interface CrawlerService {
     CrawlResultDto crawlRiotIdEUW(String gameNameRaw, String tagLineRaw, int limitRaw);
 
     CrawlResultDto crawlLatestPlayerEUW(int limitRaw);
+
+    Optional<CrawlResultDto> crawlNextPlayerEUW(int limitRaw);
 
     void crawlSummonerEUW(String acoomer, int limit);
 }

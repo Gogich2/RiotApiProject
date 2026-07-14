@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import org.main.client.RiotApiClient;
 import org.main.dto.CrawlResultDto;
 import org.main.exception.ExternalServiceException;
@@ -279,6 +280,25 @@ public class CrawlerServiceImpl implements CrawlerService {
         );
 
         return crawlPuuidEUW(puuid, limit);
+    }
+
+    @Override
+    public Optional<CrawlResultDto> crawlNextPlayerEUW(int limitRaw) {
+        Optional<PlayerEntity> candidate = playerRepository.findNextCrawlCandidate();
+
+        if (candidate.isEmpty()) {
+            log.debug("Scheduled crawl skipped because raw.players is empty");
+            return Optional.empty();
+        }
+
+        PlayerEntity player = candidate.get();
+
+        try {
+            return Optional.of(crawlPuuidEUW(player.getPuuid(), limitRaw));
+        } finally {
+            player.setLastCrawlAttemptAt(OffsetDateTime.now());
+            playerRepository.save(player);
+        }
     }
 
     static int clampLimit(int limit) {
