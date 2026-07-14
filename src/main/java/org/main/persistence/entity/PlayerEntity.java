@@ -35,6 +35,9 @@ public class PlayerEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
+    @Column(name = "last_crawl_attempt_at")
+    private OffsetDateTime lastCrawlAttemptAt;
+
     public String getPuuid() {
         return puuid;
     }
@@ -97,6 +100,14 @@ public class PlayerEntity {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public OffsetDateTime getLastCrawlAttemptAt() {
+        return lastCrawlAttemptAt;
+    }
+
+    public void setLastCrawlAttemptAt(OffsetDateTime lastCrawlAttemptAt) {
+        this.lastCrawlAttemptAt = lastCrawlAttemptAt;
     }
 }
 

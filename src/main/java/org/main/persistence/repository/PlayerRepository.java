@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import org.main.persistence.entity.PlayerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -14,5 +15,15 @@ public interface PlayerRepository extends JpaRepository<PlayerEntity, String> {
     Optional<PlayerEntity> findByGameNameIgnoreCaseAndTagLineIgnoreCase(String gameName, String tagLine);
 
     Optional<PlayerEntity> findTopByOrderByUpdatedAtDesc();
+
+    @Query(value = """
+            select *
+            from raw.players
+            order by last_crawl_attempt_at asc nulls first,
+                     created_at asc,
+                     puuid asc
+            limit 1
+            """, nativeQuery = true)
+    Optional<PlayerEntity> findNextCrawlCandidate();
 
 }
