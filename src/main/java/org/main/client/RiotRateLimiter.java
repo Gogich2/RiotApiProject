@@ -34,6 +34,20 @@ public class RiotRateLimiter {
         this.perTwoMinutesLimit = Math.max(1, perTwoMinutesLimit);
     }
 
+    public int getPerTwoMinuteLimit() {
+        return perTwoMinutesLimit;
+    }
+
+    public synchronized int remainingTwoMinuteCapacity() {
+        if (!enabled) {
+            return perTwoMinutesLimit;
+        }
+
+        Instant now = Instant.now();
+        removeOldEntries(twoMinuteWindow, now.minusSeconds(120));
+        return Math.max(0, perTwoMinutesLimit - twoMinuteWindow.size());
+    }
+
     public synchronized void acquire() {
         if (!enabled) {
             return;
