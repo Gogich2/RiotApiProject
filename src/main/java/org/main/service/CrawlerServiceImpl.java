@@ -291,13 +291,12 @@ public class CrawlerServiceImpl implements CrawlerService {
             return Optional.empty();
         }
 
-        PlayerEntity player = candidate.get();
+        String puuid = candidate.get().getPuuid();
 
         try {
-            return Optional.of(crawlPuuidEUW(player.getPuuid(), limitRaw));
+            return Optional.of(crawlPuuidEUW(puuid, limitRaw));
         } finally {
-            player.setLastCrawlAttemptAt(OffsetDateTime.now());
-            playerRepository.save(player);
+            playerRepository.updateLastCrawlAttemptAt(puuid, OffsetDateTime.now());
         }
     }
 

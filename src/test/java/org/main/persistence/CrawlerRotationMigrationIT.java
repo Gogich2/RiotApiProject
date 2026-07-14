@@ -2,6 +2,7 @@ package org.main.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.OffsetDateTime;
 import org.junit.jupiter.api.Test;
 import org.main.builds.source.JdbcItemCatalog;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,5 +88,36 @@ class CrawlerRotationMigrationIT {
                 get().
                 extracting(org.main.persistence.entity.PlayerEntity::getPuuid).
                 isEqualTo("never-new");
+    }
+
+    @Test
+    void targetedAttemptUpdatePreservesAnUnrelatedPlayerChange() throws Exception {
+        jdbcTemplate.update("""
+                insert into raw.players
+                    (puuid, game_name, created_at, updated_at)
+                values
+                    ('concurrent-player', 'original', now(), now())
+                """);
+        playerRepository.findById("concurrent-player").orElseThrow();
+        jdbcTemplate.update("""
+                update raw.players
+                set game_name = 'concurrent-change'
+                where puuid = 'concurrent-player'
+                """);
+        OffsetDateTime attemptedAt = OffsetDateTime.parse("2026-07-14T10:00:00Z");
+
+        int updated = playerRepository.updateLastCrawlAttemptAt("concurrent-player", attemptedAt);
+
+        assertThat(updated).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("""
+                select game_name
+                from raw.players
+                where puuid = 'concurrent-player'
+                """, String.class)).isEqualTo("concurrent-change");
+        assertThat(jdbcTemplate.queryForObject("""
+                select last_crawl_attempt_at
+                from raw.players
+                where puuid = 'concurrent-player'
+                """, OffsetDateTime.class)).isEqualTo(attemptedAt);
     }
 }

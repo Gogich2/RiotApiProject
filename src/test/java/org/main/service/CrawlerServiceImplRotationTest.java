@@ -2,7 +2,10 @@ package org.main.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.main.client.RiotApiClient;
 import org.main.persistence.entity.PlayerEntity;
 import org.main.persistence.repository.MatchRepository;
@@ -47,7 +51,7 @@ class CrawlerServiceImplRotationTest {
     }
 
     @Test
-    void advancesAttemptTimestampWhenCrawlSavesNothing() {
+    void updatesOnlyAttemptTimestampWhenCrawlSavesNothing() {
         PlayerEntity player = player("puuid-success");
         when(playerRepository.findNextCrawlCandidate()).thenReturn(Optional.of(player));
         when(riotApiClient.getMatchIdsByPuuidEurope("puuid-success", 0, 20)).
@@ -58,12 +62,15 @@ class CrawlerServiceImplRotationTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().savedNewMatches()).isZero();
-        assertThat(player.getLastCrawlAttemptAt()).isAfterOrEqualTo(before);
-        verify(playerRepository).save(player);
+        assertThat(player.getLastCrawlAttemptAt()).isNull();
+        ArgumentCaptor<OffsetDateTime> attemptedAt = ArgumentCaptor.forClass(OffsetDateTime.class);
+        verify(playerRepository).updateLastCrawlAttemptAt(eq("puuid-success"), attemptedAt.capture());
+        assertThat(attemptedAt.getValue()).isAfterOrEqualTo(before);
+        verify(playerRepository, never()).save(any(PlayerEntity.class));
     }
 
     @Test
-    void advancesAttemptTimestampAndRethrowsWhenCrawlFails() {
+    void updatesOnlyAttemptTimestampAndRethrowsWhenCrawlFails() {
         PlayerEntity player = player("puuid-failure");
         when(playerRepository.findNextCrawlCandidate()).thenReturn(Optional.of(player));
         when(riotApiClient.getMatchIdsByPuuidEurope("puuid-failure", 0, 20)).
@@ -72,8 +79,12 @@ class CrawlerServiceImplRotationTest {
         assertThatThrownBy(() -> service.crawlNextPlayerEUW(20)).
                 isInstanceOf(IllegalStateException.class).
                 hasMessage("Riot unavailable");
-        assertThat(player.getLastCrawlAttemptAt()).isNotNull();
-        verify(playerRepository).save(player);
+        assertThat(player.getLastCrawlAttemptAt()).isNull();
+        verify(playerRepository).updateLastCrawlAttemptAt(
+                eq("puuid-failure"),
+                any(OffsetDateTime.class)
+        );
+        verify(playerRepository, never()).save(any(PlayerEntity.class));
     }
 
     private PlayerEntity player(String puuid) {
@@ -83,4 +94,5 @@ class CrawlerServiceImplRotationTest {
         player.setUpdatedAt(OffsetDateTime.now().minusDays(1));
         return player;
     }
+
 }

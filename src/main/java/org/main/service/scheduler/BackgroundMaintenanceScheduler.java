@@ -60,7 +60,13 @@ public class BackgroundMaintenanceScheduler {
         int initialBudget = availableBackgroundRequests();
 
         if (initialBudget == 0) {
-            log.debug("Background maintenance skipped because no Riot capacity is available");
+            IntegrityOutcome localIntegrity = runStoredTimelineIntegrity();
+            logCycleSummary(
+                    startedAt,
+                    IntegrityOutcome.success(0),
+                    CrawlOutcome.empty(0),
+                    localIntegrity
+            );
             return;
         }
 
@@ -74,6 +80,25 @@ public class BackgroundMaintenanceScheduler {
         CrawlOutcome crawl = runCrawlerWithAvailableCapacity(protectedCrawlerBudget);
         IntegrityOutcome borrowedIntegrity = runBorrowedIntegrityWithAvailableCapacity();
 
+        logCycleSummary(startedAt, protectedIntegrity, crawl, borrowedIntegrity);
+    }
+
+    private IntegrityOutcome runStoredTimelineIntegrity() {
+        try {
+            dataIntegrityService.repairStoredTimelineData(50);
+            return IntegrityOutcome.success(0);
+        } catch (Exception ex) {
+            log.error("Stored timeline data integrity phase failed", ex);
+            return IntegrityOutcome.failure();
+        }
+    }
+
+    private void logCycleSummary(
+            Instant startedAt,
+            IntegrityOutcome protectedIntegrity,
+            CrawlOutcome crawl,
+            IntegrityOutcome borrowedIntegrity
+    ) {
         log.info(
                 "Background maintenance cycle finished: protectedTimelinesRepaired={}, "
                         + "borrowedTimelinesRepaired={}, crawlerPuuid='{}', "

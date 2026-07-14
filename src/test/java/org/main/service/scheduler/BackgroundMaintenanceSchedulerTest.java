@@ -2,19 +2,43 @@ package org.main.service.scheduler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.main.client.RiotRateLimiter;
 import org.main.dto.CrawlResultDto;
 import org.main.dto.DataIntegrityReportDto;
 import org.main.service.CrawlerService;
 import org.main.service.DataIntegrityService;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
+@ExtendWith(OutputCaptureExtension.class)
 class BackgroundMaintenanceSchedulerTest {
+
+    @Test
+    void zeroCapacityRepairsStoredTimelineDataAndLogsCycleSummary(CapturedOutput output) {
+        DataIntegrityService integrity = mock(DataIntegrityService.class);
+        CrawlerService crawler = mock(CrawlerService.class);
+        RiotRateLimiter limiter = mock(RiotRateLimiter.class);
+        BackgroundMaintenanceScheduler scheduler =
+                new BackgroundMaintenanceScheduler(integrity, crawler, limiter, 50, 1);
+        when(limiter.getPerTwoMinuteLimit()).thenReturn(85);
+        when(limiter.remainingTwoMinuteCapacity()).thenReturn(1);
+
+        scheduler.runMaintenanceCycle();
+
+        verify(integrity).repairStoredTimelineData(50);
+        verify(integrity, never()).repairMissingTimelines(org.mockito.ArgumentMatchers.anyInt());
+        verifyNoInteractions(crawler);
+        assertThat(output).contains("Background maintenance cycle finished:");
+    }
 
     @Test
     void usesProtectedIntegrityHalfThenCrawlerAndBorrowedIntegrity() {

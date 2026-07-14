@@ -97,6 +97,21 @@ public class DataIntegrityServiceImpl implements DataIntegrityService {
             timelineIngestService.ingestTimelineIfMissing(matchId);
         }
 
+        repairStoredTimelineProjections(limit);
+
+        return check();
+    }
+
+    @Override
+    public DataIntegrityReportDto repairStoredTimelineData(int limitRaw) {
+        int limit = normalizeLimit(limitRaw);
+
+        repairStoredTimelineProjections(limit);
+
+        return check();
+    }
+
+    private void repairStoredTimelineProjections(int limit) {
         List<String> timelinesWithoutFrames = matchRepository.findTimelineRawIdsWithoutFrames().
                 stream().
                 limit(limit).
@@ -116,8 +131,6 @@ public class DataIntegrityServiceImpl implements DataIntegrityService {
             log.info("Repairing missing timeline events: matchId='{}'", matchId);
             timelineIngestService.repairTimelineFromRaw(matchId);
         }
-
-        return check();
     }
 
     @Override

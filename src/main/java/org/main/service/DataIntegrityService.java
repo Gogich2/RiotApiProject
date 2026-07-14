@@ -10,6 +10,8 @@ public interface DataIntegrityService {
 
     DataIntegrityReportDto repairMissingTimelines(int limit);
 
+    DataIntegrityReportDto repairStoredTimelineData(int limit);
+
     RankRepairResultDto repairMissingRanks(int limit);
 
     PlayerProfileRepairResultDto repairMissingPlayerProfiles(int limit);
