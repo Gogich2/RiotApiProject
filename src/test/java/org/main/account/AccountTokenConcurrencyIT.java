@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @DirtiesContext
 @SpringBootTest(properties = {
         "spring.jpa.hibernate.ddl-auto=none",
-        "app.scheduler.data-integrity.enabled=false",
+        "app.scheduler.background-maintenance.enabled=false",
         "app.scheduler.match-analysis.enabled=false"
 })
 class AccountTokenConcurrencyIT {
