@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,16 +102,18 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         saveCoreMatch(matchId);
 
         Map<Short, ParticipantContext> participantContextById = new HashMap<>();
+        List<Object[]> coreParticipantRows = new ArrayList<>();
 
         for (JsonNode participant : participants) {
             ParticipantContext context = buildParticipantContext(source, participant);
             participantContextById.put(context.participantId(), context);
 
-            saveCoreParticipant(context, participant);
+            coreParticipantRows.add(coreParticipantRow(context, participant));
             saveFinalItems(context, participant);
             saveRuneSelections(context, participant);
         }
 
+        saveCoreParticipants(coreParticipantRows);
         saveItemEvents(source, participantContextById);
         saveSkillOrder(source, participantContextById);
 
@@ -172,6 +175,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             return;
         }
 
+        List<Object[]> rows = new ArrayList<>();
         for (JsonNode participant : participants) {
             String puuid = nullableText(participant, "puuid");
 
@@ -182,7 +186,11 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             String gameName = nullableText(participant, "riotIdGameName");
             String tagLine = nullableText(participant, "riotIdTagline");
 
-            jdbcTemplate.update("""
+            rows.add(new Object[]{puuid, gameName, tagLine});
+        }
+
+        if (!rows.isEmpty()) {
+            jdbcTemplate.batchUpdate("""
                     INSERT INTO raw.players
                     (
                         puuid,
@@ -193,11 +201,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     )
                     VALUES (?, ?, ?, now(), now())
                     ON CONFLICT (puuid) DO NOTHING
-                    """,
-                    puuid,
-                    gameName,
-                    tagLine
-            );
+                    """, rows);
         }
     }
 
@@ -256,8 +260,12 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
         );
     }
 
-    private void saveCoreParticipant(ParticipantContext context, JsonNode participant) {
-        jdbcTemplate.update("""
+    private void saveCoreParticipants(List<Object[]> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+
+        jdbcTemplate.batchUpdate("""
                 INSERT INTO core.participants
                 (
                     match_id,
@@ -326,7 +334,11 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     summoner2_id = EXCLUDED.summoner2_id,
                     perks_json = EXCLUDED.perks_json,
                     raw_participant_json = EXCLUDED.raw_participant_json
-                """,
+                """, rows);
+    }
+
+    private Object[] coreParticipantRow(ParticipantContext context, JsonNode participant) {
+        return new Object[]{
                 context.matchId(),
                 context.participantId(),
                 context.puuid(),
@@ -359,10 +371,11 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 jsonOrNull(participant.get("perks")),
                 participant.toString(),
                 OffsetDateTime.now()
-        );
+        };
     }
 
     private void saveFinalItems(ParticipantContext context, JsonNode participant) {
+        List<Object[]> rows = new ArrayList<>();
         for (int slot = 0; slot <= 6; slot++) {
             Integer itemId = nullableInteger(participant, "item" + slot);
 
@@ -370,7 +383,13 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 continue;
             }
 
-            jdbcTemplate.update("""
+            rows.add(new Object[]{
+                    context.matchId(), context.participantId(), slot, itemId, OffsetDateTime.now()
+            });
+        }
+
+        if (!rows.isEmpty()) {
+            jdbcTemplate.batchUpdate("""
                     INSERT INTO core.participant_final_items
                     (
                         match_id,
@@ -384,13 +403,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     DO UPDATE SET
                         item_id = EXCLUDED.item_id,
                         created_at = EXCLUDED.created_at
-                    """,
-                    context.matchId(),
-                    context.participantId(),
-                    slot,
-                    itemId,
-                    OffsetDateTime.now()
-            );
+                    """, rows);
         }
     }
 
@@ -401,6 +414,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             return;
         }
 
+        List<Object[]> rows = new ArrayList<>();
         for (JsonNode style : styles) {
             Integer styleId = nullableInteger(style, "style");
             String description = nullableText(style, "description");
@@ -430,7 +444,27 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
 
                 boolean isKeystone = "PRIMARY".equals(styleType) && order == 0;
 
-                jdbcTemplate.update("""
+                rows.add(new Object[]{
+                        context.matchId(),
+                        context.participantId(),
+                        styleId,
+                        styleType,
+                        runeId,
+                        order,
+                        order,
+                        isKeystone,
+                        nullableInteger(selection, "var1"),
+                        nullableInteger(selection, "var2"),
+                        nullableInteger(selection, "var3"),
+                        OffsetDateTime.now()
+                });
+
+                order++;
+            }
+        }
+
+        if (!rows.isEmpty()) {
+            jdbcTemplate.batchUpdate("""
                         INSERT INTO core.participant_rune_selections
                         (
                             match_id,
@@ -458,23 +492,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                             var2 = EXCLUDED.var2,
                             var3 = EXCLUDED.var3,
                             created_at = EXCLUDED.created_at
-                        """,
-                        context.matchId(),
-                        context.participantId(),
-                        styleId,
-                        styleType,
-                        runeId,
-                        order,
-                        order,
-                        isKeystone,
-                        nullableInteger(selection, "var1"),
-                        nullableInteger(selection, "var2"),
-                        nullableInteger(selection, "var3"),
-                        OffsetDateTime.now()
-                );
-
-                order++;
-            }
+                        """, rows);
         }
     }
 
@@ -493,6 +511,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 ORDER BY ts_ms ASC
                 """, this::mapTimelineItemEvent, source.matchId());
 
+        List<Object[]> rows = new ArrayList<>();
         for (TimelineItemEvent event : events) {
             if (!ITEM_EVENT_TYPES.contains(event.eventType())) {
                 continue;
@@ -506,7 +525,19 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
 
             Integer minute = event.timestampMs() == null ? null : (int) (event.timestampMs() / 60000);
 
-            jdbcTemplate.update("""
+            rows.add(new Object[]{
+                    context.matchId(),
+                    context.participantId(),
+                    event.itemId(),
+                    event.eventType(),
+                    event.timestampMs(),
+                    minute,
+                    OffsetDateTime.now()
+            });
+        }
+
+        if (!rows.isEmpty()) {
+            jdbcTemplate.batchUpdate("""
                     INSERT INTO core.participant_item_events
                     (
                         match_id,
@@ -520,15 +551,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT (match_id, participant_id, event_type, item_id, timestamp_ms)
                     DO NOTHING
-                    """,
-                    context.matchId(),
-                    context.participantId(),
-                    event.itemId(),
-                    event.eventType(),
-                    event.timestampMs(),
-                    minute,
-                    OffsetDateTime.now()
-            );
+                    """, rows);
         }
     }
 
@@ -558,6 +581,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                 """, this::mapTimelineSkillEvent, source.matchId());
 
         Map<Short, Integer> orderByParticipant = new HashMap<>();
+        List<Object[]> rows = new ArrayList<>();
 
         for (TimelineSkillEvent event : events) {
             ParticipantContext context = participantContextById.get(event.participantId());
@@ -569,7 +593,20 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
             int skillOrder = orderByParticipant.merge(event.participantId(), 1, Integer::sum);
             Integer minute = event.timestampMs() == null ? null : (int) (event.timestampMs() / 60000);
 
-            jdbcTemplate.update("""
+            rows.add(new Object[]{
+                    context.matchId(),
+                    context.participantId(),
+                    skillOrder,
+                    event.skillSlot(),
+                    event.levelUpType(),
+                    event.timestampMs(),
+                    minute,
+                    OffsetDateTime.now()
+            });
+        }
+
+        if (!rows.isEmpty()) {
+            jdbcTemplate.batchUpdate("""
                     INSERT INTO core.participant_skill_order
                     (
                         match_id,
@@ -589,16 +626,7 @@ public class MatchAnalysisServiceImpl implements MatchAnalysisService {
                         timestamp_ms = EXCLUDED.timestamp_ms,
                         minute = EXCLUDED.minute,
                         created_at = EXCLUDED.created_at
-                    """,
-                    context.matchId(),
-                    context.participantId(),
-                    skillOrder,
-                    event.skillSlot(),
-                    event.levelUpType(),
-                    event.timestampMs(),
-                    minute,
-                    OffsetDateTime.now()
-            );
+                    """, rows);
         }
     }
 
