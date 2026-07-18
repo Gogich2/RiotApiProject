@@ -37,6 +37,8 @@ class StaticPlayerDashboardTest {
 
         assertThat(js).contains("api.getPlayerDashboard(puuid)");
         assertThat(js).contains("api.getPlayerDashboard(puuid, queueId)");
+        assertThat(js).contains("renderPlayerMatches(dashboard.recentMatches || [])");
+        assertThat(js).doesNotContain("api.getPlayerMatches(");
         assertThat(js).contains("api.getPlayerRefreshStatus(puuid)");
         assertThat(js).contains("QUEUED");
         assertThat(js).contains("RUNNING");

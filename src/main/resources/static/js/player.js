@@ -68,11 +68,7 @@ async function loadPlayerTabData(tab, puuid) {
 
     try {
         if (tab === 'overview') {
-            const [matches, rankHistory] = await Promise.all([
-                api.getPlayerMatches(puuid, 20, currentPlayerQueueId),
-                api.getPlayerRankHistory(puuid)
-            ]);
-            renderPlayerMatches(matches || []);
+            const rankHistory = await api.getPlayerRankHistory(puuid);
             renderPlayerRankChart(rankHistory || []);
             renderPlayerRankHistory(rankHistory || []);
         }
@@ -100,6 +96,7 @@ function renderDashboard(dashboard) {
     renderInsightsForActiveTab();
     renderDashboardRanks(dashboard.ranks || []);
     renderRecentForm(dashboard.recentForm || []);
+    renderPlayerMatches(dashboard.recentMatches || []);
     renderChampionPoolHealth(dashboard.championPoolHealth);
     renderDashboardChampionPool(dashboard.championPool || []);
     renderDashboardPriorities(cachedPlayerInsights);

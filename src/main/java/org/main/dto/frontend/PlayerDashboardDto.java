@@ -8,6 +8,7 @@ public record PlayerDashboardDto(
         String analysisQueue,
         int analysisQueueId,
         List<RecentFormDto> recentForm,
+        List<PlayerRecentMatchDto> recentMatches,
         List<PlayerRankSummaryDto> ranks,
         List<PlayerChampionStatsDto> championPool,
         ChampionPoolHealthDto championPoolHealth,

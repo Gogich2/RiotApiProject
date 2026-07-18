@@ -84,6 +84,7 @@ public class PlayerDashboardServiceImpl implements PlayerDashboardService {
                 analysisQueue.label(),
                 analysisQueue.queueId(),
                 FORM_WINDOWS.stream().map(window -> recentForm(matches, window)).toList(),
+                matches,
                 rankEntities.stream().map(this::rank).toList(),
                 championPool,
                 poolHealth,

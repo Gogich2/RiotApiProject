@@ -84,6 +84,7 @@ class PlayerDashboardServiceTest {
 
         assertThat(dashboard.analysisQueue()).isEqualTo("Solo/Duo");
         assertThat(dashboard.analysisQueueId()).isEqualTo(420);
+        assertThat(dashboard.recentMatches()).containsExactlyElementsOf(matches());
         assertThat(dashboard.recentForm()).extracting(form -> form.window()).containsExactly(5, 10, 20);
         assertThat(dashboard.recentForm().get(0).wins()).isEqualTo(3);
         assertThat(dashboard.recentForm().get(0).losses()).isEqualTo(2);
