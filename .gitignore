@@ -1,4 +1,7 @@
 target/
+/target-cache/
+/graphify-out/
+/logs/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
