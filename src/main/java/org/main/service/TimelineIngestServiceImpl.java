@@ -155,16 +155,26 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
         timelineFrameRepository.deleteByMatchId(matchId);
         timelineFrameRepository.flush();
 
+        List<MatchTimelineFrameEntity> frameEntities = new ArrayList<>();
+        List<MatchTimelineEventEntity> eventEntities = new ArrayList<>();
         int frameNo = 0;
 
         for (JsonNode frame : frames) {
-            saveFrame(matchId, frameNo, frame);
-            saveFrameEvents(matchId, frameNo, frame);
+            frameEntities.add(buildFrameEntity(matchId, frameNo, frame));
+            addFrameEvents(eventEntities, matchId, frameNo, frame);
             frameNo++;
+        }
+
+        if (!frameEntities.isEmpty()) {
+            timelineFrameRepository.saveAll(frameEntities);
+        }
+
+        if (!eventEntities.isEmpty()) {
+            timelineEventRepository.saveAll(eventEntities);
         }
     }
 
-    private void saveFrame(String matchId, int frameNo, JsonNode frame) {
+    private MatchTimelineFrameEntity buildFrameEntity(String matchId, int frameNo, JsonNode frame) {
         MatchTimelineFrameEntity entity = new MatchTimelineFrameEntity();
 
         entity.setMatchId(matchId);
@@ -173,24 +183,23 @@ public class TimelineIngestServiceImpl implements TimelineIngestService {
         entity.setParticipantFrames(jsonOrNull(frame.get("participantFrames")));
         entity.setRawFrameJson(frame.toString());
 
-        timelineFrameRepository.save(entity);
+        return entity;
     }
 
-    private void saveFrameEvents(String matchId, int frameNo, JsonNode frame) {
+    private void addFrameEvents(List<MatchTimelineEventEntity> entities,
+                                String matchId,
+                                int frameNo,
+                                JsonNode frame) {
         JsonNode events = frame.path("events");
 
         if (!events.isArray()) {
             return;
         }
 
-        List<MatchTimelineEventEntity> entities = new ArrayList<>();
-
         for (JsonNode event : events) {
             MatchTimelineEventEntity entity = buildEventEntity(matchId, frameNo, event);
             entities.add(entity);
         }
-
-        timelineEventRepository.saveAll(entities);
     }
 
     private MatchTimelineEventEntity buildEventEntity(String matchId, int frameNo, JsonNode event) {
