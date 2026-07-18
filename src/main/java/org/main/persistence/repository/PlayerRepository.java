@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.main.persistence.entity.PlayerEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,30 @@ public interface PlayerRepository extends JpaRepository<PlayerEntity, String> {
     Optional<PlayerEntity> findByGameNameIgnoreCaseAndTagLineIgnoreCase(String gameName, String tagLine);
 
     Optional<PlayerEntity> findTopByOrderByUpdatedAtDesc();
+
+    @Query("""
+            select player
+            from PlayerEntity player
+            where player.puuid is not null
+              and player.puuid <> ''
+              and player.profileIconId is null
+            order by player.updatedAt asc, player.puuid asc
+            """)
+    List<PlayerEntity> findPlayersMissingProfiles(Pageable pageable);
+
+    @Query(value = """
+            select player.*
+            from raw.players player
+            where player.puuid is not null
+              and player.puuid <> ''
+              and not exists (
+                  select 1
+                  from raw.league_entries entry
+                  where entry.puuid = player.puuid
+              )
+            order by player.updated_at asc, player.puuid asc
+            """, nativeQuery = true)
+    List<PlayerEntity> findPlayersMissingRanks(Pageable pageable);
 
     @Query(value = """
             select *

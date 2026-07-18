@@ -15,6 +15,7 @@ import org.main.persistence.repository.MatchTimelineRawRepository;
 import org.main.persistence.repository.PlayerRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -137,12 +138,7 @@ public class DataIntegrityServiceImpl implements DataIntegrityService {
     public RankRepairResultDto repairMissingRanks(int limitRaw) {
         int limit = normalizeLimit(limitRaw);
 
-        List<PlayerEntity> players = playerRepository.findAll().
-                stream().
-                filter(player -> player.getPuuid() != null && !player.getPuuid().isBlank()).
-                filter(player -> !rankEnrichmentService.hasRankData(player.getPuuid())).
-                limit(limit).
-                toList();
+        List<PlayerEntity> players = playerRepository.findPlayersMissingRanks(PageRequest.of(0, limit));
 
         int enriched = 0;
         int changed = 0;
@@ -170,12 +166,7 @@ public class DataIntegrityServiceImpl implements DataIntegrityService {
     public PlayerProfileRepairResultDto repairMissingPlayerProfiles(int limitRaw) {
         int limit = normalizeLimit(limitRaw);
 
-        List<PlayerEntity> players = playerRepository.findAll().
-                stream().
-                filter(player -> player.getPuuid() != null && !player.getPuuid().isBlank()).
-                filter(player -> player.getProfileIconId() == null).
-                limit(limit).
-                toList();
+        List<PlayerEntity> players = playerRepository.findPlayersMissingProfiles(PageRequest.of(0, limit));
 
         int enriched = 0;
 
