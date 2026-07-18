@@ -5,7 +5,6 @@ import org.main.dto.frontend.ChampionDetailsDto;
 import org.main.dto.frontend.ChampionItemStatsDto;
 import org.main.dto.frontend.ChampionStatDto;
 import org.main.dto.frontend.ChampionSummaryDto;
-import org.main.dto.frontend.MatchDetailsDto;
 import org.main.dto.frontend.OverviewStatsDto;
 import org.main.dto.frontend.PlayerChampionStatsDto;
 import org.main.dto.frontend.PlayerInsightDto;
@@ -41,7 +40,5 @@ public interface FrontendStatsService {
     List<PlayerChampionStatsDto> getPlayerChampions(String puuid, int queueId);
 
     PlayerLeaderboardResponseDto getPlayerLeaderboards();
-
-    MatchDetailsDto getMatchDetails(String matchId, String puuid);
 
 }

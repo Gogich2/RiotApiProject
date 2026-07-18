@@ -10,7 +10,6 @@ import org.main.dto.frontend.ChampionItemStatsDto;
 import org.main.dto.frontend.ChampionSearchResultDto;
 import org.main.dto.frontend.ChampionStatDto;
 import org.main.dto.frontend.ChampionSummaryDto;
-import org.main.dto.frontend.MatchDetailsDto;
 import org.main.dto.frontend.OverviewStatsDto;
 import org.main.dto.frontend.PlayerChampionStatsDto;
 import org.main.dto.frontend.PlayerInsightDto;
@@ -35,12 +34,8 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final MatchDetailsService matchDetailsService;
-
-    public FrontendStatsServiceImpl(JdbcTemplate jdbcTemplate,
-                                    MatchDetailsService matchDetailsService) {
+    public FrontendStatsServiceImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.matchDetailsService = matchDetailsService;
     }
 
     @Override
@@ -668,11 +663,6 @@ public class FrontendStatsServiceImpl implements FrontendStatsService {
         }
 
         return matches;
-    }
-
-    @Override
-    public MatchDetailsDto getMatchDetails(String matchId, String puuid) {
-        return matchDetailsService.getMatchDetails(matchId, puuid);
     }
 
     private Map<String, List<PlayerMatchItemDto>> loadRecentMatchItems(List<PlayerRecentMatchRow> matches) {
